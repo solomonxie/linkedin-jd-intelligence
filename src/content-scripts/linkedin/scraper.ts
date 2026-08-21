@@ -48,21 +48,32 @@ function getVisibleText(el: Element | null): string {
 
 const READY_POLL_INTERVAL_MS = 150;
 const READY_POLL_TIMEOUT_MS = 3000;
-// Matches LinkedIn's job description toggle and the similar toggles on
-// premium insight sections — deliberately excludes "...less" so an
-// already-expanded section is never re-collapsed.
-const EXPAND_BUTTON_PATTERN = /^(show|see) more$/i;
+// Substring, not exact match — LinkedIn's toggles often carry extra
+// accessibility-only text alongside the visible label (e.g. a visually-hidden
+// span describing what's being expanded), so an exact-string match would
+// silently miss them. Requires "more" without "less" nearby so an
+// already-expanded toggle (now reading "...see less") is never re-collapsed,
+// and a from/to word pair like "less" ... "more" close together doesn't false-match.
+const EXPAND_TEXT_PATTERN = /\b(show|see) more\b/i;
+const COLLAPSE_TEXT_PATTERN = /\bless\b/i;
+// Not just <button> — LinkedIn (and especially its premium/insight panels,
+// which use varied wording like "show more"/"see more"/"show details") may
+// implement a toggle as a link or an ARIA-role element instead.
+const EXPANDABLE_SELECTOR = 'button, a, [role="button"]';
 
 function delay(ms: number): Promise<void> {
   return new Promise((resolve) => setTimeout(resolve, ms));
 }
 
-/** Clicks every "Show more"/"See more" toggle in scope so the job description
- * and any collapsed premium insight sections render their full content into
- * the DOM before scraping. */
+/** Clicks every "Show more"/"See more"-style toggle in scope so the job
+ * description and any collapsed premium insight sections render their full
+ * content into the DOM before scraping. Best-effort text match — not
+ * verified against LinkedIn's live markup, since specific button wording and
+ * structure can vary or change. */
 function expandCollapsedSections(scope: Element): void {
-  for (const button of Array.from(scope.querySelectorAll("button"))) {
-    if (EXPAND_BUTTON_PATTERN.test(button.textContent?.trim() ?? "")) button.click();
+  for (const el of Array.from(scope.querySelectorAll<HTMLElement>(EXPANDABLE_SELECTOR))) {
+    const text = el.textContent?.trim() ?? "";
+    if (EXPAND_TEXT_PATTERN.test(text) && !COLLAPSE_TEXT_PATTERN.test(text)) el.click();
   }
 }
 
