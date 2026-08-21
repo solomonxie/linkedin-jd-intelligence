@@ -88,10 +88,7 @@ async function requirePending(jobId: string, caller: string): Promise<JobRecord>
   return record;
 }
 
-const STALE_THRESHOLD_MS = 2 * 60 * 1000;
-
-/** True once a "pending" record is old enough that its analysis was almost certainly abandoned. */
-export function isStalePending(record: JobRecord): boolean {
-  if (record.status !== "pending") return false;
-  return Date.now() - new Date(record.startedAt).getTime() > STALE_THRESHOLD_MS;
-}
+// Re-exported for backwards compatibility — the real implementation lives in
+// shared/ since the UI needs it too (to decide when to stop showing a
+// spinner and offer a retry instead), not just the background.
+export { isStalePending } from "../shared/jobStatus";
