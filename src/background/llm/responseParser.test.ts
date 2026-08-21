@@ -8,7 +8,7 @@ function validResultJson(overrides: Record<string, unknown> = {}) {
     location: "San Francisco, CA",
     workplaceType: "hybrid",
     companyInfo: {
-      domain: { value: "acme.com", source: "llm-estimate" },
+      industry: { value: ["Tech"], source: "llm-estimate" },
       mainProducts: { value: null, source: "llm-estimate" },
       employeeSize: { value: "1,001-5,000", source: "page" },
       engineeringSize: { value: null, source: "llm-estimate" },
@@ -94,7 +94,7 @@ describe("parseAnalysisResponse", () => {
     const flattened = validResultJson({
       companyInfo: {
         ...validResultJson().companyInfo,
-        domain: "acme.com",
+        industry: "Tech",
         arr: null,
       },
     });
@@ -102,7 +102,8 @@ describe("parseAnalysisResponse", () => {
     const result = parseAnalysisResponse(raw);
     expect(result.ok).toBe(true);
     if (result.ok) {
-      expect(result.result.companyInfo?.domain).toEqual({ value: "acme.com", source: "llm-estimate" });
+      // Also recovers a bare string in place of the string[] the schema asks for.
+      expect(result.result.companyInfo?.industry).toEqual({ value: ["Tech"], source: "llm-estimate" });
       expect(result.result.companyInfo?.arr).toEqual({ value: null, source: "llm-estimate" });
     }
   });

@@ -45,8 +45,13 @@ const requirementNodeSchema: z.ZodType<RequirementNode> = z.lazy(() =>
   }),
 );
 
+// The model occasionally returns a single string instead of an array for a
+// multi-value field despite the schema in the prompt — recover instead of
+// failing the whole response.
+const stringArraySchema = z.preprocess((v) => (typeof v === "string" ? [v] : v), z.array(z.string()));
+
 const companyInfoSchema = z.object({
-  domain: factSchema(z.string()),
+  industry: factSchema(stringArraySchema),
   mainProducts: factSchema(z.array(z.string())),
   employeeSize: factSchema(z.string()),
   engineeringSize: factSchema(z.string()),
