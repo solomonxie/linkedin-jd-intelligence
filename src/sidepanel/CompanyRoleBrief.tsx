@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { upsertJobRecord } from "../shared/db";
 import { broadcastJobRecordUpdated } from "../shared/messaging";
 import type { CompanyInfo, Fact, JobRecord, RoleInfo } from "../shared/types";
@@ -70,11 +70,26 @@ function factOf(def: FieldDef, companyInfo: CompanyInfo, role: RoleInfo): Fact<u
   return (source as unknown as Record<string, Fact<unknown>>)[def.key];
 }
 
+function displayValue(def: FieldDef, value: unknown): string {
+  return def.format ? def.format(value) : Array.isArray(value) ? value.join(", ") : String(value);
+}
+
 export function CompanyRoleBrief({ record }: { record: JobRecord }) {
+  const [expanded, setExpanded] = useState(false);
   const [editingKey, setEditingKey] = useState<string | null>(null);
   const [draft, setDraft] = useState("");
   const [addingKey, setAddingKey] = useState("");
   const [addDraft, setAddDraft] = useState("");
+
+  // "Export as PDF" (window.print()) should show the full brief regardless of
+  // whether it's currently collapsed on screen.
+  useEffect(() => {
+    function expandForPrint() {
+      setExpanded(true);
+    }
+    window.addEventListener("beforeprint", expandForPrint);
+    return () => window.removeEventListener("beforeprint", expandForPrint);
+  }, []);
 
   if (!record.companyInfo || !record.role) return null;
   const companyInfo: CompanyInfo = record.companyInfo;
@@ -107,68 +122,88 @@ export function CompanyRoleBrief({ record }: { record: JobRecord }) {
   }
 
   const blankFields = FIELDS.filter((def) => isBlank(factOf(def, companyInfo, role).value));
+  const visibleFields = FIELDS.filter((def) => !isBlank(factOf(def, companyInfo, role).value));
 
   return (
     <div className="brief card">
-      <h3>Company & Role Brief</h3>
-      <ul>
-        {FIELDS.map((def) => {
-          const fact = factOf(def, companyInfo, role);
-          const editing = editingKey === def.key;
-          if (isBlank(fact.value) && !editing) return null;
+      <button type="button" className="brief-toggle" onClick={() => setExpanded((e) => !e)}>
+        <h3>Company & Role Brief</h3>
+        <span className="expand-toggle">{expanded ? "▾" : "▸"}</span>
+      </button>
 
-          return (
-            <li key={def.key}>
-              <span className="brief-label">{def.label}</span>
-              {editing ? (
-                <FieldEditor def={def} value={draft} onChange={setDraft} onSave={() => commitEdit(def)} onCancel={() => setEditingKey(null)} />
-              ) : (
-                <>
-                  <span>{def.format ? def.format(fact.value) : Array.isArray(fact.value) ? fact.value.join(", ") : String(fact.value)}</span>
-                  {fact.source === "llm-estimate" && <span className="source-badge">est</span>}
-                  {fact.source === "user" && <span className="source-badge">edited</span>}
-                  <button type="button" className="edit-icon" onClick={() => startEdit(def)} aria-label={`Edit ${def.label}`}>
-                    ✎
-                  </button>
-                </>
-              )}
-            </li>
-          );
-        })}
-      </ul>
-
-      {blankFields.length > 0 && (
-        <div className="brief-add-field">
-          <select
-            value={addingKey}
-            onChange={(e) => {
-              setAddingKey(e.target.value);
-              setAddDraft("");
-            }}
-          >
-            <option value="">+ Add field…</option>
-            {blankFields.map((def) => (
-              <option key={def.key} value={def.key}>
-                {def.label}
-              </option>
-            ))}
-          </select>
-          {addingKey && (
-            <FieldEditor
-              def={FIELDS.find((f) => f.key === addingKey)!}
-              value={addDraft}
-              onChange={setAddDraft}
-              onSave={() => commitAdd(FIELDS.find((f) => f.key === addingKey)!)}
-              onCancel={() => {
-                setAddingKey("");
-                setAddDraft("");
-              }}
-            />
-          )}
-        </div>
+      {!expanded && (
+        <p className="muted brief-preview" onClick={() => setExpanded(true)}>
+          {visibleFields.length === 0
+            ? "Nothing yet — click to add details."
+            : visibleFields
+                .slice(0, 3)
+                .map((def) => `${def.label}: ${displayValue(def, factOf(def, companyInfo, role).value)}`)
+                .join(" · ") + (visibleFields.length > 3 ? ` · +${visibleFields.length - 3} more` : "")}
+        </p>
       )}
 
-      <p className="muted">est = LLM's general knowledge, not verified — may be stale. edited = you changed this.</p>
+      {expanded && (
+        <>
+          <ul>
+            {FIELDS.map((def) => {
+              const fact = factOf(def, companyInfo, role);
+              const editing = editingKey === def.key;
+              if (isBlank(fact.value) && !editing) return null;
+
+              return (
+                <li key={def.key}>
+                  <span className="brief-label">{def.label}</span>
+                  {editing ? (
+                    <FieldEditor def={def} value={draft} onChange={setDraft} onSave={() => commitEdit(def)} onCancel={() => setEditingKey(null)} />
+                  ) : (
+                    <>
+                      <span>{displayValue(def, fact.value)}</span>
+                      {fact.source === "llm-estimate" && <span className="source-badge">est</span>}
+                      {fact.source === "user" && <span className="source-badge">edited</span>}
+                      <button type="button" className="edit-icon" onClick={() => startEdit(def)} aria-label={`Edit ${def.label}`}>
+                        ✎
+                      </button>
+                    </>
+                  )}
+                </li>
+              );
+            })}
+          </ul>
+
+          {blankFields.length > 0 && (
+            <div className="brief-add-field">
+              <select
+                value={addingKey}
+                onChange={(e) => {
+                  setAddingKey(e.target.value);
+                  setAddDraft("");
+                }}
+              >
+                <option value="">+ Add field…</option>
+                {blankFields.map((def) => (
+                  <option key={def.key} value={def.key}>
+                    {def.label}
+                  </option>
+                ))}
+              </select>
+              {addingKey && (
+                <FieldEditor
+                  def={FIELDS.find((f) => f.key === addingKey)!}
+                  value={addDraft}
+                  onChange={setAddDraft}
+                  onSave={() => commitAdd(FIELDS.find((f) => f.key === addingKey)!)}
+                  onCancel={() => {
+                    setAddingKey("");
+                    setAddDraft("");
+                  }}
+                />
+              )}
+            </div>
+          )}
+
+          <p className="muted">est = LLM's general knowledge, not verified — may be stale. edited = you changed this.</p>
+        </>
+      )}
     </div>
   );
 }

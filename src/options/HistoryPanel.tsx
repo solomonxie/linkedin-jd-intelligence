@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useState } from "react";
-import { clearAllJobRecords, getAllCompanyRecords, getAllJobRecords } from "../shared/db";
+import { clearAllJobRecords, getAllJobRecords } from "../shared/db";
+import { downloadAllData } from "../shared/exportData";
 import { onJobRecordUpdated } from "../shared/messaging";
 import { useSettings } from "../shared/useSettings";
 import type { JobRecord } from "../shared/types";
@@ -31,20 +32,6 @@ export function HistoryPanel() {
     }
   }
 
-  // Exports everything in IndexedDB (job records + the company info cache), not just what's
-  // currently loaded/filtered in this view — a full local backup, not a filtered report.
-  async function handleExport() {
-    const [jobs, companies] = await Promise.all([getAllJobRecords(), getAllCompanyRecords()]);
-    const payload = { exportedAt: new Date().toISOString(), jobs, companies };
-    const blob = new Blob([JSON.stringify(payload, null, 2)], { type: "application/json" });
-    const url = URL.createObjectURL(blob);
-    const link = document.createElement("a");
-    link.href = url;
-    link.download = `linkedin-jd-intelligence-export-${new Date().toISOString().slice(0, 10)}.json`;
-    link.click();
-    URL.revokeObjectURL(url);
-  }
-
   if (loading) return <p className="muted">Loading…</p>;
 
   return (
@@ -62,7 +49,7 @@ export function HistoryPanel() {
             ))}
           </select>
         </label>
-        <button type="button" onClick={() => void handleExport()} disabled={records.length === 0}>
+        <button type="button" onClick={() => void downloadAllData()} disabled={records.length === 0}>
           Export all data
         </button>
         <button type="button" onClick={handleClear} disabled={records.length === 0}>
