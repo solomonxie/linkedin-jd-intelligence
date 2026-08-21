@@ -33,6 +33,7 @@ const FIELDS: FieldDef[] = [
     format: (v) => `${v} applicants`,
   },
   { key: "seniorHeadcount", group: "role", label: "Senior eng. headcount", kind: "text" },
+  { key: "applicantInsights", group: "role", label: "Applicant insights", kind: "text" },
 ];
 
 function isBlank(value: unknown): boolean {
@@ -65,9 +66,12 @@ function parseInput(raw: string, kind: FieldKind): unknown {
   return trimmed === "" ? null : trimmed;
 }
 
+// Falls back to a blank fact for a field a cached record predates (e.g. a schema field added after
+// the record was analyzed) instead of crashing on .value — see the companyInfo.domain->industry
+// migration history in shared/db.ts for why this bites in practice.
 function factOf(def: FieldDef, companyInfo: CompanyInfo, role: RoleInfo): Fact<unknown> {
   const source = def.group === "companyInfo" ? companyInfo : role;
-  return (source as unknown as Record<string, Fact<unknown>>)[def.key];
+  return (source as unknown as Record<string, Fact<unknown>>)[def.key] ?? { value: null, source: "llm-estimate" };
 }
 
 function displayValue(def: FieldDef, value: unknown): string {
