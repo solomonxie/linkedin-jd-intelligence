@@ -8,7 +8,7 @@ A Chrome extension (Manifest V3) that, on a LinkedIn job posting, scans the page
 
 - extract job requirements as a **weighted, expandable hierarchy** (main skills with nested sub-skills, ordered by importance), including skills a requirement *implies* and not just literal keywords
 - compare those requirements against the user's resume and show what's matched vs. missing
-- assemble a short **company & role brief** (domain, size, ARR, funding stage, tech stack, salary range, applicant count, senior headcount), pulling whatever's visible on the page and filling gaps from the model's general knowledge — no live web search
+- assemble a short **company & role brief** (industry, size, ARR, funding stage, tech stack, salary range, applicant count, senior headcount), pulling whatever's visible on the page and filling gaps from the model's general knowledge — no live web search
 - produce a **normalized role classification**, since job titles are often misleading (e.g. "Software Engineer, Data Platform" is really a Data Engineering role)
 - show a **regional skill-prevalence estimate** per requirement, computed locally from the user's own analyzed-job history
 
@@ -211,7 +211,7 @@ One prompt, one fenced JSON block, built from `{ resumeText, rawPageText }`:
   jobTitle: string, company: string, location: string,
   workplaceType: "remote"|"hybrid"|"onsite"|null,
   companyInfo: {
-    domain: Fact<string>, mainProducts: Fact<string[]>,
+    industry: Fact<string[]>, mainProducts: Fact<string[]>,
     employeeSize: Fact<string>, engineeringSize: Fact<string>,
     arr: Fact<string>, fundingStage: Fact<string>,
     ownership: Fact<"public"|"private">, techStack: Fact<string[]>

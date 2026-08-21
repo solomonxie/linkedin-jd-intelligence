@@ -112,7 +112,7 @@ async function cacheCompanyInfo(companyName: string, companyInfo: CompanyInfo, s
 function blankCompanyInfo(): CompanyInfo {
   const empty = { value: null, source: "llm-estimate" as const };
   return {
-    domain: empty,
+    industry: empty,
     mainProducts: empty,
     employeeSize: empty,
     engineeringSize: empty,

@@ -16,7 +16,7 @@ describe("company records", () => {
       key: "affirm",
       name: "Affirm",
       companyInfo: {
-        domain: { value: "affirm.com", source: "page" },
+        industry: { value: ["FinTech"], source: "page" },
         mainProducts: { value: ["BNPL"], source: "llm-estimate" },
         employeeSize: { value: null, source: "llm-estimate" },
         engineeringSize: { value: null, source: "llm-estimate" },
@@ -38,7 +38,7 @@ describe("company records", () => {
       key,
       name: "Acme",
       companyInfo: {
-        domain: { value: null, source: "llm-estimate" },
+        industry: { value: null, source: "llm-estimate" },
         mainProducts: { value: null, source: "llm-estimate" },
         employeeSize: { value: null, source: "llm-estimate" },
         engineeringSize: { value: null, source: "llm-estimate" },

@@ -4,6 +4,7 @@
 // See docs/DESIGN.md "Prompt/response contract" for the rationale.
 
 import { ROLE_TAXONOMY } from "../../shared/roleTaxonomy";
+import { formatIndustryPresetsForPrompt } from "./industryPresets";
 import { formatSkillPresetsForPrompt } from "./skillPresets";
 import type { CompanyInfo } from "../../shared/types";
 
@@ -39,7 +40,7 @@ SCHEMA
 }
 // Fact<T> = { "value": T | null, "source": "page" | "llm-estimate" }
 // CompanyInfo = {
-//   "domain": Fact<string>, "mainProducts": Fact<string[]>, "employeeSize": Fact<string>,
+//   "industry": Fact<string[]>, "mainProducts": Fact<string[]>, "employeeSize": Fact<string>,
 //   "engineeringSize": Fact<string>, "arr": Fact<string>, "fundingStage": Fact<string>,
 //   "ownership": Fact<"public"|"private">, "techStack": Fact<string[]>
 // }
@@ -79,6 +80,13 @@ FACT-SOURCING RULES (apply to every Fact<T> field within companyInfo and role)
 - EXCEPTION: role.applicantCount must NEVER be "llm-estimate". If the posting doesn't literally show an
   applicant count, return { "value": null, "source": "page" }. There is no reasonable way to estimate a
   specific applicant count from general knowledge, unlike ARR or headcount.
+
+INDUSTRY (companyInfo.industry)
+A company can belong to more than one industry/domain tag — return all that reasonably apply, e.g. a
+venture capital firm is ["VC"], Google is ["Tech"], a university is ["Education"], Stripe is
+["FinTech", "SaaS"]. Prefer one or more of these when they fit reasonably well, otherwise add a short
+custom tag alongside them:
+${formatIndustryPresetsForPrompt()}
 
 ROLE CLASSIFICATION
 Classify what the role actually IS from its responsibilities and requirements, not its literal title —

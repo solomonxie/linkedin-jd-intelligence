@@ -22,7 +22,7 @@ export interface RequirementNode {
 }
 
 export interface CompanyInfo {
-  domain: Fact<string>;
+  industry: Fact<string[]>;
   mainProducts: Fact<string[]>;
   employeeSize: Fact<string>;
   engineeringSize: Fact<string>;
