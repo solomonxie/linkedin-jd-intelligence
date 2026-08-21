@@ -55,4 +55,28 @@ describe("company records", () => {
 
     expect(await getCompanyRecord(key)).toEqual(updated);
   });
+
+  it("migrates a pre-rename record stored with companyInfo.domain instead of industry", async () => {
+    const key = "legacy-co";
+    const legacyCompanyInfo = {
+      domain: { value: "SaaS", source: "page" },
+      mainProducts: { value: null, source: "llm-estimate" },
+      employeeSize: { value: null, source: "llm-estimate" },
+      engineeringSize: { value: null, source: "llm-estimate" },
+      arr: { value: null, source: "llm-estimate" },
+      fundingStage: { value: null, source: "llm-estimate" },
+      ownership: { value: null, source: "llm-estimate" },
+      techStack: { value: null, source: "llm-estimate" },
+    };
+    // Bypass the CompanyInfo type to simulate a record written before the rename.
+    await upsertCompanyRecord({
+      key,
+      name: "Legacy Co",
+      companyInfo: legacyCompanyInfo as unknown as CompanyRecord["companyInfo"],
+      updatedAt: "2026-01-01T00:00:00.000Z",
+    });
+
+    const record = await getCompanyRecord(key);
+    expect(record?.companyInfo.industry).toEqual({ value: ["SaaS"], source: "page" });
+  });
 });
