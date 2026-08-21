@@ -1,0 +1,33 @@
+<svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" viewBox="0 0 200 200">
+  <defs>
+    <linearGradient id="blueGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#0A66C2"/>
+      <stop offset="100%" stop-color="#004182"/>
+    </linearGradient>
+    <linearGradient id="ringGrad" x1="0%" y1="0%" x2="100%" y2="0%">
+      <stop offset="0%" stop-color="#7C3AED"/>
+      <stop offset="100%" stop-color="#22D3EE"/>
+    </linearGradient>
+  </defs>
+
+  <path id="ringPath" d="M 18,100 A 82,82 0 0,0 182,100" fill="none"
+        stroke="url(#ringGrad)" stroke-width="18" stroke-linecap="round"/>
+
+  <circle cx="100" cy="100" r="68" fill="url(#blueGrad)"/>
+
+  <text x="100" y="128" text-anchor="middle"
+        font-family="Helvetica, Arial, sans-serif" font-weight="700"
+        font-size="76" fill="#FFFFFF">in</text>
+
+  <g font-family="Helvetica, Arial, sans-serif" font-weight="700" font-size="22" fill="#FFFFFF">
+    <text x="32.83" y="147.03" transform="rotate(55.00 32.83 147.03)" text-anchor="middle" dominant-baseline="central">#</text>
+    <text x="45.93" y="161.65" transform="rotate(41.25 45.93 161.65)" text-anchor="middle" dominant-baseline="central">A</text>
+    <text x="62.14" y="172.73" transform="rotate(27.50 62.14 172.73)" text-anchor="middle" dominant-baseline="central">N</text>
+    <text x="80.51" y="179.65" transform="rotate(13.75 80.51 179.65)" text-anchor="middle" dominant-baseline="central">A</text>
+    <text x="100.00" y="182.00" transform="rotate(0.00 100.00 182.00)" text-anchor="middle" dominant-baseline="central">L</text>
+    <text x="119.49" y="179.65" transform="rotate(-13.75 119.49 179.65)" text-anchor="middle" dominant-baseline="central">Y</text>
+    <text x="137.86" y="172.73" transform="rotate(-27.50 137.86 172.73)" text-anchor="middle" dominant-baseline="central">S</text>
+    <text x="154.07" y="161.65" transform="rotate(-41.25 154.07 161.65)" text-anchor="middle" dominant-baseline="central">I</text>
+    <text x="167.17" y="147.03" transform="rotate(-55.00 167.17 147.03)" text-anchor="middle" dominant-baseline="central">S</text>
+  </g>
+</svg>
