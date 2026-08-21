@@ -37,6 +37,10 @@ export function App() {
     return `~${estimate.toLocaleString()} candidates in ${region} likely have this skill (estimated from ${prevalence.qualifyingJobCount} postings you've analyzed here; rough heuristic, not verified).`;
   }
 
+  const isPendingFresh = record?.status === "pending" && !isStalePending(record);
+  const isPendingStale = record?.status === "pending" && isStalePending(record);
+  const busy = analyzing || isPendingFresh;
+
   async function handleAnalyze() {
     if (!pageInfo?.jobId || !activeProfile) return;
     setAnalyzing(true);
@@ -66,6 +70,18 @@ export function App() {
     void handleAnalyze();
   }, [pageInfo?.jobId, activeProfile, settings.openaiApiKey, record]);
 
+  // OpenAI's response isn't streamed, so there's no real completion percentage —
+  // an elapsed-time counter is the honest "progress info" available. Ticks once
+  // a second only while a request is actually in flight.
+  const [, forceTick] = useState(0);
+  useEffect(() => {
+    if (!busy) return;
+    const id = setInterval(() => forceTick((n) => n + 1), 1000);
+    return () => clearInterval(id);
+  }, [busy]);
+
+  const elapsedSeconds = isPendingFresh && record ? Math.max(0, Math.floor((Date.now() - new Date(record.startedAt).getTime()) / 1000)) : 0;
+
   if (loading) return <Shell>Loading…</Shell>;
   if (!pageInfo?.jobId) return <Shell>Open a LinkedIn job posting to analyze it.</Shell>;
   if (!settings.openaiApiKey) {
@@ -89,10 +105,6 @@ export function App() {
     );
   }
 
-  const isPendingFresh = record?.status === "pending" && !isStalePending(record);
-  const isPendingStale = record?.status === "pending" && isStalePending(record);
-  const busy = analyzing || isPendingFresh;
-
   return (
     <Shell>
       <h2>{record?.jobTitle ?? "Detecting…"}</h2>
@@ -100,6 +112,7 @@ export function App() {
       <p>
         {record?.company ?? ""}
         {record?.location ? ` · ${record.location}` : ""}
+        {record?.workplaceType ? ` (${record.workplaceType})` : ""}
       </p>
 
       <label>
@@ -114,7 +127,7 @@ export function App() {
       </label>
 
       <button onClick={handleAnalyze} disabled={busy}>
-        {busy ? "Analyzing…" : record?.status === "ok" ? "Re-analyze" : "Analyze"}
+        {busy ? `Analyzing… (${elapsedSeconds}s)` : record?.status === "ok" ? "Re-analyze" : "Analyze"}
       </button>
 
       {analyzeError && <p className="error">{analyzeError}</p>}
