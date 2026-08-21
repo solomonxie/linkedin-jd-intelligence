@@ -5,6 +5,15 @@
 import { z } from "zod";
 import type { AnalysisResult, RequirementNode } from "../../shared/types";
 
+/**
+ * The LLM's raw response shape — companyInfo may legitimately be null when
+ * the prompt told it company research was already cached (see
+ * promptBuilder's CACHED COMPANY INFO section). The caller resolves this down
+ * to a full AnalysisResult (companyInfo always populated, from the response
+ * or from the cache) before it's persisted.
+ */
+export type AnalysisResponse = Omit<AnalysisResult, "companyInfo"> & { companyInfo: AnalysisResult["companyInfo"] | null };
+
 function factSchema<T extends z.ZodTypeAny>(valueSchema: T) {
   const fact = z.object({
     value: valueSchema.nullable(),
@@ -60,7 +69,9 @@ const analysisResultSchema = z.object({
   // .catch(null) rather than a hard requirement — a field the model might
   // omit shouldn't fail the whole response over it.
   workplaceType: z.enum(["remote", "hybrid", "onsite"]).nullable().catch(null),
-  companyInfo: companyInfoSchema,
+  // null when the prompt told the model companyInfo was already cached (see
+  // promptBuilder's CACHED COMPANY INFO section) — resolved by the caller.
+  companyInfo: companyInfoSchema.nullable(),
   role: roleInfoSchema,
   roleClassification: z.object({
     normalizedRole: z.string(),
@@ -68,10 +79,10 @@ const analysisResultSchema = z.object({
   }),
   requirements: z.array(requirementNodeSchema),
   summary: z.string(),
-}) satisfies z.ZodType<AnalysisResult>;
+}) satisfies z.ZodType<AnalysisResponse>;
 
 export type ParseResult =
-  | { ok: true; result: AnalysisResult }
+  | { ok: true; result: AnalysisResponse }
   | { ok: false; rawText: string; reason: string };
 
 export function parseAnalysisResponse(rawText: string): ParseResult {
