@@ -89,6 +89,18 @@ export interface JobRecord {
   errorMessage: string | null;
 }
 
+/**
+ * Company-level facts, persisted separately from job records and keyed by a
+ * normalized company name (see shared/companyKey.ts) so they're shared across
+ * every job posting from the same company instead of re-derived each time.
+ */
+export interface CompanyRecord {
+  key: string;
+  name: string;
+  companyInfo: CompanyInfo;
+  updatedAt: string;
+}
+
 export interface ResumeProfile {
   id: string;
   name: string;
