@@ -56,10 +56,12 @@ const READY_POLL_TIMEOUT_MS = 3000;
 // and a from/to word pair like "less" ... "more" close together doesn't false-match.
 const EXPAND_TEXT_PATTERN = /\b(show|see) more\b/i;
 const COLLAPSE_TEXT_PATTERN = /\bless\b/i;
-// Not just <button> — LinkedIn (and especially its premium/insight panels,
-// which use varied wording like "show more"/"see more"/"show details") may
-// implement a toggle as a link or an ARIA-role element instead.
-const EXPANDABLE_SELECTOR = 'button, a, [role="button"]';
+// Deliberately NOT <a> — an in-place "show more" toggle is a <button> (or a
+// non-anchor element wearing role="button"); a real anchor's job is to
+// navigate, and clicking one does exactly that (confirmed live: this matched
+// a company-profile link and hijacked the page). The runtime guard below is
+// a second line of defense for any <a role="button"> that still slips through.
+const EXPANDABLE_SELECTOR = 'button, [role="button"]';
 
 function delay(ms: number): Promise<void> {
   return new Promise((resolve) => setTimeout(resolve, ms));
@@ -69,9 +71,11 @@ function delay(ms: number): Promise<void> {
  * description and any collapsed premium insight sections render their full
  * content into the DOM before scraping. Best-effort text match — not
  * verified against LinkedIn's live markup, since specific button wording and
- * structure can vary or change. */
+ * structure can vary or change. Never clicks a real <a href> — that
+ * navigates the page instead of expanding anything in place. */
 function expandCollapsedSections(scope: Element): void {
   for (const el of Array.from(scope.querySelectorAll<HTMLElement>(EXPANDABLE_SELECTOR))) {
+    if (el instanceof HTMLAnchorElement && el.hasAttribute("href")) continue;
     const text = el.textContent?.trim() ?? "";
     if (EXPAND_TEXT_PATTERN.test(text) && !COLLAPSE_TEXT_PATTERN.test(text)) el.click();
   }
