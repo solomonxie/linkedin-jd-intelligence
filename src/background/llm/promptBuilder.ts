@@ -4,6 +4,7 @@
 // See docs/DESIGN.md "Prompt/response contract" for the rationale.
 
 import { ROLE_TAXONOMY } from "../../shared/roleTaxonomy";
+import { formatSkillPresetsForPrompt } from "./skillPresets";
 import type { CompanyInfo } from "../../shared/types";
 
 export interface BuildPromptParams {
@@ -93,23 +94,43 @@ domain knowledge, experience level, education, certifications. Do NOT add nodes 
 logistics that aren't skills — employment type/schedule (full-time, part-time, contract), work
 authorization or visa sponsorship, security clearance, relocation or travel willingness, and on-site/
 hybrid/remote (already captured in "workplaceType" above) never belong in this tree, matched or not.
+Do NOT add nodes for soft skills either — communication, collaboration, teamwork, leadership,
+"stakeholder management," and similar are not resume-verifiable technical facts; leave them out even
+if the posting lists them. Technical skills only.
+
+REQUIREMENT NAMING — BARE SKILL NAMES, ONE PER NODE
+"requirement" is just the skill/tool/technology name itself (e.g. "TypeScript", "Docker", "AWS"), never
+a sentence or phrase describing it. Strip wrapper language like "Experience with", "Proficiency in",
+"Familiarity with", "Knowledge of" down to the skill name. When one bullet names multiple skills
+together (e.g. "Experience with TypeScript and Golang", "familiar with AWS, GCP, or Azure"), split them
+into separate sibling nodes — one per skill, each independently weighted and matched — never combine
+multiple skills into a single node's name.
+  - "Experience with TypeScript and Golang" -> two sibling nodes: "TypeScript", "Golang"
+  - "Proficiency in React and Redux" -> "React" (parent) with "Redux" as a child, per the grouping rule below
 
 REQUIREMENT TREE — WEIGHTED AND HIERARCHICAL, NOT A FLAT LIST
 Group related sub-skills under a main skill/category as "children" instead of listing everything flat —
-e.g. Django/FastAPI nested under "Python"; Kubernetes/Docker/microservices nested under "Container
-system"; ClickHouse/Parquet nested under "Columnar DB". Assign every node (at every depth) a "weight"
-(0-100) reflecting how central it is to the role, roughly comparable across its siblings — the caller
-will renormalize these locally, so a rough relative signal is enough.
+e.g. Django/FastAPI nested under "Python"; Kubernetes/Docker nested under "Container system"; ClickHouse/
+Parquet nested under "Columnar DB". Assign every node (at every depth) a "weight" (0-100) reflecting how
+central it is to the role, roughly comparable across its siblings — the caller will renormalize these
+locally, so a rough relative signal is enough.
+
+SKILL REFERENCE (grounding for the "implied" children below — not exhaustive; use judgment for anything
+not listed here; "X(→Y,Z)" means X implies Y and Z)
+${formatSkillPresetsForPrompt()}
 
 For each requirement the posting explicitly names, also add the skills it reasonably implies as
 "implied" children even though the posting never names them — nesting itself communicates "this came
-from its parent," so there is no separate pointer field. Examples of the kind of inference expected:
-  - Django implies: Python, ORM experience, REST API design, web-app development
-  - Postgres implies: relational-database design
-  - ClickHouse implies: columnar/analytical-database experience
-  - RabbitMQ implies: asynchronous/event-driven messaging
-  - SQS implies: AWS
-  - Spark implies: distributed data processing, likely a data-lake/Delta Lake context
+from its parent," so there is no separate pointer field. Use the SKILL REFERENCE above plus your own
+judgment. This runs in both directions:
+  - A specific tool implies broader underlying skills, e.g. Django implies Python, ORM experience, REST
+    API design, web-app development; Spark implies distributed data processing, likely a data-lake/Delta
+    Lake context.
+  - A generic/abstract phrase the posting uses instead of naming specific tools implies the concrete
+    tools commonly used for it, e.g. "containerization and orchestration experience" implies Docker and
+    Kubernetes; "infrastructure as code" implies Terraform and Ansible; "CI/CD experience" implies common
+    CI/CD tools (e.g. GitHub Actions, Jenkins). Keep the posting's own phrase as the node name in this
+    case (that's what it actually says), and add the concrete tools as "implied" children.
 "must-have" and "nice-to-have" are for what the posting states directly (required vs. preferred/bonus
 language); "implied" is exclusively for skills you inferred rather than the posting naming.
 
