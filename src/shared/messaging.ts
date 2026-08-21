@@ -37,6 +37,16 @@ export interface JobRecordUpdatedMessage {
   jobId: string;
 }
 
+/**
+ * Content script -> side panel: LinkedIn is an SPA, so a job-to-job navigation
+ * often doesn't fire chrome.tabs.onUpdated (no full page load). The content
+ * script detects it locally (history API patch + a MutationObserver fallback)
+ * and pushes this so the side panel knows to re-request page info.
+ */
+export interface PageChangedMessage {
+  type: "PAGE_CHANGED";
+}
+
 export async function requestPageInfo(tabId: number): Promise<PageInfoResponse> {
   return chrome.tabs.sendMessage(tabId, { type: "GET_PAGE_INFO" } satisfies GetPageInfoRequest);
 }
@@ -55,6 +65,19 @@ export function broadcastJobRecordUpdated(jobId: string): void {
 export function onJobRecordUpdated(callback: (jobId: string) => void): () => void {
   const listener = (message: unknown) => {
     if (isJobRecordUpdatedMessage(message)) callback(message.jobId);
+  };
+  chrome.runtime.onMessage.addListener(listener);
+  return () => chrome.runtime.onMessage.removeListener(listener);
+}
+
+export function broadcastPageChanged(): void {
+  const message: PageChangedMessage = { type: "PAGE_CHANGED" };
+  chrome.runtime.sendMessage(message).catch(() => {});
+}
+
+export function onPageChanged(callback: () => void): () => void {
+  const listener = (message: unknown) => {
+    if (isObjectWithType(message, "PAGE_CHANGED")) callback();
   };
   chrome.runtime.onMessage.addListener(listener);
   return () => chrome.runtime.onMessage.removeListener(listener);
