@@ -1,42 +1,217 @@
-import type { ReactNode } from "react";
-import type { CompanyInfo, Fact, RoleInfo } from "../shared/types";
+import { useState } from "react";
+import { upsertJobRecord } from "../shared/db";
+import { broadcastJobRecordUpdated } from "../shared/messaging";
+import type { CompanyInfo, Fact, JobRecord, RoleInfo } from "../shared/types";
 
-export function CompanyRoleBrief({ companyInfo, role }: { companyInfo: CompanyInfo; role: RoleInfo }) {
-  return (
-    <div className="brief">
-      <h3>Company & Role Brief</h3>
-      <ul>
-        {factRow("Domain", companyInfo.domain)}
-        {factRow("Main products", companyInfo.mainProducts)}
-        {factRow("Size", companyInfo.employeeSize)}
-        {factRow("Eng. size", companyInfo.engineeringSize)}
-        {factRow("ARR", companyInfo.arr)}
-        {factRow("Stage", companyInfo.fundingStage)}
-        {factRow("Ownership", companyInfo.ownership)}
-        {factRow("Tech stack", companyInfo.techStack)}
-        {factRow("Salary", role.salaryRange)}
-        {factRow("Applicants", role.applicantCount, (n) => `${n} applicants`)}
-        {factRow("Senior eng. headcount", role.seniorHeadcount)}
-      </ul>
-      <p className="muted">est = LLM's general knowledge, not verified — may be stale.</p>
-    </div>
-  );
+type FieldKind = "text" | "array" | "enum" | "number";
+type FieldGroup = "companyInfo" | "role";
+
+interface FieldDef {
+  key: string;
+  group: FieldGroup;
+  label: string;
+  kind: FieldKind;
+  enumOptions?: string[];
+  format?: (value: unknown) => string;
 }
 
+const FIELDS: FieldDef[] = [
+  { key: "domain", group: "companyInfo", label: "Domain", kind: "text" },
+  { key: "mainProducts", group: "companyInfo", label: "Main products", kind: "array" },
+  { key: "employeeSize", group: "companyInfo", label: "Size", kind: "text" },
+  { key: "engineeringSize", group: "companyInfo", label: "Eng. size", kind: "text" },
+  { key: "arr", group: "companyInfo", label: "ARR", kind: "text" },
+  { key: "fundingStage", group: "companyInfo", label: "Stage", kind: "text" },
+  { key: "ownership", group: "companyInfo", label: "Ownership", kind: "enum", enumOptions: ["public", "private"] },
+  { key: "techStack", group: "companyInfo", label: "Tech stack", kind: "array" },
+  { key: "salaryRange", group: "role", label: "Salary", kind: "text" },
+  {
+    key: "applicantCount",
+    group: "role",
+    label: "Applicants",
+    kind: "number",
+    format: (v) => `${v} applicants`,
+  },
+  { key: "seniorHeadcount", group: "role", label: "Senior eng. headcount", kind: "text" },
+];
+
 function isBlank(value: unknown): boolean {
+  if (value === null) return true;
   if (Array.isArray(value)) return value.length === 0;
   if (typeof value === "string") return value.trim() === "";
   return false;
 }
 
-function factRow<T>(label: string, fact: Fact<T>, format?: (value: T) => string): ReactNode {
-  if (fact.value === null || isBlank(fact.value)) return null;
-  const display = format ? format(fact.value) : Array.isArray(fact.value) ? fact.value.join(", ") : String(fact.value);
+function formatForInput(value: unknown, kind: FieldKind): string {
+  if (value === null || value === undefined) return "";
+  if (kind === "array" && Array.isArray(value)) return value.join(", ");
+  return String(value);
+}
+
+function parseInput(raw: string, kind: FieldKind): unknown {
+  const trimmed = raw.trim();
+  if (kind === "array") {
+    const items = trimmed
+      .split(",")
+      .map((s) => s.trim())
+      .filter(Boolean);
+    return items.length > 0 ? items : null;
+  }
+  if (kind === "number") {
+    if (trimmed === "") return null;
+    const n = Number(trimmed);
+    return Number.isFinite(n) ? n : null;
+  }
+  return trimmed === "" ? null : trimmed;
+}
+
+function factOf(def: FieldDef, companyInfo: CompanyInfo, role: RoleInfo): Fact<unknown> {
+  const source = def.group === "companyInfo" ? companyInfo : role;
+  return (source as unknown as Record<string, Fact<unknown>>)[def.key];
+}
+
+export function CompanyRoleBrief({ record }: { record: JobRecord }) {
+  const [editingKey, setEditingKey] = useState<string | null>(null);
+  const [draft, setDraft] = useState("");
+  const [addingKey, setAddingKey] = useState("");
+  const [addDraft, setAddDraft] = useState("");
+
+  if (!record.companyInfo || !record.role) return null;
+  const companyInfo: CompanyInfo = record.companyInfo;
+  const role: RoleInfo = record.role;
+
+  async function save(def: FieldDef, rawValue: string) {
+    const fact: Fact<unknown> = { value: parseInput(rawValue, def.kind), source: "user" };
+    const updated: JobRecord =
+      def.group === "companyInfo"
+        ? { ...record, companyInfo: { ...companyInfo, [def.key]: fact } }
+        : { ...record, role: { ...role, [def.key]: fact } };
+    await upsertJobRecord(updated);
+    broadcastJobRecordUpdated(record.id);
+  }
+
+  function startEdit(def: FieldDef) {
+    setDraft(formatForInput(factOf(def, companyInfo, role).value, def.kind));
+    setEditingKey(def.key);
+  }
+
+  async function commitEdit(def: FieldDef) {
+    await save(def, draft);
+    setEditingKey(null);
+  }
+
+  async function commitAdd(def: FieldDef) {
+    await save(def, addDraft);
+    setAddingKey("");
+    setAddDraft("");
+  }
+
+  const blankFields = FIELDS.filter((def) => isBlank(factOf(def, companyInfo, role).value));
+
   return (
-    <li key={label}>
-      <span className="brief-label">{label}</span>
-      <span>{display}</span>
-      {fact.source === "llm-estimate" && <span className="source-badge">est</span>}
-    </li>
+    <div className="brief">
+      <h3>Company & Role Brief</h3>
+      <ul>
+        {FIELDS.map((def) => {
+          const fact = factOf(def, companyInfo, role);
+          const editing = editingKey === def.key;
+          if (isBlank(fact.value) && !editing) return null;
+
+          return (
+            <li key={def.key}>
+              <span className="brief-label">{def.label}</span>
+              {editing ? (
+                <FieldEditor def={def} value={draft} onChange={setDraft} onSave={() => commitEdit(def)} onCancel={() => setEditingKey(null)} />
+              ) : (
+                <>
+                  <span>{def.format ? def.format(fact.value) : Array.isArray(fact.value) ? fact.value.join(", ") : String(fact.value)}</span>
+                  {fact.source === "llm-estimate" && <span className="source-badge">est</span>}
+                  {fact.source === "user" && <span className="source-badge">edited</span>}
+                  <button type="button" className="edit-icon" onClick={() => startEdit(def)} aria-label={`Edit ${def.label}`}>
+                    ✎
+                  </button>
+                </>
+              )}
+            </li>
+          );
+        })}
+      </ul>
+
+      {blankFields.length > 0 && (
+        <div className="brief-add-field">
+          <select
+            value={addingKey}
+            onChange={(e) => {
+              setAddingKey(e.target.value);
+              setAddDraft("");
+            }}
+          >
+            <option value="">+ Add field…</option>
+            {blankFields.map((def) => (
+              <option key={def.key} value={def.key}>
+                {def.label}
+              </option>
+            ))}
+          </select>
+          {addingKey && (
+            <FieldEditor
+              def={FIELDS.find((f) => f.key === addingKey)!}
+              value={addDraft}
+              onChange={setAddDraft}
+              onSave={() => commitAdd(FIELDS.find((f) => f.key === addingKey)!)}
+              onCancel={() => {
+                setAddingKey("");
+                setAddDraft("");
+              }}
+            />
+          )}
+        </div>
+      )}
+
+      <p className="muted">est = LLM's general knowledge, not verified — may be stale. edited = you changed this.</p>
+    </div>
+  );
+}
+
+function FieldEditor({
+  def,
+  value,
+  onChange,
+  onSave,
+  onCancel,
+}: {
+  def: FieldDef;
+  value: string;
+  onChange: (value: string) => void;
+  onSave: () => void;
+  onCancel: () => void;
+}) {
+  return (
+    <span className="field-editor">
+      {def.kind === "enum" ? (
+        <select value={value} onChange={(e) => onChange(e.target.value)}>
+          <option value="">—</option>
+          {def.enumOptions?.map((option) => (
+            <option key={option} value={option}>
+              {option}
+            </option>
+          ))}
+        </select>
+      ) : (
+        <input
+          type={def.kind === "number" ? "number" : "text"}
+          value={value}
+          placeholder={def.kind === "array" ? "comma-separated" : undefined}
+          onChange={(e) => onChange(e.target.value)}
+          autoFocus
+        />
+      )}
+      <button type="button" onClick={onSave}>
+        Save
+      </button>
+      <button type="button" onClick={onCancel}>
+        Cancel
+      </button>
+    </span>
   );
 }

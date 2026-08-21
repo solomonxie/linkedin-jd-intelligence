@@ -7,7 +7,7 @@ import {
   completeAnalysisUnparsed,
   isStalePending,
 } from "./historyStore";
-import { getAllJobRecords, getJobRecord } from "../shared/db";
+import { getAllJobRecords, getJobRecord, upsertJobRecord } from "../shared/db";
 import type { AnalysisResult, JobRecord } from "../shared/types";
 
 const sampleResult: AnalysisResult = {
@@ -32,6 +32,7 @@ const sampleResult: AnalysisResult = {
   },
   roleClassification: { normalizedRole: "Data Engineer", rationale: "Pipelines, not just APIs." },
   requirements: [],
+  interviewRounds: [],
   summary: "Looks like a data engineering role.",
 };
 
@@ -118,6 +119,44 @@ describe("historyStore", () => {
     expect(all.filter((r) => r.id === jobId)).toHaveLength(1);
   });
 
+  it("preserves user-edited facts and user-added interview rounds across re-analysis", async () => {
+    const jobId = "job-preserve-edits";
+    await beginAnalysis({
+      jobId,
+      url: `https://www.linkedin.com/jobs/view/${jobId}`,
+      resumeProfileId: "p1",
+      resumeProfileName: "Backend",
+    });
+    const first = await completeAnalysisOk(jobId, sampleResult);
+
+    // Simulate the user hand-editing a fact and adding an interview round.
+    const edited: JobRecord = {
+      ...first,
+      companyInfo: { ...first.companyInfo!, arr: { value: "$50M ARR (I checked)", source: "user" } },
+      interviewRounds: [{ label: "Take-home project", durationMinutes: null, mode: null, source: "user" }],
+    };
+    await upsertJobRecord(edited);
+
+    await beginAnalysis({
+      jobId,
+      url: `https://www.linkedin.com/jobs/view/${jobId}`,
+      resumeProfileId: "p1",
+      resumeProfileName: "Backend",
+    });
+    const reAnalyzed = await completeAnalysisOk(jobId, {
+      ...sampleResult,
+      interviewRounds: [{ label: "Recruiter screen", durationMinutes: 30, mode: "phone", source: "page" }],
+    });
+
+    expect(reAnalyzed.companyInfo?.arr).toEqual({ value: "$50M ARR (I checked)", source: "user" });
+    // The LLM's other fresh facts still come through untouched.
+    expect(reAnalyzed.companyInfo?.domain).toEqual(sampleResult.companyInfo.domain);
+    expect(reAnalyzed.interviewRounds).toEqual([
+      { label: "Recruiter screen", durationMinutes: 30, mode: "phone", source: "page" },
+      { label: "Take-home project", durationMinutes: null, mode: null, source: "user" },
+    ]);
+  });
+
   it("throws if completing analysis without a prior beginAnalysis", async () => {
     await expect(completeAnalysisOk("never-started", sampleResult)).rejects.toThrow(/no record found/);
   });
@@ -141,6 +180,7 @@ describe("isStalePending", () => {
     role: null,
     roleClassification: null,
     requirements: [],
+    interviewRounds: [],
     summary: null,
     rawResponse: null,
     errorMessage: null,

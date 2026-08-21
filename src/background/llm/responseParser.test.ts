@@ -34,6 +34,7 @@ function validResultJson(overrides: Record<string, unknown> = {}) {
         children: [],
       },
     ],
+    interviewRounds: [],
     summary: "A backend role that's really data engineering.",
     ...overrides,
   };
@@ -112,6 +113,40 @@ describe("parseAnalysisResponse", () => {
     expect(result.ok).toBe(true);
     if (result.ok) {
       expect(result.result.companyInfo).toBeNull();
+    }
+  });
+
+  it("parses explicit interview rounds", () => {
+    const raw =
+      "```json\n" +
+      JSON.stringify(
+        validResultJson({
+          interviewRounds: [
+            { label: "Recruiter screen", durationMinutes: 30, mode: "phone", source: "page" },
+            { label: "Technical interview", durationMinutes: 60, mode: "virtual", source: "page" },
+          ],
+        }),
+      ) +
+      "\n```";
+    const result = parseAnalysisResponse(raw);
+    expect(result.ok).toBe(true);
+    if (result.ok) {
+      expect(result.result.interviewRounds).toHaveLength(2);
+      expect(result.result.interviewRounds[0]).toEqual({
+        label: "Recruiter screen",
+        durationMinutes: 30,
+        mode: "phone",
+        source: "page",
+      });
+    }
+  });
+
+  it("defaults interviewRounds to [] when omitted or null", () => {
+    const raw = "```json\n" + JSON.stringify(validResultJson({ interviewRounds: null })) + "\n```";
+    const result = parseAnalysisResponse(raw);
+    expect(result.ok).toBe(true);
+    if (result.ok) {
+      expect(result.result.interviewRounds).toEqual([]);
     }
   });
 

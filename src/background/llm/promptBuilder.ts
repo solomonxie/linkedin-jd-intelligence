@@ -33,6 +33,7 @@ SCHEMA
   },
   "roleClassification": { "normalizedRole": string, "rationale": string },
   "requirements": RequirementNode[],
+  "interviewRounds": InterviewRound[],
   "summary": string
 }
 // Fact<T> = { "value": T | null, "source": "page" | "llm-estimate" }
@@ -47,6 +48,7 @@ SCHEMA
 //   "matched": boolean, "evidence": string | null, "resumeSnippet": string | null,
 //   "children": RequirementNode[]   // [] if none
 // }
+// InterviewRound = { "label": string, "durationMinutes": number | null, "mode": string | null, "source": "page" }
 
 WORKPLACE TYPE
 "workplaceType" is "remote" | "hybrid" | "onsite" — read it from an explicit workplace badge/label on the
@@ -116,6 +118,15 @@ For every node (every depth), set "matched": true if the resume shows explicit O
 it — e.g. a "Python" requirement is matched, with evidence noting the inference, if the resume only
 lists "Django". Put a short quote or paraphrase in "evidence" and, if applicable, the relevant resume
 fragment in "resumeSnippet". Leave both null if nothing in the resume supports it.
+
+INTERVIEW ROUNDS
+Only include a round if the posting explicitly describes its interview/hiring process (e.g. a numbered
+list, a "Our process" section, "3 rounds: ..."). Do NOT guess or fill in a typical/expected process from
+general knowledge — "source" must always be "page" here; if the posting doesn't describe its process,
+return "interviewRounds": [] rather than inventing one. For each round found, "label" is a short name
+(e.g. "Recruiter screen", "Technical interview", "System design", "Onsite", "Hiring manager chat"),
+"durationMinutes" and "mode" (e.g. "virtual", "onsite", "phone") are whatever the posting states, or null
+if not stated. Order rounds as the posting presents them.
 
 INPUTS
 
