@@ -106,6 +106,16 @@ Do NOT add nodes for soft skills either — communication, collaboration, teamwo
 "stakeholder management," and similar are not resume-verifiable technical facts; leave them out even
 if the posting lists them. Technical skills only.
 
+Do NOT name a node after a generic, unfalsifiable catch-all either — "Software engineering", "Backend
+development", "Programming", "Engineering experience" and similar are not things a resume can
+specifically confirm or refute. A bullet that reads as generic experience often still bundles a concrete,
+verifiable qualifier — years of experience, an industry/domain, a product type (B2B, B2C, SaaS, fintech,
+healthcare, etc.) — extract THAT as its own node instead of folding it into (or dropping it in favor of)
+the vague generic phrase.
+  - "5+ years of software engineering experience shipping production code for B2B or B2C SaaS products"
+    -> do NOT emit a bare "Software engineering" node; emit "5+ years of experience" (experience level)
+    and "B2B/B2C SaaS product experience" (domain knowledge) — those are what a resume can actually show.
+
 REQUIREMENT NAMING — BARE SKILL NAMES, ONE PER NODE
 "requirement" is just the skill/tool/technology name itself (e.g. "TypeScript", "Docker", "AWS"), never
 a sentence or phrase describing it. Strip wrapper language like "Experience with", "Proficiency in",
