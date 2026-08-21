@@ -236,7 +236,12 @@ One prompt, one fenced JSON block, built from `{ resumeText, rawPageText }`:
 
 **Requirement tree scope**: skills/tools/domain knowledge/experience/education/certifications only — a resume can provide evidence for or against these. Employment logistics (employment type/schedule, work authorization, security clearance, relocation, on-site/hybrid/remote — the last already captured by `workplaceType` above) are explicitly excluded from the tree, matched or not.
 
-**Requirement tree, weight, and implication**: extraction instructions ask the model to build a weighted hierarchy, not a flat list — group related sub-skills under a main skill/category (Django/FastAPI under Python; Kubernetes/Docker/microservices under Container system; ClickHouse/Parquet under Columnar DB) as `children`, and assign each node (at every depth) a `weight` (0–100) reflecting how central it is to the role, roughly comparable across siblings. For each explicit JD requirement, also add implied sub-skills the JD doesn't literally name (Django → Python/ORM/REST APIs; Postgres → relational-database design; ClickHouse → columnar/analytical-database experience; RabbitMQ → async/event-driven messaging; SQS → AWS; Spark → distributed data processing, likely data-lake/Delta Lake context) tagged `tier: "implied"` — nesting itself communicates "this came from its parent," so there's no separate pointer field. `must-have`/`nice-to-have` are for what the JD states directly.
+**Requirement naming**: `requirement` is a bare skill/tool name only (e.g. "TypeScript", "Docker") — the
+prompt explicitly tells the model to strip wrapper phrasing ("Experience with", "Proficiency in") and to
+split a bullet naming multiple skills ("Experience with TypeScript and Golang") into separate sibling
+nodes, never one combined node.
+
+**Requirement tree, weight, and implication**: extraction instructions ask the model to build a weighted hierarchy, not a flat list — group related sub-skills under a main skill/category (Django/FastAPI under Python; Kubernetes/Docker under Container system; ClickHouse/Parquet under Columnar DB) as `children`, and assign each node (at every depth) a `weight` (0–100) reflecting how central it is to the role, roughly comparable across siblings. `background/llm/skillPresets.ts` is a curated, categorized reference of common technical skills and what they imply (Languages, Backend frameworks, Databases, Cloud, DevOps, etc.), formatted compactly and injected into the prompt as grounding — not exhaustive, the model still uses judgment beyond it. Implication runs both directions: a concrete tool implies broader underlying skills (Django → Python/ORM/REST APIs; Spark → distributed data processing), and a generic/abstract JD phrase implies the concrete tools commonly used for it ("containerization and orchestration experience" → Docker, Kubernetes; "infrastructure as code" → Terraform, Ansible) — the posting's own phrase stays as the node name in that case, with the concrete tools added as `tier: "implied"` children. Soft skills (communication, collaboration, leadership, etc.) are explicitly excluded, same as employment logistics.
 
 **Matching reasons about implication too**: a node counts as `matched` if the resume shows explicit **or** implied evidence (e.g. "Python" matches, with evidence noting the inference, if the resume only lists "Django") — one reasoning pass, at every node in the tree.
 
@@ -262,6 +267,24 @@ otherwise silently clobber a hand edit — `historyStore.ts`'s `completeAnalysis
 overwriting: any `companyInfo`/`role` fact whose *existing* stored value has `source: "user"` is kept over
 the fresh one, and existing `source: "user"` interview rounds are appended after the freshly-derived ones
 rather than dropped.
+
+**Reordering**: interview rounds can be drag-reordered (native HTML5 drag-and-drop on each row); dropping
+persists the new array order via `upsertJobRecord`, same path as any other edit.
+
+**Immediate reflection**: an edit calls `upsertJobRecord` then both `broadcastJobRecordUpdated` (for other
+open extension pages, e.g. the History panel) and a direct `onSaved` callback into `useActiveJob`'s
+`refresh()` — the side panel doesn't rely on receiving its own broadcast (Chrome doesn't reliably deliver
+a `runtime.sendMessage` back to the same page that sent it) to see its own edit reflected.
+
+### Export as PDF (`PrintPage.tsx`, `main.tsx`)
+
+A side panel can't reliably `window.print()` (Chrome restricts printing from that surface). "Export as
+PDF" instead opens the *same* `sidepanel/index.html` bundle in a normal tab with `?printJobId=<id>` —
+`main.tsx` checks for that query param and renders `PrintPage` (a read-only, non-interactive layout of one
+`JobRecord` loaded directly from IndexedDB by id, bypassing the active-tab detection `useActiveJob` needs)
+instead of `App`, with the requirement tree and brief pre-expanded (no interaction available to expand
+them with), then calls `window.print()` once the layout settles — a normal tab prints fine, so the
+browser's native "Save as PDF" destination in that dialog is the actual PDF output.
 
 ### Company info cache (`shared/companyKey.ts`, `shared/db.ts` "companies" store)
 

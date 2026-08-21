@@ -11,16 +11,19 @@ const TIER_SHORT_LABELS: Record<RequirementTier, string> = {
 export function RequirementTree({
   nodes,
   prevalenceTooltip,
+  defaultExpanded = false,
 }: {
   nodes: RequirementNode[];
   /** Tooltip text for a top-level skill's "ⓘ" icon, or null to omit it. */
   prevalenceTooltip: (skill: string) => string | null;
+  /** Starts every row expanded — used by the print view, which has no interaction to expand rows with. */
+  defaultExpanded?: boolean;
 }) {
   const normalized = normalizeWeights(nodes);
   return (
     <ul className="requirement-tree">
       {normalized.map((node) => (
-        <RequirementRow key={node.requirement} node={node} depth={0} prevalenceTooltip={prevalenceTooltip} />
+        <RequirementRow key={node.requirement} node={node} depth={0} prevalenceTooltip={prevalenceTooltip} defaultExpanded={defaultExpanded} />
       ))}
     </ul>
   );
@@ -30,12 +33,14 @@ function RequirementRow({
   node,
   depth,
   prevalenceTooltip,
+  defaultExpanded,
 }: {
   node: RequirementNode;
   depth: number;
   prevalenceTooltip: (skill: string) => string | null;
+  defaultExpanded: boolean;
 }) {
-  const [expanded, setExpanded] = useState(false);
+  const [expanded, setExpanded] = useState(defaultExpanded);
   const hasChildren = node.children.length > 0;
   // Children are already normalized+sorted recursively by normalizeWeights
   // in the parent call, so nested rows render node.children as-is.
@@ -72,7 +77,13 @@ function RequirementRow({
       {expanded && hasChildren && (
         <ul>
           {node.children.map((child) => (
-            <RequirementRow key={child.requirement} node={child} depth={depth + 1} prevalenceTooltip={prevalenceTooltip} />
+            <RequirementRow
+              key={child.requirement}
+              node={child}
+              depth={depth + 1}
+              prevalenceTooltip={prevalenceTooltip}
+              defaultExpanded={defaultExpanded}
+            />
           ))}
         </ul>
       )}

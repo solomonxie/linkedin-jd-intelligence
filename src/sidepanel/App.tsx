@@ -20,7 +20,7 @@ const TIER_LABELS: Record<RequirementTier, string> = {
 };
 
 export function App() {
-  const { pageInfo, record, loading } = useActiveJob();
+  const { pageInfo, record, loading, refresh } = useActiveJob();
   const settings = useSettings();
   const [analyzing, setAnalyzing] = useState(false);
   const [analyzeError, setAnalyzeError] = useState<string | null>(null);
@@ -151,18 +151,31 @@ export function App() {
       {record?.status === "error" && <p className="error">{record.errorMessage}</p>}
       {record?.status === "unparsed" && <p className="error">Couldn't parse the response: {record.errorMessage}</p>}
 
-      {record?.status === "ok" && record.companyInfo && record.role && <CompanyRoleBrief record={record} />}
-      {record?.status === "ok" && <TierSummary requirements={record.requirements} />}
+      {record?.status === "ok" && record.companyInfo && record.role && <CompanyRoleBrief record={record} onSaved={refresh} />}
       {record?.status === "ok" && (
-        <RequirementTree nodes={record.requirements} prevalenceTooltip={prevalenceTooltip} />
+        <div className="card">
+          <h3>Skill Match</h3>
+          <TierSummary requirements={record.requirements} />
+          <RequirementTree nodes={record.requirements} prevalenceTooltip={prevalenceTooltip} />
+        </div>
       )}
-      {record?.status === "ok" && <InterviewRounds record={record} />}
+      {record?.status === "ok" && <InterviewRounds record={record} onSaved={refresh} />}
 
       <footer className="app-footer">
         <button type="button" onClick={() => chrome.runtime.openOptionsPage()}>
           Settings
         </button>
-        <button type="button" onClick={() => window.print()}>
+        <button
+          type="button"
+          disabled={record?.status !== "ok"}
+          onClick={() => {
+            if (!record) return;
+            // A side panel can't reliably print (Chrome restricts window.print()
+            // there) — open the same page as a normal tab with the job id, where
+            // printing works, and print from there instead.
+            chrome.tabs.create({ url: chrome.runtime.getURL(`src/sidepanel/index.html?printJobId=${record.id}`) });
+          }}
+        >
           Export as PDF
         </button>
         <button type="button" onClick={() => void downloadAllData()}>
@@ -177,7 +190,7 @@ function Shell({ children }: { children: ReactNode }) {
   return <div className="app">{children}</div>;
 }
 
-function TierSummary({ requirements }: { requirements: JobRecord["requirements"] }) {
+export function TierSummary({ requirements }: { requirements: JobRecord["requirements"] }) {
   const counts = countByTier(requirements);
   return (
     <ul className="tier-summary">
