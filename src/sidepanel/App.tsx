@@ -9,6 +9,7 @@ import { isStalePending } from "../shared/jobStatus";
 import { normalizeSkillName } from "../shared/skillPrevalence";
 import { RequirementTree } from "./RequirementTree";
 import { CompanyRoleBrief } from "./CompanyRoleBrief";
+import { InterviewRounds } from "./InterviewRounds";
 import type { JobRecord, RequirementTier } from "../shared/types";
 
 const TIER_LABELS: Record<RequirementTier, string> = {
@@ -135,9 +136,8 @@ export function App() {
       {record?.status === "error" && <p className="error">{record.errorMessage}</p>}
       {record?.status === "unparsed" && <p className="error">Couldn't parse the response: {record.errorMessage}</p>}
 
-      {record?.status === "ok" && record.companyInfo && record.role && (
-        <CompanyRoleBrief companyInfo={record.companyInfo} role={record.role} />
-      )}
+      {record?.status === "ok" && record.companyInfo && record.role && <CompanyRoleBrief record={record} />}
+      {record?.status === "ok" && <InterviewRounds record={record} />}
       {record?.status === "ok" && <TierSummary requirements={record.requirements} />}
       {record?.status === "ok" && (
         <RequirementTree nodes={record.requirements} prevalenceTooltip={prevalenceTooltip} />

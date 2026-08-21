@@ -4,7 +4,7 @@
 
 import { getJobRecord, upsertJobRecord } from "../shared/db";
 import { computeRegionBucket } from "../shared/skillPrevalence";
-import type { AnalysisResult, JobRecord } from "../shared/types";
+import type { AnalysisResult, CompanyInfo, JobRecord, RoleInfo } from "../shared/types";
 
 export interface BeginAnalysisParams {
   jobId: string;
@@ -33,6 +33,7 @@ export async function beginAnalysis(params: BeginAnalysisParams): Promise<JobRec
     role: existing?.role ?? null,
     roleClassification: existing?.roleClassification ?? null,
     requirements: existing?.requirements ?? [],
+    interviewRounds: existing?.interviewRounds ?? [],
     summary: existing?.summary ?? null,
     rawResponse: null,
     errorMessage: null,
@@ -52,16 +53,38 @@ export async function completeAnalysisOk(jobId: string, result: AnalysisResult):
     company: result.company,
     location: result.location,
     workplaceType: result.workplaceType,
-    companyInfo: result.companyInfo,
-    role: result.role,
+    // Re-analysis re-derives everything fresh from the LLM — but a hand
+    // edit/addition shouldn't get silently clobbered by the next "Re-analyze"
+    // click, so anything the user touched is preserved over the fresh value.
+    companyInfo: preserveUserCompanyFacts(record.companyInfo, result.companyInfo),
+    role: preserveUserRoleFacts(record.role, result.role),
     roleClassification: result.roleClassification,
     requirements: result.requirements,
+    interviewRounds: [...result.interviewRounds, ...record.interviewRounds.filter((r) => r.source === "user")],
     summary: result.summary,
     rawResponse: null,
     errorMessage: null,
   };
   await upsertJobRecord(updated);
   return updated;
+}
+
+function preserveUserCompanyFacts(existing: CompanyInfo | null, fresh: CompanyInfo): CompanyInfo {
+  if (!existing) return fresh;
+  const merged = { ...fresh };
+  for (const key of Object.keys(existing) as (keyof CompanyInfo)[]) {
+    if (existing[key].source === "user") merged[key] = existing[key] as never;
+  }
+  return merged;
+}
+
+function preserveUserRoleFacts(existing: RoleInfo | null, fresh: RoleInfo): RoleInfo {
+  if (!existing) return fresh;
+  const merged = { ...fresh };
+  for (const key of Object.keys(existing) as (keyof RoleInfo)[]) {
+    if (existing[key].source === "user") merged[key] = existing[key] as never;
+  }
+  return merged;
 }
 
 export async function completeAnalysisUnparsed(jobId: string, rawText: string, reason: string): Promise<JobRecord> {

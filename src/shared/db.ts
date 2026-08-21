@@ -92,3 +92,8 @@ export async function upsertCompanyRecord(record: CompanyRecord): Promise<void> 
   const db = await getDb();
   await db.put("companies", record);
 }
+
+export async function getAllCompanyRecords(): Promise<CompanyRecord[]> {
+  const db = await getDb();
+  return db.getAll("companies");
+}
