@@ -16,7 +16,7 @@ export function CompanyRoleBrief({ companyInfo, role }: { companyInfo: CompanyIn
         {factRow("Tech stack", companyInfo.techStack)}
         {factRow("Salary", role.salaryRange)}
         {factRow("Applicants", role.applicantCount, (n) => `${n} applicants`)}
-        {factRow("Sr. headcount", role.seniorHeadcount)}
+        {factRow("Senior eng. headcount", role.seniorHeadcount)}
       </ul>
       <p className="muted">est = LLM's general knowledge, not verified — may be stale.</p>
     </div>
@@ -30,7 +30,7 @@ function factRow<T>(label: string, fact: Fact<T>, format?: (value: T) => string)
     <li key={label}>
       <span className="brief-label">{label}</span>
       <span>{display}</span>
-      <span className="source-badge">{fact.source === "page" ? "page" : "est"}</span>
+      {fact.source === "llm-estimate" && <span className="source-badge">est</span>}
     </li>
   );
 }
