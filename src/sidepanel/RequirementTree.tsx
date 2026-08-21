@@ -4,7 +4,7 @@ import type { RequirementNode, RequirementTier } from "../shared/types";
 
 const TIER_SHORT_LABELS: Record<RequirementTier, string> = {
   "must-have": "required",
-  "nice-to-have": "nice",
+  "nice-to-have": "preferred",
   implied: "implied",
 };
 
