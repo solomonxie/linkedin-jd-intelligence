@@ -100,7 +100,7 @@ export interface Settings {
   resumeProfiles: ResumeProfile[];
 }
 
-export const DEFAULT_OPENAI_MODEL = "gpt-4o-mini";
+export const DEFAULT_OPENAI_MODEL = "gpt-4.1-mini";
 
 export const DEFAULT_SETTINGS: Settings = {
   openaiApiKey: null,

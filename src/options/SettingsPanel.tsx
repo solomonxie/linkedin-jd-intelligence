@@ -9,6 +9,7 @@ import {
 } from "../shared/storage";
 import { parseResumeFile } from "../shared/resumeParser";
 import { DEFAULT_SETTINGS } from "../shared/types";
+import { verifyOpenAiApiKey } from "../background/llm/openaiClient";
 
 const MODEL_OPTIONS = ["gpt-4o-mini", "gpt-4o", "gpt-4.1-mini", "gpt-4.1"];
 
@@ -16,6 +17,8 @@ export function SettingsPanel() {
   const settings = useSettings();
   const [apiKeyInput, setApiKeyInput] = useState("");
   const [savedNotice, setSavedNotice] = useState(false);
+  const [verifying, setVerifying] = useState(false);
+  const [verifyError, setVerifyError] = useState<string | null>(null);
   const [uploading, setUploading] = useState(false);
   const [uploadWarning, setUploadWarning] = useState<string | null>(null);
   const [uploadError, setUploadError] = useState<string | null>(null);
@@ -34,7 +37,20 @@ export function SettingsPanel() {
   }, [settings]);
 
   async function handleSaveApiKey() {
-    await updateSettings({ openaiApiKey: apiKeyInput.trim() || null });
+    const trimmed = apiKeyInput.trim();
+    setVerifyError(null);
+
+    if (trimmed) {
+      setVerifying(true);
+      const result = await verifyOpenAiApiKey(trimmed);
+      setVerifying(false);
+      if (!result.ok) {
+        setVerifyError(result.error ?? "Couldn't verify this key with OpenAI.");
+        return;
+      }
+    }
+
+    await updateSettings({ openaiApiKey: trimmed || null });
     setSavedNotice(true);
     setTimeout(() => setSavedNotice(false), 2000);
   }
@@ -88,10 +104,11 @@ export function SettingsPanel() {
           onChange={(e) => setApiKeyInput(e.target.value)}
           placeholder="sk-..."
         />
-        <button type="button" onClick={handleSaveApiKey}>
-          Save
+        <button type="button" onClick={handleSaveApiKey} disabled={verifying}>
+          {verifying ? "Verifying…" : "Save"}
         </button>
-        {savedNotice && <span className="muted"> Saved.</span>}
+        {savedNotice && <span className="muted"> Verified and saved.</span>}
+        {verifyError && <p className="error">{verifyError}</p>}
         <p className="muted">
           Stored locally in this browser profile only — not encrypted beyond normal browser sandboxing.
         </p>
