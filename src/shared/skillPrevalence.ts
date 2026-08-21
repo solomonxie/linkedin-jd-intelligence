@@ -93,7 +93,7 @@ function collectQualifyingJobs(records: JobRecord[], regionBucket: string): Qual
   return jobs;
 }
 
-function normalizeSkillName(name: string): string {
+export function normalizeSkillName(name: string): string {
   return name.trim().toLowerCase();
 }
 
