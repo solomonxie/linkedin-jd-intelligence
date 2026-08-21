@@ -33,10 +33,11 @@ function toRound(draft: typeof EMPTY_DRAFT): InterviewRound | null {
   };
 }
 
-export function InterviewRounds({ record }: { record: JobRecord }) {
+export function InterviewRounds({ record, onSaved }: { record: JobRecord; onSaved?: () => void }) {
   const [editingIndex, setEditingIndex] = useState<number | null>(null);
   const [draft, setDraft] = useState(EMPTY_DRAFT);
   const [adding, setAdding] = useState(false);
+  const [dragIndex, setDragIndex] = useState<number | null>(null);
 
   const rounds = record.interviewRounds;
   const isPlaceholder = rounds.length === 0;
@@ -47,6 +48,15 @@ export function InterviewRounds({ record }: { record: JobRecord }) {
   async function persist(next: InterviewRound[]) {
     await upsertJobRecord({ ...record, interviewRounds: next });
     broadcastJobRecordUpdated(record.id);
+    onSaved?.();
+  }
+
+  function reorder(from: number, to: number) {
+    if (from === to) return;
+    const next = [...rounds];
+    const [moved] = next.splice(from, 1);
+    next.splice(to, 0, moved);
+    void persist(next);
   }
 
   function startEdit(index: number) {
@@ -92,7 +102,24 @@ export function InterviewRounds({ record }: { record: JobRecord }) {
               <RoundEditor draft={draft} onChange={setDraft} onSave={() => commitEdit(index)} onCancel={() => setEditingIndex(null)} />
             </li>
           ) : (
-            <li key={index} className={isPlaceholder ? "placeholder" : undefined}>
+            <li
+              key={index}
+              className={[isPlaceholder ? "placeholder" : "", dragIndex === index ? "dragging" : ""].filter(Boolean).join(" ") || undefined}
+              draggable={!isPlaceholder}
+              onDragStart={() => setDragIndex(index)}
+              onDragOver={(e) => e.preventDefault()}
+              onDrop={(e) => {
+                e.preventDefault();
+                if (dragIndex !== null) reorder(dragIndex, index);
+                setDragIndex(null);
+              }}
+              onDragEnd={() => setDragIndex(null)}
+            >
+              {!isPlaceholder && (
+                <span className="drag-handle" aria-hidden="true">
+                  ⠿
+                </span>
+              )}
               <span className="round-label">{index + 1}</span>
               <span>{formatRound(round)}</span>
               {round.source === "user" && <span className="source-badge">edited</span>}
