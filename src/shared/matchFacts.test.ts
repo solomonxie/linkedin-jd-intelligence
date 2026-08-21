@@ -16,7 +16,7 @@ function node(overrides: Partial<RequirementNode>): RequirementNode {
 }
 
 describe("countByTier", () => {
-  it("counts only top-level nodes, matched vs total, per tier", () => {
+  it("counts top-level nodes plus nested children, matched vs total, per tier", () => {
     const nodes = [
       node({ requirement: "Python", tier: "must-have", matched: true }),
       node({ requirement: "Kubernetes", tier: "must-have", matched: false }),
@@ -31,8 +31,8 @@ describe("countByTier", () => {
     const counts = countByTier(nodes);
     expect(counts["must-have"]).toEqual({ matched: 2, total: 3 });
     expect(counts["nice-to-have"]).toEqual({ matched: 1, total: 1 });
-    // Children (the implied "Docker" under "Container system") must not be counted.
-    expect(counts.implied).toEqual({ matched: 0, total: 0 });
+    // implied only ever appears nested, so it must still be counted.
+    expect(counts.implied).toEqual({ matched: 1, total: 1 });
   });
 
   it("returns all-zero counts for an empty tree", () => {
