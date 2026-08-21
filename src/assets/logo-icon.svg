@@ -4,9 +4,11 @@
       <stop offset="0%" stop-color="#334155"/>
       <stop offset="100%" stop-color="#0F172A"/>
     </linearGradient>
+    <!-- Approximate LinkedIn #OpenToWork frame green — not pulled from an
+         official brand asset, since no exact hex could be confirmed. -->
     <linearGradient id="ringGrad" x1="0%" y1="0%" x2="100%" y2="0%">
-      <stop offset="0%" stop-color="#7C3AED"/>
-      <stop offset="100%" stop-color="#22D3EE"/>
+      <stop offset="0%" stop-color="#478C33"/>
+      <stop offset="100%" stop-color="#7DC242"/>
     </linearGradient>
   </defs>
 
