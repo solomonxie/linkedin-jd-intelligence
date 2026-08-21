@@ -1,5 +1,6 @@
 node_modules/
 dist/
+release-v*.zip
 .vite/
 *.local
 .DS_Store
