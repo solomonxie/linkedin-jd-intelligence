@@ -1,5 +1,7 @@
 # linkedin-jd-intelligence
 
+> 🤖 This repo is built with AI-assisted coding (Claude Code).
+
 Chrome browser extension: Smart LinkedIn JD intelligence.
 
 Full design (architecture, diagrams, data model, algorithms) lives in
