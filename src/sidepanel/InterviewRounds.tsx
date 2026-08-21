@@ -16,7 +16,8 @@ const DEFAULT_LABELS = [
   "Final round / onsite",
 ];
 
-function formatRound(round: InterviewRound): string {
+function formatRound(round: InterviewRound, isPlaceholder: boolean): string {
+  if (isPlaceholder) return `${round.label}: Unknown`;
   const details = [round.durationMinutes ? `${round.durationMinutes} min` : null, round.mode].filter(Boolean);
   return details.length > 0 ? `${round.label} (${details.join(", ")})` : round.label;
 }
@@ -121,7 +122,7 @@ export function InterviewRounds({ record, onSaved }: { record: JobRecord; onSave
                 </span>
               )}
               <span className="round-label">{index + 1}</span>
-              <span>{formatRound(round)}</span>
+              <span>{formatRound(round, isPlaceholder)}</span>
               {round.source === "user" && <span className="source-badge">edited</span>}
               <button type="button" className="edit-icon" onClick={() => startEdit(index)} aria-label={`Edit round ${index + 1}`}>
                 ✎
