@@ -16,7 +16,7 @@ const sampleResult: AnalysisResult = {
   location: "San Francisco, CA",
   workplaceType: "hybrid",
   companyInfo: {
-    domain: { value: "acme.com", source: "llm-estimate" },
+    industry: { value: ["Tech"], source: "llm-estimate" },
     mainProducts: { value: null, source: "llm-estimate" },
     employeeSize: { value: null, source: "llm-estimate" },
     engineeringSize: { value: null, source: "llm-estimate" },
@@ -150,7 +150,7 @@ describe("historyStore", () => {
 
     expect(reAnalyzed.companyInfo?.arr).toEqual({ value: "$50M ARR (I checked)", source: "user" });
     // The LLM's other fresh facts still come through untouched.
-    expect(reAnalyzed.companyInfo?.domain).toEqual(sampleResult.companyInfo.domain);
+    expect(reAnalyzed.companyInfo?.industry).toEqual(sampleResult.companyInfo.industry);
     expect(reAnalyzed.interviewRounds).toEqual([
       { label: "Recruiter screen", durationMinutes: 30, mode: "phone", source: "page" },
       { label: "Take-home project", durationMinutes: null, mode: null, source: "user" },
