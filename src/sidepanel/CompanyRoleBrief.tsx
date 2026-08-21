@@ -109,7 +109,7 @@ export function CompanyRoleBrief({ record }: { record: JobRecord }) {
   const blankFields = FIELDS.filter((def) => isBlank(factOf(def, companyInfo, role).value));
 
   return (
-    <div className="brief">
+    <div className="brief card">
       <h3>Company & Role Brief</h3>
       <ul>
         {FIELDS.map((def) => {

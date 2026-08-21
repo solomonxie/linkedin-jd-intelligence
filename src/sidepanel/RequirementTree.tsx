@@ -56,7 +56,7 @@ function RequirementRow({
         ) : (
           <span className="expand-spacer" />
         )}
-        <span>{node.matched ? "✔" : "✘"}</span>
+        <span className={`check-icon ${node.matched ? "matched" : "unmatched"}`}>{node.matched ? "✓" : "✕"}</span>
         <span>
           {node.requirement} ({Math.round(node.weight)}%)
         </span>
@@ -65,7 +65,9 @@ function RequirementRow({
             ⓘ
           </span>
         )}
-        <span className="tier-badge">{TIER_SHORT_LABELS[node.tier]}</span>
+        <span className="tier-badge" data-tier={node.tier}>
+          {TIER_SHORT_LABELS[node.tier]}
+        </span>
       </span>
       {expanded && hasChildren && (
         <ul>

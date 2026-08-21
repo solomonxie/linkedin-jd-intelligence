@@ -83,53 +83,67 @@ export function App() {
 
   const elapsedSeconds = isPendingFresh && record ? Math.max(0, Math.floor((Date.now() - new Date(record.startedAt).getTime()) / 1000)) : 0;
 
-  if (loading) return <Shell>Loading…</Shell>;
-  if (!pageInfo?.jobId) return <Shell>Open a LinkedIn job posting to analyze it.</Shell>;
+  if (loading) return <Shell><p className="empty-state">Loading…</p></Shell>;
+  if (!pageInfo?.jobId) {
+    return (
+      <Shell>
+        <p className="empty-state">Open a LinkedIn job posting to analyze it.</p>
+      </Shell>
+    );
+  }
   if (!settings.openaiApiKey) {
     return (
       <Shell>
-        <p>Add an OpenAI API key to start analyzing.</p>
-        <button type="button" onClick={() => chrome.runtime.openOptionsPage()}>
-          Open Settings
-        </button>
+        <div className="empty-state">
+          <p>Add an OpenAI API key to start analyzing.</p>
+          <button type="button" className="btn-primary" onClick={() => chrome.runtime.openOptionsPage()}>
+            Open Settings
+          </button>
+        </div>
       </Shell>
     );
   }
   if (!activeProfile) {
     return (
       <Shell>
-        <p>Upload a resume to start analyzing.</p>
-        <button type="button" onClick={() => chrome.runtime.openOptionsPage()}>
-          Open Settings
-        </button>
+        <div className="empty-state">
+          <p>Upload a resume to start analyzing.</p>
+          <button type="button" className="btn-primary" onClick={() => chrome.runtime.openOptionsPage()}>
+            Open Settings
+          </button>
+        </div>
       </Shell>
     );
   }
 
   return (
     <Shell>
-      <h2>{record?.jobTitle ?? "Detecting…"}</h2>
-      {record?.roleClassification && <p className="muted">→ classified as: {record.roleClassification.normalizedRole}</p>}
-      <p>
-        {record?.company ?? ""}
-        {record?.location ? ` · ${record.location}` : ""}
-        {record?.workplaceType ? ` (${record.workplaceType})` : ""}
-      </p>
+      <header className="job-header">
+        <h2>{record?.jobTitle ?? "Detecting…"}</h2>
+        {record?.roleClassification && <p className="muted">→ classified as: {record.roleClassification.normalizedRole}</p>}
+        <p className="subtitle">
+          {record?.company ?? ""}
+          {record?.location ? ` · ${record.location}` : ""}
+          {record?.workplaceType ? ` (${record.workplaceType})` : ""}
+        </p>
+      </header>
 
-      <label>
-        Resume:{" "}
-        <select value={activeProfile.id} onChange={(e) => void setActiveResumeProfile(e.target.value)}>
-          {settings.resumeProfiles.map((p) => (
-            <option key={p.id} value={p.id}>
-              {p.name}
-            </option>
-          ))}
-        </select>
-      </label>
+      <div className="toolbar">
+        <label>
+          Resume:
+          <select value={activeProfile.id} onChange={(e) => void setActiveResumeProfile(e.target.value)}>
+            {settings.resumeProfiles.map((p) => (
+              <option key={p.id} value={p.id}>
+                {p.name}
+              </option>
+            ))}
+          </select>
+        </label>
 
-      <button onClick={handleAnalyze} disabled={busy}>
-        {busy ? `Analyzing… (${elapsedSeconds}s)` : record?.status === "ok" ? "Re-analyze" : "Analyze"}
-      </button>
+        <button type="button" className="btn-primary" onClick={handleAnalyze} disabled={busy}>
+          {busy ? `Analyzing… (${elapsedSeconds}s)` : record?.status === "ok" ? "Re-analyze" : "Analyze"}
+        </button>
+      </div>
 
       {analyzeError && <p className="error">{analyzeError}</p>}
       {isPendingStale && <p className="error">Previous analysis didn't complete — click Analyze to retry.</p>}
@@ -155,7 +169,7 @@ function TierSummary({ requirements }: { requirements: JobRecord["requirements"]
   return (
     <ul className="tier-summary">
       {(Object.keys(TIER_LABELS) as RequirementTier[]).map((tier) => (
-        <li key={tier}>
+        <li key={tier} data-tier={tier}>
           {TIER_LABELS[tier]}: {counts[tier].matched}/{counts[tier].total}
         </li>
       ))}

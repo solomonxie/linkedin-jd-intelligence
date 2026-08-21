@@ -67,7 +67,7 @@ export function InterviewRounds({ record }: { record: JobRecord }) {
   }
 
   return (
-    <div className="interview-rounds-section">
+    <div className="interview-rounds-section card">
       <h3>Interview Process</h3>
       {rounds.length === 0 && !adding && <p className="muted">Not mentioned in the posting.</p>}
       <ol className="interview-rounds">
@@ -78,7 +78,7 @@ export function InterviewRounds({ record }: { record: JobRecord }) {
             </li>
           ) : (
             <li key={index}>
-              <span className="round-label">Round {index + 1}:</span>
+              <span className="round-label">{index + 1}</span>
               <span>{formatRound(round)}</span>
               {round.source === "user" && <span className="source-badge">edited</span>}
               <button type="button" className="edit-icon" onClick={() => startEdit(index)} aria-label={`Edit round ${index + 1}`}>
