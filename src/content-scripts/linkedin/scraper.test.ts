@@ -11,6 +11,20 @@ describe("extractJobId", () => {
     expect(extractJobId("https://www.linkedin.com/jobs/view/4123456789?refId=abc")).toBe("4123456789");
   });
 
+  it("extracts the id from LinkedIn's SEO-slugged /jobs/view/{title-slug}-{id} URL", () => {
+    expect(
+      extractJobId(
+        "https://www.linkedin.com/jobs/view/senior-software-engineer-backend-lake-analytics-platform-at-affirm-4438379738/",
+      ),
+    ).toBe("4438379738");
+  });
+
+  it("extracts the id from a slugged URL with query params", () => {
+    expect(extractJobId("https://www.linkedin.com/jobs/view/staff-engineer-at-acme-4123456789?refId=abc")).toBe(
+      "4123456789",
+    );
+  });
+
   it("extracts the id from a currentJobId query param on a collections page", () => {
     expect(extractJobId("https://www.linkedin.com/jobs/collections/recommended/?currentJobId=987654321")).toBe(
       "987654321",
