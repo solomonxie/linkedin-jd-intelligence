@@ -257,19 +257,6 @@ input:focus {
   width: 100%;
 }
 
-.expand-toggle {
-  background: none;
-  border: none;
-  padding: 0 2px;
-  width: 16px;
-  color: var(--muted);
-}
-
-.expand-spacer {
-  display: inline-block;
-  width: 16px;
-}
-
 .check-icon {
   font-size: 12px;
   width: 16px;
@@ -489,7 +476,6 @@ li:hover .edit-icon {
   .toolbar,
   .app-footer,
   .edit-icon,
-  .expand-toggle,
   .drag-handle,
   button {
     display: none !important;

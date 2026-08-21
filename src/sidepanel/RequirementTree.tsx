@@ -1,4 +1,3 @@
-import { useState } from "react";
 import { normalizeWeights } from "../shared/matchFacts";
 import type { RequirementNode, RequirementTier } from "../shared/types";
 
@@ -20,13 +19,10 @@ const SECTION_LABELS: Record<RequirementTier, string> = {
 export function RequirementTree({
   nodes,
   prevalenceTooltip,
-  defaultExpanded = false,
 }: {
   nodes: RequirementNode[];
   /** Tooltip text for a top-level skill's "ⓘ" icon, or null to omit it. */
   prevalenceTooltip: (skill: string) => string | null;
-  /** Starts every row expanded — used by the print view, which has no interaction to expand rows with. */
-  defaultExpanded?: boolean;
 }) {
   return (
     <>
@@ -38,7 +34,7 @@ export function RequirementTree({
             <h4 className="tier-section-heading">{SECTION_LABELS[tier]}</h4>
             <ul className="requirement-tree">
               {group.map((node) => (
-                <RequirementRow key={node.requirement} node={node} depth={0} prevalenceTooltip={prevalenceTooltip} defaultExpanded={defaultExpanded} />
+                <RequirementRow key={node.requirement} node={node} depth={0} prevalenceTooltip={prevalenceTooltip} />
               ))}
             </ul>
           </section>
@@ -52,34 +48,20 @@ function RequirementRow({
   node,
   depth,
   prevalenceTooltip,
-  defaultExpanded,
 }: {
   node: RequirementNode;
   depth: number;
   prevalenceTooltip: (skill: string) => string | null;
-  defaultExpanded: boolean;
 }) {
-  const [expanded, setExpanded] = useState(defaultExpanded);
   const hasChildren = node.children.length > 0;
   // Children are already normalized+sorted recursively by normalizeWeights
-  // in the parent call, so nested rows render node.children as-is.
+  // in the parent call, so nested rows render node.children as-is. Always
+  // shown, nested by indentation — no collapse toggle to hide them behind.
   const tooltip = depth === 0 ? prevalenceTooltip(node.requirement) : null;
 
   return (
     <li style={{ marginLeft: depth * 16 }}>
       <span className="requirement-row">
-        {hasChildren ? (
-          <button
-            type="button"
-            className="expand-toggle"
-            onClick={() => setExpanded((e) => !e)}
-            aria-label={expanded ? "Collapse" : "Expand"}
-          >
-            {expanded ? "▾" : "▸"}
-          </button>
-        ) : (
-          <span className="expand-spacer" />
-        )}
         <span className={`check-icon ${node.matched ? "matched" : "unmatched"}`}>{node.matched ? "✓" : "✕"}</span>
         <span>
           {node.requirement} ({Math.round(node.weight)}%)
@@ -93,16 +75,10 @@ function RequirementRow({
           {TIER_SHORT_LABELS[node.tier]}
         </span>
       </span>
-      {expanded && hasChildren && (
+      {hasChildren && (
         <ul>
           {node.children.map((child) => (
-            <RequirementRow
-              key={child.requirement}
-              node={child}
-              depth={depth + 1}
-              prevalenceTooltip={prevalenceTooltip}
-              defaultExpanded={defaultExpanded}
-            />
+            <RequirementRow key={child.requirement} node={child} depth={depth + 1} prevalenceTooltip={prevalenceTooltip} />
           ))}
         </ul>
       )}
