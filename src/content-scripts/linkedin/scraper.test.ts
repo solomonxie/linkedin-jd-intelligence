@@ -106,4 +106,19 @@ describe("extractRawPageTextWhenReady", () => {
     expect(moreClicked).toBe(true);
     expect(lessClicked).toBe(false);
   });
+
+  it("never clicks a real <a href> even if its text matches, so it never navigates the page", async () => {
+    const doc = new DOMParser().parseFromString(
+      `<html><body><main>
+        <a id="companyLink" href="/company/acme/">See more about Acme</a>
+      </main></body></html>`,
+      "text/html",
+    );
+    let navigated = false;
+    doc.querySelector("#companyLink")!.addEventListener("click", () => (navigated = true));
+
+    await extractRawPageTextWhenReady(doc, { pollIntervalMs: 5, timeoutMs: 20 });
+
+    expect(navigated).toBe(false);
+  });
 });
