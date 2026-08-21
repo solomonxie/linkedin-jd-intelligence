@@ -88,6 +88,23 @@ describe("parseAnalysisResponse", () => {
     }
   });
 
+  it("recovers when the model flattens a Fact<T> to a bare value instead of {value, source}", () => {
+    const flattened = validResultJson({
+      companyInfo: {
+        ...validResultJson().companyInfo,
+        domain: "acme.com",
+        arr: null,
+      },
+    });
+    const raw = "```json\n" + JSON.stringify(flattened) + "\n```";
+    const result = parseAnalysisResponse(raw);
+    expect(result.ok).toBe(true);
+    if (result.ok) {
+      expect(result.result.companyInfo.domain).toEqual({ value: "acme.com", source: "llm-estimate" });
+      expect(result.result.companyInfo.arr).toEqual({ value: null, source: "llm-estimate" });
+    }
+  });
+
   it("recursively validates nested requirement children", () => {
     const nested = validResultJson({
       requirements: [
