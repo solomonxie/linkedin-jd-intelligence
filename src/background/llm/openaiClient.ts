@@ -35,3 +35,24 @@ export async function callOpenAI({ prompt, apiKey, model }: CallOpenAIParams): P
   }
   return content;
 }
+
+export interface VerifyApiKeyResult {
+  ok: boolean;
+  error?: string;
+}
+
+/** Cheap, side-effect-free check (list models) so Settings can confirm a key works before saving it. */
+export async function verifyOpenAiApiKey(apiKey: string): Promise<VerifyApiKeyResult> {
+  try {
+    const response = await fetch("https://api.openai.com/v1/models", {
+      headers: { Authorization: `Bearer ${apiKey}` },
+    });
+    if (!response.ok) {
+      const bodyText = await response.text().catch(() => "");
+      return { ok: false, error: `OpenAI rejected the key (${response.status}): ${bodyText || response.statusText}` };
+    }
+    return { ok: true };
+  } catch (error) {
+    return { ok: false, error: (error as Error).message };
+  }
+}
