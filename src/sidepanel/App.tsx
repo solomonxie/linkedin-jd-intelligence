@@ -1,4 +1,4 @@
-import { useState, type ReactNode } from "react";
+import { useEffect, useRef, useState, type ReactNode } from "react";
 import { useActiveJob } from "./useActiveJob";
 import { useSettings } from "../shared/useSettings";
 import { useSkillPrevalence } from "./useSkillPrevalence";
@@ -50,6 +50,21 @@ export function App() {
     setAnalyzing(false);
     if (!ack.ok) setAnalyzeError(ack.error ?? "Analysis failed to start.");
   }
+
+  // Auto-analyze the first time we see a given job: only while it's a valid,
+  // never-before-seen JD page (record === null) with everything needed already
+  // configured. Guarded per jobId so it fires once, not on every render — once
+  // analysis starts, beginAnalysis() writes a "pending" record which flips
+  // `record` away from null and stops this from re-firing.
+  const autoAnalyzedJobId = useRef<string | null>(null);
+  useEffect(() => {
+    const jobId = pageInfo?.jobId;
+    if (!jobId || !activeProfile || !settings.openaiApiKey) return;
+    if (record !== null) return;
+    if (autoAnalyzedJobId.current === jobId) return;
+    autoAnalyzedJobId.current = jobId;
+    void handleAnalyze();
+  }, [pageInfo?.jobId, activeProfile, settings.openaiApiKey, record]);
 
   if (loading) return <Shell>Loading…</Shell>;
   if (!pageInfo?.jobId) return <Shell>Open a LinkedIn job posting to analyze it.</Shell>;
