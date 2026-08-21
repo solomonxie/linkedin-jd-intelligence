@@ -2,7 +2,28 @@
 // so re-analysis replaces rather than duplicates).
 
 import { openDB, type DBSchema, type IDBPDatabase } from "idb";
-import type { CompanyRecord, JobRecord } from "./types";
+import type { CompanyInfo, CompanyRecord, Fact, JobRecord } from "./types";
+
+// Records written before companyInfo.domain (Fact<string>) was renamed to
+// companyInfo.industry (Fact<string[]>) are still sitting in IndexedDB with
+// the old field only — normalize on read so the UI never sees a missing
+// `industry` and crashes reading `.value` off it.
+function normalizeCompanyInfo(info: CompanyInfo): CompanyInfo {
+  if (info.industry) return info;
+  const legacyDomain = (info as unknown as { domain?: Fact<string> }).domain;
+  const industry: Fact<string[]> = legacyDomain
+    ? { value: legacyDomain.value ? [legacyDomain.value] : null, source: legacyDomain.source }
+    : { value: null, source: "llm-estimate" };
+  return { ...info, industry };
+}
+
+function normalizeJobRecord(record: JobRecord): JobRecord {
+  return record.companyInfo ? { ...record, companyInfo: normalizeCompanyInfo(record.companyInfo) } : record;
+}
+
+function normalizeCompanyRecord(record: CompanyRecord): CompanyRecord {
+  return { ...record, companyInfo: normalizeCompanyInfo(record.companyInfo) };
+}
 
 interface JdIntelligenceDB extends DBSchema {
   jobs: {
@@ -55,22 +76,23 @@ export async function upsertJobRecord(record: JobRecord): Promise<void> {
 
 export async function getJobRecord(id: string): Promise<JobRecord | undefined> {
   const db = await getDb();
-  return db.get("jobs", id);
+  const record = await db.get("jobs", id);
+  return record ? normalizeJobRecord(record) : undefined;
 }
 
 export async function getAllJobRecords(): Promise<JobRecord[]> {
   const db = await getDb();
-  return db.getAll("jobs");
+  return (await db.getAll("jobs")).map(normalizeJobRecord);
 }
 
 export async function getJobRecordsByResumeProfile(resumeProfileId: string): Promise<JobRecord[]> {
   const db = await getDb();
-  return db.getAllFromIndex("jobs", "resumeProfileId", resumeProfileId);
+  return (await db.getAllFromIndex("jobs", "resumeProfileId", resumeProfileId)).map(normalizeJobRecord);
 }
 
 export async function getJobRecordsByRegion(regionBucket: string): Promise<JobRecord[]> {
   const db = await getDb();
-  return db.getAllFromIndex("jobs", "regionBucket", regionBucket);
+  return (await db.getAllFromIndex("jobs", "regionBucket", regionBucket)).map(normalizeJobRecord);
 }
 
 export async function deleteJobRecord(id: string): Promise<void> {
@@ -85,7 +107,8 @@ export async function clearAllJobRecords(): Promise<void> {
 
 export async function getCompanyRecord(key: string): Promise<CompanyRecord | undefined> {
   const db = await getDb();
-  return db.get("companies", key);
+  const record = await db.get("companies", key);
+  return record ? normalizeCompanyRecord(record) : undefined;
 }
 
 export async function upsertCompanyRecord(record: CompanyRecord): Promise<void> {
@@ -95,5 +118,5 @@ export async function upsertCompanyRecord(record: CompanyRecord): Promise<void> 
 
 export async function getAllCompanyRecords(): Promise<CompanyRecord[]> {
   const db = await getDb();
-  return db.getAll("companies");
+  return (await db.getAll("companies")).map(normalizeCompanyRecord);
 }
