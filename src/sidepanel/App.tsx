@@ -1,10 +1,14 @@
 import { useState, type ReactNode } from "react";
 import { useActiveJob } from "./useActiveJob";
 import { useSettings } from "../shared/useSettings";
+import { useSkillPrevalence } from "./useSkillPrevalence";
 import { requestAnalyze } from "../shared/messaging";
 import { setActiveResumeProfile } from "../shared/storage";
 import { countByTier } from "../shared/matchFacts";
 import { isStalePending } from "../shared/jobStatus";
+import { normalizeSkillName } from "../shared/skillPrevalence";
+import { RequirementTree } from "./RequirementTree";
+import { CompanyRoleBrief } from "./CompanyRoleBrief";
 import type { JobRecord, RequirementTier } from "../shared/types";
 
 const TIER_LABELS: Record<RequirementTier, string> = {
@@ -20,6 +24,18 @@ export function App() {
   const [analyzeError, setAnalyzeError] = useState<string | null>(null);
 
   const activeProfile = settings.resumeProfiles.find((p) => p.id === settings.activeResumeProfileId) ?? null;
+  const prevalence = useSkillPrevalence(record?.regionBucket ?? null);
+
+  function prevalenceTooltip(skill: string): string | null {
+    const region = record?.regionBucket;
+    if (!region) return null;
+    if (!prevalence.sufficientData) {
+      return `Not enough data yet in ${region} — analyze a few more postings here first.`;
+    }
+    const estimate = prevalence.estimates.get(normalizeSkillName(skill));
+    if (estimate === undefined) return null;
+    return `~${estimate.toLocaleString()} candidates in ${region} likely have this skill (estimated from ${prevalence.qualifyingJobCount} postings you've analyzed here; rough heuristic, not verified).`;
+  }
 
   async function handleAnalyze() {
     if (!pageInfo?.jobId || !activeProfile) return;
@@ -73,7 +89,13 @@ export function App() {
       {record?.status === "error" && <p className="error">{record.errorMessage}</p>}
       {record?.status === "unparsed" && <p className="error">Couldn't parse the response: {record.errorMessage}</p>}
 
+      {record?.status === "ok" && record.companyInfo && record.role && (
+        <CompanyRoleBrief companyInfo={record.companyInfo} role={record.role} />
+      )}
       {record?.status === "ok" && <TierSummary requirements={record.requirements} />}
+      {record?.status === "ok" && (
+        <RequirementTree nodes={record.requirements} prevalenceTooltip={prevalenceTooltip} />
+      )}
     </Shell>
   );
 }
