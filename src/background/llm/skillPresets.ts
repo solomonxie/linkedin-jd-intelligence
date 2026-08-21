@@ -33,13 +33,19 @@ export const SKILL_PRESETS: SkillCategory[] = [
       { skill: "Swift" },
       { skill: "Scala", implies: ["Java"] },
       { skill: "R" },
+      { skill: "Elixir" },
+      { skill: "Erlang" },
+      { skill: "Haskell" },
+      { skill: "Clojure", implies: ["Java"] },
+      { skill: "F#" },
+      { skill: "OCaml" },
     ],
   },
   {
     // Generic phrasing a posting sometimes uses instead of naming a specific
     // language (e.g. "proficiency in at least one scripting language") — the
-    // three categories overlap in practice but are distinct axes, so each
-    // gets its own implied set rather than being folded into one.
+    // categories overlap in practice but are distinct axes, so each gets its
+    // own implied set rather than being folded into one.
     category: "Language paradigms (generic JD phrasing)",
     skills: [
       { skill: "Scripting language", implies: ["Python", "JavaScript", "Ruby", "PHP", "Bash/Shell", "Perl"] },
@@ -47,6 +53,10 @@ export const SKILL_PRESETS: SkillCategory[] = [
       {
         skill: "Statically-typed language",
         implies: ["TypeScript", "Java", "C#", "Go", "Rust", "C++", "Kotlin", "Swift"],
+      },
+      {
+        skill: "Functional programming",
+        implies: ["Elixir", "Haskell", "Clojure", "F#", "Erlang", "OCaml", "Scala"],
       },
     ],
   },
