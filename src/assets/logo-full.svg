@@ -4,9 +4,11 @@
       <stop offset="0%" stop-color="#334155"/>
       <stop offset="100%" stop-color="#0F172A"/>
     </linearGradient>
+    <!-- Approximate LinkedIn #OpenToWork frame green — not pulled from an
+         official brand asset, since no exact hex could be confirmed. -->
     <linearGradient id="ringGrad" x1="0%" y1="0%" x2="100%" y2="0%">
-      <stop offset="0%" stop-color="#7C3AED"/>
-      <stop offset="100%" stop-color="#22D3EE"/>
+      <stop offset="0%" stop-color="#478C33"/>
+      <stop offset="100%" stop-color="#7DC242"/>
     </linearGradient>
   </defs>
 
@@ -19,15 +21,17 @@
   <circle cx="90" cy="90" r="26" fill="none" stroke="#FFFFFF" stroke-width="11"/>
   <line x1="109" y1="109" x2="134" y2="134" stroke="#FFFFFF" stroke-width="11" stroke-linecap="round"/>
 
-  <g font-family="Helvetica, Arial, sans-serif" font-weight="700" font-size="22" fill="#FFFFFF">
+  <g font-family="Helvetica, Arial, sans-serif" font-weight="700" font-size="18" fill="#FFFFFF">
     <text x="32.83" y="147.03" transform="rotate(55.00 32.83 147.03)" text-anchor="middle" dominant-baseline="central">#</text>
-    <text x="45.93" y="161.65" transform="rotate(41.25 45.93 161.65)" text-anchor="middle" dominant-baseline="central">A</text>
-    <text x="62.14" y="172.73" transform="rotate(27.50 62.14 172.73)" text-anchor="middle" dominant-baseline="central">N</text>
-    <text x="80.51" y="179.65" transform="rotate(13.75 80.51 179.65)" text-anchor="middle" dominant-baseline="central">A</text>
-    <text x="100.00" y="182.00" transform="rotate(0.00 100.00 182.00)" text-anchor="middle" dominant-baseline="central">L</text>
-    <text x="119.49" y="179.65" transform="rotate(-13.75 119.49 179.65)" text-anchor="middle" dominant-baseline="central">Y</text>
-    <text x="137.86" y="172.73" transform="rotate(-27.50 137.86 172.73)" text-anchor="middle" dominant-baseline="central">S</text>
-    <text x="154.07" y="161.65" transform="rotate(-41.25 154.07 161.65)" text-anchor="middle" dominant-baseline="central">I</text>
-    <text x="167.17" y="147.03" transform="rotate(-55.00 167.17 147.03)" text-anchor="middle" dominant-baseline="central">S</text>
+    <text x="43.04" y="158.99" transform="rotate(44.00 43.04 158.99)" text-anchor="middle" dominant-baseline="central">O</text>
+    <text x="55.34" y="168.77" transform="rotate(33.00 55.34 168.77)" text-anchor="middle" dominant-baseline="central">P</text>
+    <text x="69.28" y="176.03" transform="rotate(22.00 69.28 176.03)" text-anchor="middle" dominant-baseline="central">E</text>
+    <text x="84.35" y="180.49" transform="rotate(11.00 84.35 180.49)" text-anchor="middle" dominant-baseline="central">N</text>
+    <text x="100.00" y="182.00" transform="rotate(0.00 100.00 182.00)" text-anchor="middle" dominant-baseline="central">T</text>
+    <text x="115.65" y="180.49" transform="rotate(-11.00 115.65 180.49)" text-anchor="middle" dominant-baseline="central">O</text>
+    <text x="130.72" y="176.03" transform="rotate(-22.00 130.72 176.03)" text-anchor="middle" dominant-baseline="central">W</text>
+    <text x="144.66" y="168.77" transform="rotate(-33.00 144.66 168.77)" text-anchor="middle" dominant-baseline="central">O</text>
+    <text x="156.96" y="158.99" transform="rotate(-44.00 156.96 158.99)" text-anchor="middle" dominant-baseline="central">R</text>
+    <text x="167.17" y="147.03" transform="rotate(-55.00 167.17 147.03)" text-anchor="middle" dominant-baseline="central">K</text>
   </g>
 </svg>
