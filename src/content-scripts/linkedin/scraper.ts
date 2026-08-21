@@ -5,9 +5,13 @@
 
 const MAX_TEXT_LENGTH = 20_000;
 
-/** Job id from `/jobs/view/{id}` or the `currentJobId` query param; null if this isn't a job page. */
+/**
+ * Job id from `/jobs/view/{id}`, LinkedIn's SEO-slugged
+ * `/jobs/view/{title-slug}-{id}` form, or the `currentJobId` query param;
+ * null if this isn't a job page.
+ */
 export function extractJobId(url: string): string | null {
-  const viewMatch = url.match(/\/jobs\/view\/(\d+)/);
+  const viewMatch = url.match(/\/jobs\/view\/(?:[^/?]*-)?(\d+)(?:[/?]|$)/);
   if (viewMatch) return viewMatch[1];
 
   try {
