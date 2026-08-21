@@ -4,6 +4,7 @@ import { useSettings } from "../shared/useSettings";
 import { useSkillPrevalence } from "./useSkillPrevalence";
 import { requestAnalyze } from "../shared/messaging";
 import { setActiveResumeProfile } from "../shared/storage";
+import { downloadAllData } from "../shared/exportData";
 import { countByTier } from "../shared/matchFacts";
 import { isStalePending } from "../shared/jobStatus";
 import { normalizeSkillName } from "../shared/skillPrevalence";
@@ -151,11 +152,23 @@ export function App() {
       {record?.status === "unparsed" && <p className="error">Couldn't parse the response: {record.errorMessage}</p>}
 
       {record?.status === "ok" && record.companyInfo && record.role && <CompanyRoleBrief record={record} />}
-      {record?.status === "ok" && <InterviewRounds record={record} />}
       {record?.status === "ok" && <TierSummary requirements={record.requirements} />}
       {record?.status === "ok" && (
         <RequirementTree nodes={record.requirements} prevalenceTooltip={prevalenceTooltip} />
       )}
+      {record?.status === "ok" && <InterviewRounds record={record} />}
+
+      <footer className="app-footer">
+        <button type="button" onClick={() => chrome.runtime.openOptionsPage()}>
+          Settings
+        </button>
+        <button type="button" onClick={() => window.print()}>
+          Export as PDF
+        </button>
+        <button type="button" onClick={() => void downloadAllData()}>
+          Export entire DB
+        </button>
+      </footer>
     </Shell>
   );
 }

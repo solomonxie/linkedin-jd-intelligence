@@ -350,6 +350,31 @@ input:focus {
   flex-shrink: 0;
 }
 
+.brief-toggle {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  width: 100%;
+  background: none;
+  border: none;
+  padding: 0;
+  text-align: left;
+}
+
+.brief-toggle h3 {
+  margin: 0;
+}
+
+.brief-toggle .expand-toggle {
+  margin-left: auto;
+  width: auto;
+}
+
+.brief-preview {
+  cursor: pointer;
+  margin: 4px 0 0;
+}
+
 .edit-icon {
   background: none;
   border: none;
@@ -428,6 +453,64 @@ li:hover .edit-icon {
   font-size: 11px;
   font-weight: 600;
   flex-shrink: 0;
+}
+
+.interview-rounds li.placeholder {
+  color: var(--muted);
+  font-style: italic;
+}
+
+.interview-rounds li.placeholder .round-label {
+  background: var(--surface);
+  color: var(--muted);
+}
+
+.app-footer {
+  margin-top: 16px;
+  padding-top: 10px;
+  border-top: 1px solid var(--border);
+  display: flex;
+  gap: 14px;
+  flex-wrap: wrap;
+  font-size: 12px;
+}
+
+.app-footer button {
+  background: none;
+  border: none;
+  padding: 0;
+  color: var(--muted);
+  text-decoration: underline;
+}
+
+.app-footer button:hover {
+  color: var(--accent);
+}
+
+@media print {
+  .toolbar,
+  .app-footer,
+  .edit-icon,
+  .expand-toggle,
+  button {
+    display: none !important;
+  }
+
+  /* .brief-toggle is a <button> (so the whole header is one click target on
+     screen) but must stay visible in print — only its chevron should hide. */
+  .brief-toggle {
+    display: flex !important;
+  }
+
+  .brief-toggle .expand-toggle {
+    display: none !important;
+  }
+
+  body,
+  .app {
+    background: #fff;
+    color: #000;
+  }
 }
 
 /* Options page */
