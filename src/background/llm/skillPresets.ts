@@ -36,6 +36,21 @@ export const SKILL_PRESETS: SkillCategory[] = [
     ],
   },
   {
+    // Generic phrasing a posting sometimes uses instead of naming a specific
+    // language (e.g. "proficiency in at least one scripting language") — the
+    // three categories overlap in practice but are distinct axes, so each
+    // gets its own implied set rather than being folded into one.
+    category: "Language paradigms (generic JD phrasing)",
+    skills: [
+      { skill: "Scripting language", implies: ["Python", "JavaScript", "Ruby", "PHP", "Bash/Shell", "Perl"] },
+      { skill: "Compiled language", implies: ["C", "C++", "Go", "Rust", "Java", "C#"] },
+      {
+        skill: "Statically-typed language",
+        implies: ["TypeScript", "Java", "C#", "Go", "Rust", "C++", "Kotlin", "Swift"],
+      },
+    ],
+  },
+  {
     category: "Backend web frameworks",
     skills: [
       { skill: "Django", implies: ["Python", "ORM", "REST API design", "web-app development"] },
