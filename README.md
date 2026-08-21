@@ -1,4 +1,4 @@
-# linkedin-job-helper
+# linkedin-jd-intelligence
 
 Chrome browser extension: Smart LinkedIn Job helper.
 

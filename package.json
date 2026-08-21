@@ -1,5 +1,5 @@
 {
-  "name": "linkedin-job-helper",
+  "name": "linkedin-jd-intelligence",
   "version": "0.1.0",
   "description": "Chrome browser extension: Smart LinkedIn Job helper",
   "private": true,
@@ -11,13 +11,13 @@
   },
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/solomonxie/linkedin-job-helper.git"
+    "url": "git+https://github.com/solomonxie/linkedin-jd-intelligence.git"
   },
   "license": "ISC",
   "bugs": {
-    "url": "https://github.com/solomonxie/linkedin-job-helper/issues"
+    "url": "https://github.com/solomonxie/linkedin-jd-intelligence/issues"
   },
-  "homepage": "https://github.com/solomonxie/linkedin-job-helper#readme",
+  "homepage": "https://github.com/solomonxie/linkedin-jd-intelligence#readme",
   "devDependencies": {
     "@crxjs/vite-plugin": "^2.7.1",
     "@types/chrome": "^0.2.6",
