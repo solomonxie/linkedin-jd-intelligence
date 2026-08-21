@@ -20,7 +20,7 @@ const TIER_LABELS: Record<RequirementTier, string> = {
 };
 
 export function App() {
-  const { pageInfo, record, loading, refresh } = useActiveJob();
+  const { tabId, pageInfo, record, loading, contentScriptMissing, refresh } = useActiveJob();
   const settings = useSettings();
   const [analyzing, setAnalyzing] = useState(false);
   const [analyzeError, setAnalyzeError] = useState<string | null>(null);
@@ -85,6 +85,34 @@ export function App() {
   const elapsedSeconds = isPendingFresh && record ? Math.max(0, Math.floor((Date.now() - new Date(record.startedAt).getTime()) / 1000)) : 0;
 
   if (loading) return <Shell><p className="empty-state">Loading…</p></Shell>;
+  if (contentScriptMissing) {
+    return (
+      <Shell>
+        <div className="empty-state">
+          <p>This tab was open before the extension loaded, so it can't be read yet.</p>
+          <button
+            type="button"
+            className="btn-primary"
+            onClick={() => {
+              if (tabId === null) return;
+              // A same-tab reload doesn't change tabId, so nothing re-triggers
+              // the page-info fetch on its own — wait for this reload to
+              // finish (new content script attached) and refresh explicitly.
+              const onUpdated = (updatedTabId: number, info: chrome.tabs.OnUpdatedInfo) => {
+                if (updatedTabId !== tabId || info.status !== "complete") return;
+                chrome.tabs.onUpdated.removeListener(onUpdated);
+                refresh();
+              };
+              chrome.tabs.onUpdated.addListener(onUpdated);
+              chrome.tabs.reload(tabId);
+            }}
+          >
+            Reload tab
+          </button>
+        </div>
+      </Shell>
+    );
+  }
   if (!pageInfo?.jobId) {
     return (
       <Shell>
