@@ -53,8 +53,26 @@ export function App() {
 
   if (loading) return <Shell>Loading…</Shell>;
   if (!pageInfo?.jobId) return <Shell>Open a LinkedIn job posting to analyze it.</Shell>;
-  if (!settings.openaiApiKey) return <Shell>Add an OpenAI API key in Settings to start analyzing.</Shell>;
-  if (!activeProfile) return <Shell>Upload a resume in Settings to start analyzing.</Shell>;
+  if (!settings.openaiApiKey) {
+    return (
+      <Shell>
+        <p>Add an OpenAI API key to start analyzing.</p>
+        <button type="button" onClick={() => chrome.runtime.openOptionsPage()}>
+          Open Settings
+        </button>
+      </Shell>
+    );
+  }
+  if (!activeProfile) {
+    return (
+      <Shell>
+        <p>Upload a resume to start analyzing.</p>
+        <button type="button" onClick={() => chrome.runtime.openOptionsPage()}>
+          Open Settings
+        </button>
+      </Shell>
+    );
+  }
 
   const isPendingFresh = record?.status === "pending" && !isStalePending(record);
   const isPendingStale = record?.status === "pending" && isStalePending(record);
