@@ -45,3 +45,50 @@ function getVisibleText(el: Element | null): string {
   const withInnerText = el as HTMLElement;
   return withInnerText.innerText ?? el.textContent ?? "";
 }
+
+const READY_POLL_INTERVAL_MS = 150;
+const READY_POLL_TIMEOUT_MS = 3000;
+// Matches LinkedIn's job description toggle and the similar toggles on
+// premium insight sections — deliberately excludes "...less" so an
+// already-expanded section is never re-collapsed.
+const EXPAND_BUTTON_PATTERN = /^(show|see) more$/i;
+
+function delay(ms: number): Promise<void> {
+  return new Promise((resolve) => setTimeout(resolve, ms));
+}
+
+/** Clicks every "Show more"/"See more" toggle in scope so the job description
+ * and any collapsed premium insight sections render their full content into
+ * the DOM before scraping. */
+function expandCollapsedSections(scope: Element): void {
+  for (const button of Array.from(scope.querySelectorAll("button"))) {
+    if (EXPAND_BUTTON_PATTERN.test(button.textContent?.trim() ?? "")) button.click();
+  }
+}
+
+/**
+ * LinkedIn's SPA updates the URL (and job id) immediately on navigation but
+ * fetches and renders the newly-selected job's description asynchronously —
+ * scraping right away can capture stale text left over from the previous job,
+ * or a half-rendered page. Poll until two consecutive reads agree (rendering
+ * has settled) or the timeout elapses, then expand any collapsed sections and
+ * take a final read.
+ */
+export async function extractRawPageTextWhenReady(
+  doc: Document = document,
+  { pollIntervalMs = READY_POLL_INTERVAL_MS, timeoutMs = READY_POLL_TIMEOUT_MS }: { pollIntervalMs?: number; timeoutMs?: number } = {},
+): Promise<string> {
+  const scope = () => doc.querySelector("main") ?? doc.body;
+  let previous: string | null = null;
+  const deadline = Date.now() + timeoutMs;
+  while (Date.now() < deadline) {
+    const current = getVisibleText(scope()).trim();
+    if (current.length > 0 && current === previous) break;
+    previous = current;
+    await delay(pollIntervalMs);
+  }
+  expandCollapsedSections(scope());
+  await delay(pollIntervalMs);
+  const text = getVisibleText(scope()).trim();
+  return text.length > MAX_TEXT_LENGTH ? text.slice(0, MAX_TEXT_LENGTH) : text;
+}
