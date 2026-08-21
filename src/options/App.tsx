@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { SettingsPanel } from "./SettingsPanel";
+import { HistoryPanel } from "./HistoryPanel";
 
 type Tab = "settings" | "history";
 
@@ -17,7 +18,7 @@ export function App() {
         </button>
       </nav>
       {tab === "settings" && <SettingsPanel />}
-      {tab === "history" && <p className="muted">History view coming next.</p>}
+      {tab === "history" && <HistoryPanel />}
     </div>
   );
 }
