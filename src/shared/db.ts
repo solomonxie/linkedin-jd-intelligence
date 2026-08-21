@@ -4,7 +4,7 @@
 import { openDB, type DBSchema, type IDBPDatabase } from "idb";
 import type { JobRecord } from "./types";
 
-interface JobHelperDB extends DBSchema {
+interface JdIntelligenceDB extends DBSchema {
   jobs: {
     key: string;
     value: JobRecord;
@@ -20,14 +20,14 @@ interface JobHelperDB extends DBSchema {
   };
 }
 
-const DB_NAME = "linkedin-job-helper";
+const DB_NAME = "linkedin-jd-intelligence";
 const DB_VERSION = 1;
 
-let dbPromise: Promise<IDBPDatabase<JobHelperDB>> | null = null;
+let dbPromise: Promise<IDBPDatabase<JdIntelligenceDB>> | null = null;
 
-function getDb(): Promise<IDBPDatabase<JobHelperDB>> {
+function getDb(): Promise<IDBPDatabase<JdIntelligenceDB>> {
   if (!dbPromise) {
-    dbPromise = openDB<JobHelperDB>(DB_NAME, DB_VERSION, {
+    dbPromise = openDB<JdIntelligenceDB>(DB_NAME, DB_VERSION, {
       upgrade(db) {
         const store = db.createObjectStore("jobs", { keyPath: "id" });
         store.createIndex("analyzedAt", "analyzedAt");
