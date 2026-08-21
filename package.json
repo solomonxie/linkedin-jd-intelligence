@@ -1,7 +1,7 @@
 {
   "name": "linkedin-jd-intelligence",
   "version": "0.1.0",
-  "description": "Chrome browser extension: Smart LinkedIn Job helper",
+  "description": "Chrome browser extension: Smart LinkedIn JD intelligence",
   "private": true,
   "type": "module",
   "scripts": {
