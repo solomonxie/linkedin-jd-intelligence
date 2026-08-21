@@ -32,6 +32,7 @@ function makeRecord(overrides: {
     jobTitle: "Some Role",
     company: "Some Co",
     location: overrides.regionBucket,
+    workplaceType: null,
     companyInfo: null,
     role: {
       salaryRange: { value: null, source: "llm-estimate" },

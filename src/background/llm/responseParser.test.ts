@@ -6,6 +6,7 @@ function validResultJson(overrides: Record<string, unknown> = {}) {
     jobTitle: "Senior Backend Engineer",
     company: "Acme Corp",
     location: "San Francisco, CA",
+    workplaceType: "hybrid",
     companyInfo: {
       domain: { value: "acme.com", source: "llm-estimate" },
       mainProducts: { value: null, source: "llm-estimate" },
@@ -102,6 +103,37 @@ describe("parseAnalysisResponse", () => {
     if (result.ok) {
       expect(result.result.companyInfo.domain).toEqual({ value: "acme.com", source: "llm-estimate" });
       expect(result.result.companyInfo.arr).toEqual({ value: null, source: "llm-estimate" });
+    }
+  });
+
+  it("falls back to null when workplaceType is missing or invalid", () => {
+    const raw = "```json\n" + JSON.stringify(validResultJson({ workplaceType: "on the moon" })) + "\n```";
+    const result = parseAnalysisResponse(raw);
+    expect(result.ok).toBe(true);
+    if (result.ok) {
+      expect(result.result.workplaceType).toBeNull();
+    }
+  });
+
+  it("recovers when a leaf requirement node has children: null instead of []", () => {
+    const nested = validResultJson({
+      requirements: [
+        {
+          requirement: "Python",
+          tier: "must-have",
+          weight: 100,
+          matched: true,
+          evidence: null,
+          resumeSnippet: null,
+          children: null,
+        },
+      ],
+    });
+    const raw = "```json\n" + JSON.stringify(nested) + "\n```";
+    const result = parseAnalysisResponse(raw);
+    expect(result.ok).toBe(true);
+    if (result.ok) {
+      expect(result.result.requirements[0].children).toEqual([]);
     }
   });
 
