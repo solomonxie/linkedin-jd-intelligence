@@ -209,7 +209,7 @@ One prompt, one fenced JSON block, built from `{ resumeText, rawPageText }`:
 ```
 {
   jobTitle: string, company: string, location: string,
-  company: {
+  companyInfo: {
     domain: Fact<string>, mainProducts: Fact<string[]>,
     employeeSize: Fact<string>, engineeringSize: Fact<string>,
     arr: Fact<string>, fundingStage: Fact<string>,
