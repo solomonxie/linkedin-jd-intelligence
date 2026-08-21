@@ -22,7 +22,7 @@ export default defineManifest({
   content_scripts: [
     {
       matches: ["https://www.linkedin.com/jobs/*"],
-      js: ["src/content-scripts/linkedin/index.ts"],
+      js: ["src/content-scripts/linkedin/main.ts"],
       run_at: "document_idle",
     },
   ],
