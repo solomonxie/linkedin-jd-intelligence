@@ -21,6 +21,7 @@ SCHEMA
   "jobTitle": string,
   "company": string,
   "location": string,
+  "workplaceType": "remote" | "hybrid" | "onsite" | null,
   "companyInfo": {
     "domain": Fact<string>,
     "mainProducts": Fact<string[]>,
@@ -48,6 +49,12 @@ SCHEMA
 //   "children": RequirementNode[]   // [] if none
 // }
 
+WORKPLACE TYPE
+"workplaceType" is "remote" | "hybrid" | "onsite" — read it from an explicit workplace badge/label on the
+posting (LinkedIn shows one directly) if present, otherwise infer from the description text (e.g. "work
+from home", "fully remote" -> remote; "in-office", "on-site" -> onsite; a stated in-office schedule for
+part of the week -> hybrid). Return null only if the posting gives no basis for any of the three.
+
 FACT-SOURCING RULES (apply to every Fact<T> field)
 - source: "page" means you found that value literally written in the job posting text below.
   Echo it back — do not invent or contradict what the page actually says.
@@ -66,6 +73,13 @@ Engineering work). Prefer one of these labels when it fits reasonably well, othe
 custom label:
 ${ROLE_TAXONOMY.map((role) => `  - ${role}`).join("\n")}
 Always include a one-sentence rationale for the classification.
+
+REQUIREMENT TREE — SKILLS AND QUALIFICATIONS ONLY
+Only include things a resume can actually provide evidence for or against: technical skills, tools,
+domain knowledge, experience level, education, certifications. Do NOT add nodes for employment
+logistics that aren't skills — employment type/schedule (full-time, part-time, contract), work
+authorization or visa sponsorship, security clearance, relocation or travel willingness, and on-site/
+hybrid/remote (already captured in "workplaceType" above) never belong in this tree, matched or not.
 
 REQUIREMENT TREE — WEIGHTED AND HIERARCHICAL, NOT A FLAT LIST
 Group related sub-skills under a main skill/category as "children" instead of listing everything flat —
