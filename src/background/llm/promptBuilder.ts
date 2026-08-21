@@ -4,13 +4,16 @@
 // See docs/DESIGN.md "Prompt/response contract" for the rationale.
 
 import { ROLE_TAXONOMY } from "../../shared/roleTaxonomy";
+import type { CompanyInfo } from "../../shared/types";
 
 export interface BuildPromptParams {
   resumeText: string;
   rawPageText: string;
+  /** When set, company research is already known — skip re-deriving it (see CACHED COMPANY INFO below). */
+  cachedCompanyInfo?: { name: string; info: CompanyInfo } | null;
 }
 
-export function buildAnalysisPrompt({ resumeText, rawPageText }: BuildPromptParams): string {
+export function buildAnalysisPrompt({ resumeText, rawPageText, cachedCompanyInfo }: BuildPromptParams): string {
   return `You are helping a job seeker evaluate a LinkedIn job posting against their resume.
 You will be given the raw visible text of the job posting page and the candidate's resume text.
 Extract structured information and respond with EXACTLY ONE fenced JSON code block (\`\`\`json ... \`\`\`)
@@ -22,16 +25,7 @@ SCHEMA
   "company": string,
   "location": string,
   "workplaceType": "remote" | "hybrid" | "onsite" | null,
-  "companyInfo": {
-    "domain": Fact<string>,
-    "mainProducts": Fact<string[]>,
-    "employeeSize": Fact<string>,
-    "engineeringSize": Fact<string>,
-    "arr": Fact<string>,
-    "fundingStage": Fact<string>,
-    "ownership": Fact<"public"|"private">,
-    "techStack": Fact<string[]>
-  },
+  "companyInfo": CompanyInfo | null,
   "role": {
     "salaryRange": Fact<string>,
     "seniorHeadcount": Fact<string>,
@@ -42,6 +36,11 @@ SCHEMA
   "summary": string
 }
 // Fact<T> = { "value": T | null, "source": "page" | "llm-estimate" }
+// CompanyInfo = {
+//   "domain": Fact<string>, "mainProducts": Fact<string[]>, "employeeSize": Fact<string>,
+//   "engineeringSize": Fact<string>, "arr": Fact<string>, "fundingStage": Fact<string>,
+//   "ownership": Fact<"public"|"private">, "techStack": Fact<string[]>
+// }
 // RequirementNode = {
 //   "requirement": string, "tier": "must-have" | "nice-to-have" | "implied",
 //   "weight": number,          // 0-100, importance relative to sibling nodes
@@ -54,8 +53,20 @@ WORKPLACE TYPE
 posting (LinkedIn shows one directly) if present, otherwise infer from the description text (e.g. "work
 from home", "fully remote" -> remote; "in-office", "on-site" -> onsite; a stated in-office schedule for
 part of the week -> hybrid). Return null only if the posting gives no basis for any of the three.
-
-FACT-SOURCING RULES (apply to every Fact<T> field)
+${
+  cachedCompanyInfo
+    ? `
+CACHED COMPANY INFO — ALREADY KNOWN, DO NOT RE-DERIVE
+The company on this posting is already known to be "${cachedCompanyInfo.name}", and its companyInfo has
+already been researched and cached. Set "companyInfo": null in your response instead of re-deriving it —
+this is intentional, not a gap to fill. (Still set "company" in your response as normal from the posting.)
+`
+    : `
+COMPANY INFO
+Fill in "companyInfo" per the FACT-SOURCING RULES below.
+`
+}
+FACT-SOURCING RULES (apply to every Fact<T> field within companyInfo and role)
 - source: "page" means you found that value literally written in the job posting text below.
   Echo it back — do not invent or contradict what the page actually says.
 - source: "llm-estimate" means you filled a gap using general knowledge about the company/role/market.
