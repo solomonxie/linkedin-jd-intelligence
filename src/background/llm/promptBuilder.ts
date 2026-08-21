@@ -109,38 +109,71 @@ if the posting lists them. Technical skills only.
 REQUIREMENT NAMING — BARE SKILL NAMES, ONE PER NODE
 "requirement" is just the skill/tool/technology name itself (e.g. "TypeScript", "Docker", "AWS"), never
 a sentence or phrase describing it. Strip wrapper language like "Experience with", "Proficiency in",
-"Familiarity with", "Knowledge of" down to the skill name. When one bullet names multiple skills
-together (e.g. "Experience with TypeScript and Golang", "familiar with AWS, GCP, or Azure"), split them
-into separate sibling nodes — one per skill, each independently weighted and matched — never combine
-multiple skills into a single node's name.
+"Familiarity with", "Knowledge of" down to the skill name.
+
+When one bullet names multiple skills that are ALL required together (e.g. "Experience with TypeScript
+and Golang"), split them into separate sibling nodes at the bullet's own tier — one per skill, each
+independently weighted and matched.
   - "Experience with TypeScript and Golang" -> two sibling nodes: "TypeScript", "Golang"
-  - "Proficiency in React and Redux" -> "React" (parent) with "Redux" as a child, per the grouping rule below
+
+When one bullet offers a choice of ALTERNATIVES instead — any one of them satisfies it ("X, Y, Z, or
+similar", "X, Y, or Z") — do NOT create separate top-level nodes for each option; that overstates the
+bullet as needing all of them. Instead create ONE parent node named for the bullet's own category (or
+its first option if there's no natural category name), at the bullet's own tier, with each alternative
+as a child at THE SAME TIER as the parent — not "implied", since the posting named all of them itself.
+  - "Strong proficiency in Python, Go, Java, C++, or similar" -> one must-have parent "Programming
+    language" with must-have children "Python", "Go", "Java", "C++"
+  - "Cloud platform expertise (AWS, GCP, or Azure)" -> one must-have parent "Cloud platform" with
+    must-have children "AWS", "GCP", "Azure"
 
 REQUIREMENT TREE — WEIGHTED AND HIERARCHICAL, NOT A FLAT LIST
 Group related sub-skills under a main skill/category as "children" instead of listing everything flat —
-e.g. Django/FastAPI nested under "Python"; Kubernetes/Docker nested under "Container system"; ClickHouse/
-Parquet nested under "Columnar DB". Assign every node (at every depth) a "weight" (0-100) reflecting how
-central it is to the role, roughly comparable across its siblings — the caller will renormalize these
-locally, so a rough relative signal is enough.
+e.g. Django/FastAPI nested under "Python" when the posting names both; Kubernetes/Docker nested under
+"Container system"; ClickHouse/Parquet nested under "Columnar DB". Assign every node (at every depth) a
+"weight" (0-100) reflecting how central it is to the role, roughly comparable across its siblings — the
+caller will renormalize these locally, so a rough relative signal is enough.
+
+TIER — "must-have"/"nice-to-have" COVER EVERYTHING THE POSTING NAMES; "implied" IS ONLY FOR YOUR OWN INFERENCES
+A child node keeps its parent's tier (must-have/nice-to-have) whenever the posting itself names that
+child — in a parenthetical, an "and"/"or" list, or spelled out elsewhere in the same bullet. Nesting a
+node under a parent is about grouping related skills, never about demoting a posting-named skill to
+"implied".
+  - "...deep understanding of consistency, fault tolerance, state management" (spelled out by the
+    posting) -> must-have children "Consistency", "Fault tolerance", "State management", NOT implied
+  - "API design expertise (REST, gRPC)" -> must-have children "REST", "gRPC" under "API design", NOT implied
+  - "Containerization and orchestration expertise (Kubernetes, Docker)" -> must-have children
+    "Kubernetes", "Docker" — both are named by the posting, so neither is inferred
 
 SKILL REFERENCE (grounding for the "implied" children below — not exhaustive; use judgment for anything
 not listed here; "X(→Y,Z)" means X implies Y and Z)
 ${formatSkillPresetsForPrompt()}
 
-For each requirement the posting explicitly names, also add the skills it reasonably implies as
-"implied" children even though the posting never names them — nesting itself communicates "this came
-from its parent," so there is no separate pointer field. Use the SKILL REFERENCE above plus your own
-judgment. This runs in both directions:
-  - A specific tool implies broader underlying skills, e.g. Django implies Python, ORM experience, REST
-    API design, web-app development; Spark implies distributed data processing, likely a data-lake/Delta
-    Lake context.
-  - A generic/abstract phrase the posting uses instead of naming specific tools implies the concrete
-    tools commonly used for it, e.g. "containerization and orchestration experience" implies Docker and
-    Kubernetes; "infrastructure as code" implies Terraform and Ansible; "CI/CD experience" implies common
-    CI/CD tools (e.g. GitHub Actions, Jenkins). Keep the posting's own phrase as the node name in this
-    case (that's what it actually says), and add the concrete tools as "implied" children.
-"must-have" and "nice-to-have" are for what the posting states directly (required vs. preferred/bonus
-language); "implied" is exclusively for skills you inferred rather than the posting naming.
+"implied" is reserved for skills you add yourself that the posting never names anywhere. Use the SKILL
+REFERENCE above plus your own judgment, applied only in the direction the posting's own words point:
+  - A specific tool the posting names implies broader underlying skills it does NOT name, e.g. the
+    posting says "Django" -> add implied children "Python", "ORM experience", "REST API design" (the
+    posting never said these itself). Do NOT run this backwards: if the posting says "Python" alone,
+    do not invent "Django"/"FastAPI"/other frameworks as implied children — the posting not naming a
+    framework is not evidence the candidate needs one.
+  - A generic/abstract phrase the posting uses INSTEAD OF naming specific tools implies the concrete
+    tools commonly used for it, e.g. "containerization and orchestration experience" (no tools named)
+    implies Docker and Kubernetes; "infrastructure as code" implies Terraform and Ansible; "CI/CD
+    experience" implies common CI/CD tools (e.g. GitHub Actions, Jenkins). Keep the posting's own phrase
+    as the node name in this case, and add the concrete tools as implied children of THAT bullet only —
+    never borrow tools implied by one bullet (e.g. "infrastructure as code") to imply under a different,
+    unrelated bullet (e.g. "developer-facing tooling (CLIs, SDKs, testing frameworks)") just because both
+    are loosely "dev tooling."
+
+DEDUPLICATION
+If the same skill would otherwise appear twice — e.g. it's a natural implied child under one requirement
+but the posting also names it directly elsewhere — give it one node, one consistent name, at the tier its
+own explicit bullet states. Do not also add a second implied copy of it (under the same or a different
+name) elsewhere in the tree.
+
+COVERAGE
+Every explicitly stated requirement and preferred/bonus qualification bullet must map to at least one
+node, including years-of-experience and education/degree requirements (per the SKILLS AND QUALIFICATIONS
+scope above). Do not silently drop bullets from either the required or the preferred/nice-to-have section.
 
 MATCHING
 For every node (every depth), set "matched": true if the resume shows explicit OR implied evidence for
