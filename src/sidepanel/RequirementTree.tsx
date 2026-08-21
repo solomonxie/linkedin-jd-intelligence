@@ -8,6 +8,15 @@ const TIER_SHORT_LABELS: Record<RequirementTier, string> = {
   implied: "implied",
 };
 
+// Implied nodes are exclusively nested children by construction (see
+// matchFacts.ts) — only these two tiers ever appear at the top level.
+const TOP_LEVEL_TIERS: RequirementTier[] = ["must-have", "nice-to-have"];
+const SECTION_LABELS: Record<RequirementTier, string> = {
+  "must-have": "Required skills",
+  "nice-to-have": "Preferred skills",
+  implied: "Implied skills",
+};
+
 export function RequirementTree({
   nodes,
   prevalenceTooltip,
@@ -19,13 +28,23 @@ export function RequirementTree({
   /** Starts every row expanded — used by the print view, which has no interaction to expand rows with. */
   defaultExpanded?: boolean;
 }) {
-  const normalized = normalizeWeights(nodes);
   return (
-    <ul className="requirement-tree">
-      {normalized.map((node) => (
-        <RequirementRow key={node.requirement} node={node} depth={0} prevalenceTooltip={prevalenceTooltip} defaultExpanded={defaultExpanded} />
-      ))}
-    </ul>
+    <>
+      {TOP_LEVEL_TIERS.map((tier) => {
+        const group = normalizeWeights(nodes.filter((n) => n.tier === tier));
+        if (group.length === 0) return null;
+        return (
+          <section className="requirement-tier-section" key={tier}>
+            <h4 className="tier-section-heading">{SECTION_LABELS[tier]}</h4>
+            <ul className="requirement-tree">
+              {group.map((node) => (
+                <RequirementRow key={node.requirement} node={node} depth={0} prevalenceTooltip={prevalenceTooltip} defaultExpanded={defaultExpanded} />
+              ))}
+            </ul>
+          </section>
+        );
+      })}
+    </>
   );
 }
 
