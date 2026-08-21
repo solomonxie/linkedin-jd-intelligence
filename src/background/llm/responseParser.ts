@@ -6,10 +6,20 @@ import { z } from "zod";
 import type { AnalysisResult, RequirementNode } from "../../shared/types";
 
 function factSchema<T extends z.ZodTypeAny>(valueSchema: T) {
-  return z.object({
+  const fact = z.object({
     value: valueSchema.nullable(),
     source: z.enum(["page", "llm-estimate"]),
   });
+  // The model occasionally flattens Fact<T> to a bare value instead of
+  // {value, source} despite the schema in the prompt — recover instead of
+  // failing the whole response; "llm-estimate" is the safe default since we
+  // can't tell whether an unwrapped value came from the page.
+  return z.preprocess((input) => {
+    if (input !== null && typeof input === "object" && "value" in (input as Record<string, unknown>)) {
+      return input;
+    }
+    return { value: input ?? null, source: "llm-estimate" };
+  }, fact);
 }
 
 const requirementNodeSchema: z.ZodType<RequirementNode> = z.lazy(() =>
