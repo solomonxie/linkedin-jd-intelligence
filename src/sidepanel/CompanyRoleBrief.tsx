@@ -16,7 +16,7 @@ interface FieldDef {
 }
 
 const FIELDS: FieldDef[] = [
-  { key: "domain", group: "companyInfo", label: "Domain", kind: "text" },
+  { key: "industry", group: "companyInfo", label: "Industry", kind: "array" },
   { key: "mainProducts", group: "companyInfo", label: "Main products", kind: "array" },
   { key: "employeeSize", group: "companyInfo", label: "Size", kind: "text" },
   { key: "engineeringSize", group: "companyInfo", label: "Eng. size", kind: "text" },
