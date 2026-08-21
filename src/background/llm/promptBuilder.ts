@@ -31,7 +31,8 @@ SCHEMA
   "role": {
     "salaryRange": Fact<string>,
     "seniorHeadcount": Fact<string>,
-    "applicantCount": Fact<number>
+    "applicantCount": Fact<number>,
+    "applicantInsights": Fact<string>
   },
   "roleClassification": { "normalizedRole": string, "rationale": string },
   "requirements": RequirementNode[],
@@ -80,6 +81,14 @@ FACT-SOURCING RULES (apply to every Fact<T> field within companyInfo and role)
 - EXCEPTION: role.applicantCount must NEVER be "llm-estimate". If the posting doesn't literally show an
   applicant count, return { "value": null, "source": "page" }. There is no reasonable way to estimate a
   specific applicant count from general knowledge, unlike ARR or headcount.
+- EXCEPTION: role.applicantInsights must NEVER be "llm-estimate" either, for the same reason. This is
+  LinkedIn's own "See how you compare to others who clicked apply" panel — applicant seniority-level
+  and/or education-level percentage breakdowns, sometimes also a "candidates who clicked apply" count
+  broken out by recency (distinct from the single applicantCount number above, which is the plain
+  "X applicants" line near the job title, not this panel). Summarize what the panel states in one
+  compact line, e.g. "52% Senior, 43% Entry, 1% Manager; education: 18% Bachelor's, 14% Master's, 11%
+  Bachelor of Technology, 57% other". If the posting shows no such panel, return { "value": null,
+  "source": "page" } — never estimate this from general knowledge about the company or role.
 
 INDUSTRY (companyInfo.industry)
 A company can belong to more than one industry/domain tag — return all that reasonably apply, e.g. a

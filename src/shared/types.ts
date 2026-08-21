@@ -34,9 +34,14 @@ export interface CompanyInfo {
 
 export interface RoleInfo {
   salaryRange: Fact<string>;
+  /** Company-wide senior engineering staffing, not this posting's applicant pool — usually an estimate. */
   seniorHeadcount: Fact<string>;
   /** Must never be "llm-estimate" — null unless literally shown on the page. */
   applicantCount: Fact<number>;
+  /** LinkedIn's own "see how you compare to others who clicked apply" panel (applicant seniority/
+   * education breakdown), when the posting shows one. Must never be "llm-estimate" — same reasoning
+   * as applicantCount, this is page analytics, not something inferable from general knowledge. */
+  applicantInsights: Fact<string>;
 }
 
 export interface RoleClassification {
@@ -140,3 +145,4 @@ export const DEFAULT_SETTINGS: Settings = {
   activeResumeProfileId: null,
   resumeProfiles: [],
 };
+
