@@ -1,6 +1,6 @@
 // @vitest-environment jsdom
 import { describe, expect, it } from "vitest";
-import { extractJobId, extractRawPageText, isJobPage } from "./scraper";
+import { extractJobId, extractRawPageText, extractRawPageTextWhenReady, isJobPage } from "./scraper";
 
 describe("extractJobId", () => {
   it("extracts the id from a /jobs/view/{id} URL", () => {
@@ -73,5 +73,37 @@ describe("extractRawPageText", () => {
     const longText = "x".repeat(30_000);
     const doc = new DOMParser().parseFromString(`<html><body><main>${longText}</main></body></html>`, "text/html");
     expect(extractRawPageText(doc).length).toBe(20_000);
+  });
+});
+
+describe("extractRawPageTextWhenReady", () => {
+  it("waits for the page text to stop changing before returning it", async () => {
+    const doc = new DOMParser().parseFromString(`<html><body><main>Loading…</main></body></html>`, "text/html");
+    setTimeout(() => {
+      doc.querySelector("main")!.textContent = "Full job description text";
+    }, 5);
+
+    const text = await extractRawPageTextWhenReady(doc, { pollIntervalMs: 20, timeoutMs: 200 });
+    expect(text).toBe("Full job description text");
+  });
+
+  it("clicks 'Show more'/'See more' toggles but leaves 'Show less' alone", async () => {
+    const doc = new DOMParser().parseFromString(
+      `<html><body><main>
+        <div id="jd">Intro text</div>
+        <button id="more">Show more</button>
+        <button id="less">Show less</button>
+      </main></body></html>`,
+      "text/html",
+    );
+    let moreClicked = false;
+    let lessClicked = false;
+    doc.querySelector("#more")!.addEventListener("click", () => (moreClicked = true));
+    doc.querySelector("#less")!.addEventListener("click", () => (lessClicked = true));
+
+    await extractRawPageTextWhenReady(doc, { pollIntervalMs: 5, timeoutMs: 20 });
+
+    expect(moreClicked).toBe(true);
+    expect(lessClicked).toBe(false);
   });
 });

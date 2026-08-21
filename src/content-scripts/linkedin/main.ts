@@ -4,20 +4,20 @@
 // History-API navigation, so the side panel can't rely on that alone).
 
 import { broadcastPageChanged, isGetPageInfoRequest, type PageInfoResponse } from "../../shared/messaging";
-import { extractJobId, extractRawPageText } from "./scraper";
+import { extractJobId, extractRawPageTextWhenReady } from "./scraper";
 
-function buildPageInfo(): PageInfoResponse {
+async function buildPageInfo(): Promise<PageInfoResponse> {
   return {
     jobId: extractJobId(location.href),
     url: location.href,
-    rawPageText: extractRawPageText(document),
+    rawPageText: await extractRawPageTextWhenReady(document),
   };
 }
 
 chrome.runtime.onMessage.addListener((message, _sender, sendResponse) => {
   if (!isGetPageInfoRequest(message)) return undefined;
-  sendResponse(buildPageInfo());
-  return undefined; // synchronous response, no need to keep the channel open
+  void buildPageInfo().then(sendResponse);
+  return true; // async response — keep the message channel open until it resolves
 });
 
 let lastUrl = location.href;
