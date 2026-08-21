@@ -4,6 +4,8 @@
 
 Chrome browser extension: Smart LinkedIn JD intelligence.
 
+Not affiliated with, endorsed by, or sponsored by LinkedIn Corporation.
+
 Full design (architecture, diagrams, data model, algorithms) lives in
 [`docs/DESIGN.md`](docs/DESIGN.md). This README's job is just to help you find
 your way around `src/` and the config files.

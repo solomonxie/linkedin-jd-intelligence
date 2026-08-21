@@ -74,6 +74,16 @@ p {
   color: var(--muted);
 }
 
+.privacy-note {
+  font-size: 13px;
+  color: var(--muted);
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  padding: 8px 10px;
+  margin: 0 0 16px;
+}
+
 .error {
   color: var(--error);
 }
