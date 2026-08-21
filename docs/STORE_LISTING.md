@@ -62,4 +62,4 @@ Productivity
   to OpenAI's API (with the user's own key) to perform the requested analysis.
 - Not sold to third parties. Not used for purposes unrelated to the extension's single purpose. Not
   used to determine creditworthiness or for lending purposes.
-- Privacy policy URL: link to `PRIVACY.md` in this repository (raw GitHub URL or repo page).
+- Privacy policy URL: https://github.com/solomonxie/linkedin-jd-intelligence/blob/master/PRIVACY.md
