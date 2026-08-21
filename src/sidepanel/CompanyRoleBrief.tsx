@@ -23,8 +23,14 @@ export function CompanyRoleBrief({ companyInfo, role }: { companyInfo: CompanyIn
   );
 }
 
+function isBlank(value: unknown): boolean {
+  if (Array.isArray(value)) return value.length === 0;
+  if (typeof value === "string") return value.trim() === "";
+  return false;
+}
+
 function factRow<T>(label: string, fact: Fact<T>, format?: (value: T) => string): ReactNode {
-  if (fact.value === null) return null;
+  if (fact.value === null || isBlank(fact.value)) return null;
   const display = format ? format(fact.value) : Array.isArray(fact.value) ? fact.value.join(", ") : String(fact.value);
   return (
     <li key={label}>
