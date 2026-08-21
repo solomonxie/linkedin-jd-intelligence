@@ -198,6 +198,7 @@ export const SKILL_PRESETS: SkillCategory[] = [
     skills: [
       { skill: "OAuth/OIDC", implies: ["authentication/authorization"] },
       { skill: "JWT", implies: ["authentication"] },
+      { skill: "RBAC", implies: ["authorization/access control"] },
       { skill: "TLS/SSL", implies: ["encryption in transit"] },
       { skill: "SOC 2", implies: ["security/compliance auditing", "access controls", "encryption at rest/in transit"] },
       { skill: "GDPR", implies: ["data privacy compliance"] },
