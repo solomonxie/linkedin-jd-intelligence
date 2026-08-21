@@ -1,4 +1,4 @@
-# Design: LinkedIn Job Helper
+# Design: LinkedIn JD Intelligence
 
 **Status: draft, awaiting confirmation before any implementation code is written.**
 
@@ -88,7 +88,7 @@ The actual OpenAI call happens in the background service worker, not in the side
 Side panel:
 ```
 ┌─────────────────────────────────┐
-│ LinkedIn Job Helper         ⚙   │
+│ LinkedIn JD Intelligence    ⚙   │
 ├─────────────────────────────────┤
 │ Senior Backend Engineer          │
 │  → classified as: Data Engineer  │

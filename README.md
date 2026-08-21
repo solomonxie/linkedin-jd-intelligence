@@ -1,6 +1,6 @@
 # linkedin-jd-intelligence
 
-Chrome browser extension: Smart LinkedIn Job helper.
+Chrome browser extension: Smart LinkedIn JD intelligence.
 
 Full design (architecture, diagrams, data model, algorithms) lives in
 [`docs/DESIGN.md`](docs/DESIGN.md). This README's job is just to help you find

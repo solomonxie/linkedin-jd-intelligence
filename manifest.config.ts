@@ -3,7 +3,7 @@ import pkg from "./package.json" with { type: "json" };
 
 export default defineManifest({
   manifest_version: 3,
-  name: "LinkedIn Job Helper",
+  name: "LinkedIn JD Intelligence",
   version: pkg.version,
   description: pkg.description,
   permissions: ["storage", "unlimitedStorage", "sidePanel"],

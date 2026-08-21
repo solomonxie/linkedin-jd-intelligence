@@ -36,7 +36,7 @@ export function HistoryPanel() {
     const url = URL.createObjectURL(blob);
     const link = document.createElement("a");
     link.href = url;
-    link.download = `linkedin-job-helper-history-${new Date().toISOString().slice(0, 10)}.json`;
+    link.download = `linkedin-jd-intelligence-history-${new Date().toISOString().slice(0, 10)}.json`;
     link.click();
     URL.revokeObjectURL(url);
   }
