@@ -216,6 +216,19 @@ input:focus {
   font-weight: 600;
 }
 
+.requirement-tier-section + .requirement-tier-section {
+  margin-top: 12px;
+}
+
+.tier-section-heading {
+  margin: 0 0 4px;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--muted);
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+}
+
 .requirement-tree {
   list-style: none;
   padding: 0;
