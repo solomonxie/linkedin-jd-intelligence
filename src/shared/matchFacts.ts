@@ -11,18 +11,25 @@ export interface TierCounts {
 export type TierCountsByTier = Record<RequirementTier, TierCounts>;
 
 /**
- * Headline "n/m" figures per tier, counting **top-level nodes only** — children
- * are informational detail and must not double-count into the primary ratio.
+ * Headline "n/m" figures per tier, counting every node in the tree regardless
+ * of depth. "implied" nodes are exclusively nested children by construction
+ * (see promptBuilder's REQUIREMENT TREE section) — they never appear at the
+ * top level, so a top-level-only count always read 0/0 for that tier.
  */
-export function countByTier(topLevelNodes: RequirementNode[]): TierCountsByTier {
+export function countByTier(nodes: RequirementNode[]): TierCountsByTier {
   const counts: TierCountsByTier = {
     "must-have": { matched: 0, total: 0 },
     "nice-to-have": { matched: 0, total: 0 },
     implied: { matched: 0, total: 0 },
   };
-  for (const node of topLevelNodes) {
+  for (const node of nodes) {
     counts[node.tier].total += 1;
     if (node.matched) counts[node.tier].matched += 1;
+    const childCounts = countByTier(node.children);
+    for (const tier of Object.keys(counts) as RequirementTier[]) {
+      counts[tier].total += childCounts[tier].total;
+      counts[tier].matched += childCounts[tier].matched;
+    }
   }
   return counts;
 }
