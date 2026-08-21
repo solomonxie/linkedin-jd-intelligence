@@ -30,7 +30,9 @@ const requirementNodeSchema: z.ZodType<RequirementNode> = z.lazy(() =>
     matched: z.boolean(),
     evidence: z.string().nullable(),
     resumeSnippet: z.string().nullable(),
-    children: z.array(requirementNodeSchema),
+    // A leaf node sometimes comes back as `children: null` instead of `[]` —
+    // recover instead of failing the whole response over it.
+    children: z.preprocess((v) => v ?? [], z.array(requirementNodeSchema)),
   }),
 );
 
@@ -55,6 +57,9 @@ const analysisResultSchema = z.object({
   jobTitle: z.string(),
   company: z.string(),
   location: z.string(),
+  // .catch(null) rather than a hard requirement — a field the model might
+  // omit shouldn't fail the whole response over it.
+  workplaceType: z.enum(["remote", "hybrid", "onsite"]).nullable().catch(null),
   companyInfo: companyInfoSchema,
   role: roleInfoSchema,
   roleClassification: z.object({

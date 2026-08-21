@@ -44,11 +44,14 @@ export interface RoleClassification {
   rationale: string;
 }
 
+export type WorkplaceType = "remote" | "hybrid" | "onsite";
+
 /** The parsed, validated shape of one LLM analysis response. */
 export interface AnalysisResult {
   jobTitle: string;
   company: string;
   location: string;
+  workplaceType: WorkplaceType | null;
   companyInfo: CompanyInfo;
   role: RoleInfo;
   roleClassification: RoleClassification;
@@ -73,6 +76,7 @@ export interface JobRecord {
   jobTitle: string | null;
   company: string | null;
   location: string | null;
+  workplaceType: WorkplaceType | null;
   companyInfo: CompanyInfo | null;
   role: RoleInfo | null;
   roleClassification: RoleClassification | null;

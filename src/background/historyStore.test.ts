@@ -14,6 +14,7 @@ const sampleResult: AnalysisResult = {
   jobTitle: "Senior Backend Engineer",
   company: "Acme Corp",
   location: "San Francisco, CA",
+  workplaceType: "hybrid",
   companyInfo: {
     domain: { value: "acme.com", source: "llm-estimate" },
     mainProducts: { value: null, source: "llm-estimate" },
@@ -135,6 +136,7 @@ describe("isStalePending", () => {
     jobTitle: null,
     company: null,
     location: null,
+    workplaceType: null,
     companyInfo: null,
     role: null,
     roleClassification: null,
