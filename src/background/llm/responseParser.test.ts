@@ -101,8 +101,17 @@ describe("parseAnalysisResponse", () => {
     const result = parseAnalysisResponse(raw);
     expect(result.ok).toBe(true);
     if (result.ok) {
-      expect(result.result.companyInfo.domain).toEqual({ value: "acme.com", source: "llm-estimate" });
-      expect(result.result.companyInfo.arr).toEqual({ value: null, source: "llm-estimate" });
+      expect(result.result.companyInfo?.domain).toEqual({ value: "acme.com", source: "llm-estimate" });
+      expect(result.result.companyInfo?.arr).toEqual({ value: null, source: "llm-estimate" });
+    }
+  });
+
+  it("accepts companyInfo: null (the model was told it's already cached)", () => {
+    const raw = "```json\n" + JSON.stringify(validResultJson({ companyInfo: null })) + "\n```";
+    const result = parseAnalysisResponse(raw);
+    expect(result.ok).toBe(true);
+    if (result.ok) {
+      expect(result.result.companyInfo).toBeNull();
     }
   });
 

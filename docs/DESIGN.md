@@ -209,12 +209,13 @@ One prompt, one fenced JSON block, built from `{ resumeText, rawPageText }`:
 ```
 {
   jobTitle: string, company: string, location: string,
+  workplaceType: "remote"|"hybrid"|"onsite"|null,
   companyInfo: {
     domain: Fact<string>, mainProducts: Fact<string[]>,
     employeeSize: Fact<string>, engineeringSize: Fact<string>,
     arr: Fact<string>, fundingStage: Fact<string>,
     ownership: Fact<"public"|"private">, techStack: Fact<string[]>
-  },
+  } | null,   // null when already cached — see "Company info cache" below
   role: { salaryRange: Fact<string>, seniorHeadcount: Fact<string>, applicantCount: Fact<number> },
   roleClassification: { normalizedRole: string, rationale: string },
   requirements: RequirementNode[],
@@ -230,13 +231,35 @@ One prompt, one fenced JSON block, built from `{ resumeText, rawPageText }`:
 
 **Role classification**: asks the model to classify what the role *actually is* from its responsibilities, not the literal title — titles are frequently misleading (e.g. "Software Engineer, Data Platform" describing what is really Data Engineering work). The prompt offers a suggested (not enforced) taxonomy from `roleTaxonomy.ts` — Software Engineer (Backend/Frontend/Full-Stack), Data Engineer, Data Scientist, Data Analyst, ML Engineer, MLOps Engineer, DevOps/SRE, Platform/Infrastructure Engineer, Mobile Engineer, QA/Test Engineer, Security Engineer, Engineering Manager — with a free-form fallback plus a one-sentence rationale when none fit well.
 
+**Requirement tree scope**: skills/tools/domain knowledge/experience/education/certifications only — a resume can provide evidence for or against these. Employment logistics (employment type/schedule, work authorization, security clearance, relocation, on-site/hybrid/remote — the last already captured by `workplaceType` above) are explicitly excluded from the tree, matched or not.
+
 **Requirement tree, weight, and implication**: extraction instructions ask the model to build a weighted hierarchy, not a flat list — group related sub-skills under a main skill/category (Django/FastAPI under Python; Kubernetes/Docker/microservices under Container system; ClickHouse/Parquet under Columnar DB) as `children`, and assign each node (at every depth) a `weight` (0–100) reflecting how central it is to the role, roughly comparable across siblings. For each explicit JD requirement, also add implied sub-skills the JD doesn't literally name (Django → Python/ORM/REST APIs; Postgres → relational-database design; ClickHouse → columnar/analytical-database experience; RabbitMQ → async/event-driven messaging; SQS → AWS; Spark → distributed data processing, likely data-lake/Delta Lake context) tagged `tier: "implied"` — nesting itself communicates "this came from its parent," so there's no separate pointer field. `must-have`/`nice-to-have` are for what the JD states directly.
 
 **Matching reasons about implication too**: a node counts as `matched` if the resume shows explicit **or** implied evidence (e.g. "Python" matches, with evidence noting the inference, if the resume only lists "Django") — one reasoning pass, at every node in the tree.
 
-`matchFacts.ts` derives "n/m" locally per tier from **top-level nodes only** (children are informational detail, not double-counted into the headline ratio) so implied items never inflate the primary figure: `must-have` matched/total is primary, `nice-to-have`/`implied` shown as secondary lines. It also **locally renormalizes `weight` values** at each sibling level so displayed percentages sum to 100 (the model's raw weights are a rough signal, not trusted arithmetic) — the UI sorts each level by this normalized weight, descending.
+`matchFacts.ts` derives "n/m" locally per tier by counting **every node in the tree, at every depth** — `implied` only ever appears as a nested child by construction (see above), so a top-level-only count would always read 0/0 for it. `must-have` matched/total is primary, `nice-to-have`/`implied` shown as secondary lines. It also **locally renormalizes `weight` values** at each sibling level so displayed percentages sum to 100 (the model's raw weights are a rough signal, not trusted arithmetic) — the UI sorts each level by this normalized weight, descending.
 
 `responseParser.ts` extracts the fenced JSON (fallback: bare fence, then first-`{`-to-last-`}`), validates with `zod` (recursive `RequirementNode`, `Fact<T>` shape), and on total failure stores the record with `status: 'unparsed'` + raw text. `response_format: {type:"json_object"}` is set on the API call as a belt-and-suspenders layer on top of the same contract.
+
+### Company info cache (`shared/companyKey.ts`, `shared/db.ts` "companies" store)
+
+`companyInfo` rarely changes job-to-job for the same company, so it's persisted separately from
+`JobRecord`s and reused instead of re-derived by the LLM every time:
+
+- **Key**: `normalizeCompanyKey()` lowercases, strips common corporate suffixes (Inc/LLC/Corp/...), and
+  strips remaining punctuation — "Affirm, Inc." and "Affirm" both key to `"affirm"`.
+- **Pre-call lookup (the actual cost saving)**: `company` is otherwise only known *from* the LLM's own
+  response — a chicken-and-egg problem for skipping that response's own tokens. `extractCompanySlugHint()`
+  breaks the loop with a best-effort guess from LinkedIn's SEO-slugged job URL
+  (`.../{title-slug}-at-{company-slug}-{id}/`); a match is looked up in the cache *before* the prompt is
+  built. On a hit, the prompt tells the model companyInfo is already known and to return
+  `"companyInfo": null` instead of re-deriving it — real token savings, since the caller fills the field
+  back in from the cache before the record is stored. A miss (unslugged URL, or no cache entry yet) just
+  falls back to asking the LLM as normal — never wrong, only sometimes skips the saving.
+- **Write-back**: whenever companyInfo *is* freshly derived, it's upserted under both the name-derived key
+  and the URL-slug key (when they differ) so a future lookup by either route hits.
+- **No expiry**: persisted indefinitely in its own store, not a TTL cache — company facts drift slowly
+  enough that re-analyzing a job at a company is the natural way to refresh it.
 
 ### Skill prevalence estimate (`skillPrevalence.ts`, pure, computed on read, no LLM call)
 
@@ -252,7 +275,7 @@ For each **top-level** requirement row the side panel shows an "ⓘ" with an est
 
 `chrome.storage.local` for the `Settings` singleton — `{ openaiApiKey, openaiModel, activeResumeProfileId, resumeProfiles: ResumeProfile[] }`, `ResumeProfile = { id, name, fileName, parsedAt, text }` (multiple named resumes, one active). Not encrypted beyond normal browser-profile sandboxing — noted in the Options UI copy.
 
-`IndexedDB` via `idb` for `JobRecord` (keyed by LinkedIn job id — upsert, so re-analysis replaces rather than duplicates), storing the requirement tree, the company/role brief, `roleClassification`, `regionBucket`, `status`, and `resumeProfileId` used, indexed by `analyzedAt`/`resumeProfileId`/`regionBucket` (the last one is what `skillPrevalence.ts` queries against).
+`IndexedDB` via `idb` for `JobRecord` (keyed by LinkedIn job id — upsert, so re-analysis replaces rather than duplicates), storing the requirement tree, the company/role brief, `roleClassification`, `regionBucket`, `status`, and `resumeProfileId` used, indexed by `analyzedAt`/`resumeProfileId`/`regionBucket` (the last one is what `skillPrevalence.ts` queries against). A separate `companies` store (keyed by `normalizeCompanyKey()`) holds `CompanyRecord { key, name, companyInfo, updatedAt }` — see "Company info cache" above.
 
 ### Robustness
 

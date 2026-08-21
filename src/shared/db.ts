@@ -2,7 +2,7 @@
 // so re-analysis replaces rather than duplicates).
 
 import { openDB, type DBSchema, type IDBPDatabase } from "idb";
-import type { JobRecord } from "./types";
+import type { CompanyRecord, JobRecord } from "./types";
 
 interface JdIntelligenceDB extends DBSchema {
   jobs: {
@@ -18,21 +18,30 @@ interface JdIntelligenceDB extends DBSchema {
       regionBucket: string;
     };
   };
+  companies: {
+    key: string;
+    value: CompanyRecord;
+  };
 }
 
 const DB_NAME = "linkedin-jd-intelligence";
-const DB_VERSION = 1;
+const DB_VERSION = 2;
 
 let dbPromise: Promise<IDBPDatabase<JdIntelligenceDB>> | null = null;
 
 function getDb(): Promise<IDBPDatabase<JdIntelligenceDB>> {
   if (!dbPromise) {
     dbPromise = openDB<JdIntelligenceDB>(DB_NAME, DB_VERSION, {
-      upgrade(db) {
-        const store = db.createObjectStore("jobs", { keyPath: "id" });
-        store.createIndex("analyzedAt", "analyzedAt");
-        store.createIndex("resumeProfileId", "resumeProfileId");
-        store.createIndex("regionBucket", "regionBucket");
+      upgrade(db, oldVersion) {
+        if (oldVersion < 1) {
+          const store = db.createObjectStore("jobs", { keyPath: "id" });
+          store.createIndex("analyzedAt", "analyzedAt");
+          store.createIndex("resumeProfileId", "resumeProfileId");
+          store.createIndex("regionBucket", "regionBucket");
+        }
+        if (oldVersion < 2) {
+          db.createObjectStore("companies", { keyPath: "key" });
+        }
       },
     });
   }
@@ -72,4 +81,14 @@ export async function deleteJobRecord(id: string): Promise<void> {
 export async function clearAllJobRecords(): Promise<void> {
   const db = await getDb();
   await db.clear("jobs");
+}
+
+export async function getCompanyRecord(key: string): Promise<CompanyRecord | undefined> {
+  const db = await getDb();
+  return db.get("companies", key);
+}
+
+export async function upsertCompanyRecord(record: CompanyRecord): Promise<void> {
+  const db = await getDb();
+  await db.put("companies", record);
 }
