@@ -61,7 +61,7 @@ function RequirementRow({
           {node.requirement} ({Math.round(node.weight)}%)
         </span>
         {tooltip && (
-          <span className="info-icon" title={tooltip} aria-label={tooltip}>
+          <span className="info-icon" data-tooltip={tooltip} aria-label={tooltip} tabIndex={0}>
             ⓘ
           </span>
         )}
