@@ -178,6 +178,54 @@ input[type="text"] {
   color: var(--muted);
 }
 
+.edit-icon {
+  background: none;
+  border: none;
+  padding: 0 2px;
+  color: var(--muted);
+}
+
+.edit-icon:hover {
+  color: var(--accent);
+}
+
+.field-editor {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.field-editor input,
+.field-editor select {
+  font: inherit;
+  padding: 2px 4px;
+}
+
+.brief-add-field {
+  margin-top: 6px;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.interview-rounds {
+  list-style: none;
+  padding: 0;
+  margin: 4px 0;
+}
+
+.interview-rounds li {
+  display: flex;
+  gap: 6px;
+  align-items: baseline;
+  padding: 2px 0;
+}
+
+.interview-rounds .round-label {
+  min-width: 60px;
+  color: var(--muted);
+}
+
 /* Options page */
 
 .options-app nav {

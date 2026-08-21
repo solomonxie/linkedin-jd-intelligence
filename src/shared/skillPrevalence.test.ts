@@ -41,6 +41,7 @@ function makeRecord(overrides: {
     },
     roleClassification: null,
     requirements: overrides.skills.map(mustHave),
+    interviewRounds: [],
     summary: null,
     rawResponse: null,
     errorMessage: null,

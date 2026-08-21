@@ -219,12 +219,15 @@ One prompt, one fenced JSON block, built from `{ resumeText, rawPageText }`:
   role: { salaryRange: Fact<string>, seniorHeadcount: Fact<string>, applicantCount: Fact<number> },
   roleClassification: { normalizedRole: string, rationale: string },
   requirements: RequirementNode[],
+  interviewRounds: InterviewRound[],
   summary: string
 }
-// Fact<T> = { value: T | null, source: "page" | "llm-estimate" }
+// Fact<T> = { value: T | null, source: "page" | "llm-estimate" | "user" }  ("user" only ever set by a
+//   manual edit in the side panel — see "Manual edits" below, never written by the LLM)
 // RequirementNode = { requirement: string, tier: "must-have"|"nice-to-have"|"implied",
 //                      weight: number, matched: boolean, evidence: string|null,
 //                      resumeSnippet: string|null, children: RequirementNode[] }
+// InterviewRound = { label: string, durationMinutes: number|null, mode: string|null, source: "page"|"user" }
 ```
 
 `source: "page"` means the model found that fact literally in `rawPageText` (it must not invent or contradict what's actually on the page); `"llm-estimate"` means it filled a gap from general training knowledge, with an explicit instruction to return `value: null` rather than a specific-sounding guess when not reasonably confident — this applies hardest to ARR, funding stage, engineering headcount, senior headcount, and salary-when-not-shown. **`role.applicantCount` is the one field that must never fall back to `"llm-estimate"`** — if the count isn't literally present in the page text, the correct answer is `null`, since there's no reasonable general-knowledge basis for guessing a specific applicant number (unlike ARR or headcount, which have loose public-knowledge anchors).
@@ -240,6 +243,25 @@ One prompt, one fenced JSON block, built from `{ resumeText, rawPageText }`:
 `matchFacts.ts` derives "n/m" locally per tier by counting **every node in the tree, at every depth** — `implied` only ever appears as a nested child by construction (see above), so a top-level-only count would always read 0/0 for it. `must-have` matched/total is primary, `nice-to-have`/`implied` shown as secondary lines. It also **locally renormalizes `weight` values** at each sibling level so displayed percentages sum to 100 (the model's raw weights are a rough signal, not trusted arithmetic) — the UI sorts each level by this normalized weight, descending.
 
 `responseParser.ts` extracts the fenced JSON (fallback: bare fence, then first-`{`-to-last-`}`), validates with `zod` (recursive `RequirementNode`, `Fact<T>` shape), and on total failure stores the record with `status: 'unparsed'` + raw text. `response_format: {type:"json_object"}` is set on the API call as a belt-and-suspenders layer on top of the same contract.
+
+**Interview rounds**: like `applicantCount`, never `"llm-estimate"` — guessing a specific company's actual
+process from general knowledge would be misleading, so a round is only ever extracted when the posting
+explicitly describes its hiring process (a numbered list, an "Our process" section, etc.); otherwise
+`interviewRounds: []`. The side panel lets the user add rounds by hand when the posting doesn't say
+(`source: "user"`) — see "Manual edits" below.
+
+### Manual edits (`CompanyRoleBrief.tsx`, `InterviewRounds.tsx`)
+
+Any `companyInfo`/`role` fact, and interview rounds, can be edited or added by hand in the side panel when
+the LLM left them blank or got them wrong — click the ✎ next to a row, or "+ Add field"/"+ Add round" for
+one that's currently empty. A hand-entered/edited value is tagged `source: "user"` (a badge reads
+"edited") and written straight to the `JobRecord` via `upsertJobRecord`, no LLM call involved.
+
+**Survives re-analysis**: clicking "Re-analyze" re-derives everything from a fresh LLM call, which would
+otherwise silently clobber a hand edit — `historyStore.ts`'s `completeAnalysisOk` merges instead of
+overwriting: any `companyInfo`/`role` fact whose *existing* stored value has `source: "user"` is kept over
+the fresh one, and existing `source: "user"` interview rounds are appended after the freshly-derived ones
+rather than dropped.
 
 ### Company info cache (`shared/companyKey.ts`, `shared/db.ts` "companies" store)
 
@@ -276,6 +298,8 @@ For each **top-level** requirement row the side panel shows an "ⓘ" with an est
 `chrome.storage.local` for the `Settings` singleton — `{ openaiApiKey, openaiModel, activeResumeProfileId, resumeProfiles: ResumeProfile[] }`, `ResumeProfile = { id, name, fileName, parsedAt, text }` (multiple named resumes, one active). Not encrypted beyond normal browser-profile sandboxing — noted in the Options UI copy.
 
 `IndexedDB` via `idb` for `JobRecord` (keyed by LinkedIn job id — upsert, so re-analysis replaces rather than duplicates), storing the requirement tree, the company/role brief, `roleClassification`, `regionBucket`, `status`, and `resumeProfileId` used, indexed by `analyzedAt`/`resumeProfileId`/`regionBucket` (the last one is what `skillPrevalence.ts` queries against). A separate `companies` store (keyed by `normalizeCompanyKey()`) holds `CompanyRecord { key, name, companyInfo, updatedAt }` — see "Company info cache" above.
+
+**Export**: the Options History panel's "Export all data" button downloads every `JobRecord` and every `CompanyRecord` (not just what's currently filtered in the table) as one JSON file — a full local backup of both IndexedDB stores. `Settings` (including the API key) is deliberately not included.
 
 ### Robustness
 

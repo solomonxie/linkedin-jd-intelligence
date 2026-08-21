@@ -1,10 +1,10 @@
 // Core data model shared across background, content scripts, and UI.
 // See docs/DESIGN.md for the rationale behind each shape.
 
-/** A fact the LLM reports, tagged by where it came from. */
+/** A fact the LLM reports (or the user supplies by hand), tagged by where it came from. */
 export interface Fact<T> {
   value: T | null;
-  source: "page" | "llm-estimate";
+  source: "page" | "llm-estimate" | "user";
 }
 
 export type RequirementTier = "must-have" | "nice-to-have" | "implied";
@@ -46,6 +46,20 @@ export interface RoleClassification {
 
 export type WorkplaceType = "remote" | "hybrid" | "onsite";
 
+/**
+ * One step of a hiring process, e.g. "Round 1: Recruiter screen" or
+ * "Round 2: Technical interview (45 min, virtual)". Never "llm-estimate" —
+ * like applicantCount, guessing a specific company's actual process from
+ * general knowledge would be misleading; it's either on the posting or the
+ * user enters it themselves.
+ */
+export interface InterviewRound {
+  label: string;
+  durationMinutes: number | null;
+  mode: string | null;
+  source: "page" | "user";
+}
+
 /** The parsed, validated shape of one LLM analysis response. */
 export interface AnalysisResult {
   jobTitle: string;
@@ -56,6 +70,7 @@ export interface AnalysisResult {
   role: RoleInfo;
   roleClassification: RoleClassification;
   requirements: RequirementNode[];
+  interviewRounds: InterviewRound[];
   summary: string;
 }
 
@@ -81,6 +96,7 @@ export interface JobRecord {
   role: RoleInfo | null;
   roleClassification: RoleClassification | null;
   requirements: RequirementNode[];
+  interviewRounds: InterviewRound[];
   summary: string | null;
 
   /** Kept when status is "unparsed", for a manual "view raw response" fallback. */

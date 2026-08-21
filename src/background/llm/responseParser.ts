@@ -62,6 +62,15 @@ const roleInfoSchema = z.object({
   applicantCount: factSchema(z.number()),
 });
 
+const interviewRoundSchema = z.object({
+  label: z.string(),
+  durationMinutes: z.number().nullable().catch(null),
+  mode: z.string().nullable().catch(null),
+  // The model should only ever write "page" — catch(...) just means a stray
+  // "llm-estimate" (never asked for here) doesn't fail the whole response.
+  source: z.enum(["page", "user"]).catch("page"),
+});
+
 const analysisResultSchema = z.object({
   jobTitle: z.string(),
   company: z.string(),
@@ -78,6 +87,8 @@ const analysisResultSchema = z.object({
     rationale: z.string(),
   }),
   requirements: z.array(requirementNodeSchema),
+  // Defaults to [] if the model omits it or sends null — nothing found is the common case.
+  interviewRounds: z.preprocess((v) => v ?? [], z.array(interviewRoundSchema)),
   summary: z.string(),
 }) satisfies z.ZodType<AnalysisResponse>;
 
