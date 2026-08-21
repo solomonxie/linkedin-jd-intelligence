@@ -95,6 +95,13 @@ export function SettingsPanel() {
     <div className="settings-panel">
       <h2>Settings</h2>
 
+      <p className="privacy-note">
+        Your resume, this API key, and every job analysis are stored only in this browser profile
+        (nothing on any server this extension's developer runs). The only place any of that data is
+        sent is to OpenAI's API, using the key below, to generate the analysis you request — that's
+        it. Not affiliated with, endorsed by, or sponsored by LinkedIn Corporation.
+      </p>
+
       <div className="field">
         <label htmlFor="api-key">OpenAI API key</label>
         <input
