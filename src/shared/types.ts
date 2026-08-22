@@ -128,11 +128,38 @@ export interface ResumeProfile {
   text: string;
 }
 
+/** One job blocked by hand ("Block this job") — skipped on any future visit, never auto-analyzed. */
+export interface BlockedJob {
+  jobId: string;
+  jobTitle: string;
+  company: string;
+  addedAt: string;
+}
+
+/** One company blocked by hand ("Block this company"), keyed like the company-info cache so
+ * "Affirm" and "Affirm, Inc." block together. */
+export interface BlockedCompany {
+  key: string;
+  name: string;
+  addedAt: string;
+}
+
+/** One user-entered substring, matched case-insensitively against a company name or job title. */
+export interface BlockKeyword {
+  id: string;
+  value: string;
+  addedAt: string;
+}
+
 export interface Settings {
   openaiApiKey: string | null;
   openaiModel: string;
   activeResumeProfileId: string | null;
   resumeProfiles: ResumeProfile[];
+  blockedJobs: BlockedJob[];
+  blockedCompanies: BlockedCompany[];
+  companyBlockKeywords: BlockKeyword[];
+  roleBlockKeywords: BlockKeyword[];
 }
 
 export const DEFAULT_OPENAI_MODEL = "gpt-4.1-mini";
@@ -142,5 +169,9 @@ export const DEFAULT_SETTINGS: Settings = {
   openaiModel: DEFAULT_OPENAI_MODEL,
   activeResumeProfileId: null,
   resumeProfiles: [],
+  blockedJobs: [],
+  blockedCompanies: [],
+  companyBlockKeywords: [],
+  roleBlockKeywords: [],
 };
 
