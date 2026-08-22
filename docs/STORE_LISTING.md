@@ -74,9 +74,19 @@ company/role brief, and interview process — entirely within a Chrome side pane
 
 ## Data usage disclosure (Privacy practices tab)
 
-- Personally identifiable information: resume content may contain PII (name, contact info, work
-  history) — collected only into local browser storage, never transmitted to the developer, only sent
-  to OpenAI's API (with the user's own key) to perform the requested analysis.
-- Not sold to third parties. Not used for purposes unrelated to the extension's single purpose. Not
-  used to determine creditworthiness or for lending purposes.
-- Privacy policy URL: https://github.com/solomonxie/linkedin-jd-intelligence/blob/master/PRIVACY.md
+Data categories to check:
+- **Personally identifiable information** — resume content may contain PII (name, contact info, work
+  history).
+- **Authentication information** — the OpenAI API key the user enters is a credential.
+- **Website content** — the LinkedIn job posting text (and, less centrally, the resume file's text) is
+  read and processed.
+
+Leave every other category (health, financial/payment, personal communications, location, web history,
+user activity) unchecked — none of it is collected. All of the above is local-only (`chrome.storage.local`/
+IndexedDB) except when sent to OpenAI's API for the analysis the user explicitly requested, using the
+user's own key.
+
+Certifications: all three can be checked truthfully — not sold to third parties, not used for purposes
+unrelated to the extension's single purpose, not used to determine creditworthiness or for lending.
+
+Privacy policy URL: https://github.com/solomonxie/linkedin-jd-intelligence/blob/master/PRIVACY.md
