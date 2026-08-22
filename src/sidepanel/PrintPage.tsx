@@ -31,7 +31,7 @@ export function PrintPage({ record }: { record: JobRecord }) {
       {record.companyInfo && record.role && <CompanyRoleBrief record={record} />}
 
       <div className="card">
-        <h3>Skill Match</h3>
+        <h3>Skill / Experience Match</h3>
         <TierSummary requirements={record.requirements} />
         <RequirementTree nodes={record.requirements} prevalenceTooltip={() => null} />
       </div>
