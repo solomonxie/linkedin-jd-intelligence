@@ -5,13 +5,25 @@
 
 import { broadcastPageChanged, isGetPageInfoRequest, type PageInfoResponse } from "../../shared/messaging";
 import { extractJobId, extractRawPageTextWhenReady } from "./scraper";
-import { initListFilter, scheduleListFilterPass } from "./listFilter";
+import { findCurrentJobCardInfo, initListFilter, scheduleListFilterPass } from "./listFilter";
 
 async function buildPageInfo(): Promise<PageInfoResponse> {
+  const jobId = extractJobId(location.href);
+  // Best-effort, LLM-free — never lets a failure here stop the response, since rawPageText below is
+  // the one thing Analyze actually depends on.
+  let jobTitle: string | null = null;
+  let company: string | null = null;
+  try {
+    if (jobId) ({ jobTitle, company } = findCurrentJobCardInfo(jobId));
+  } catch {
+    // See listFilter.ts's own module comment.
+  }
   return {
-    jobId: extractJobId(location.href),
+    jobId,
     url: location.href,
     rawPageText: await extractRawPageTextWhenReady(document),
+    jobTitle,
+    company,
   };
 }
 

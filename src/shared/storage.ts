@@ -65,7 +65,7 @@ export async function setActiveResumeProfile(id: string): Promise<Settings> {
   return updateSettings((s) => ({ ...s, activeResumeProfileId: id }));
 }
 
-export async function blockJob(entry: { jobId: string; jobTitle: string; company: string }): Promise<Settings> {
+export async function blockJob(entry: { jobId: string; jobTitle: string; company: string; url?: string }): Promise<Settings> {
   return updateSettings((s) => {
     if (s.blockedJobs.some((j) => j.jobId === entry.jobId)) return s;
     return { ...s, blockedJobs: [...s.blockedJobs, { ...entry, addedAt: new Date().toISOString() }] };
@@ -76,11 +76,11 @@ export async function unblockJob(jobId: string): Promise<Settings> {
   return updateSettings((s) => ({ ...s, blockedJobs: s.blockedJobs.filter((j) => j.jobId !== jobId) }));
 }
 
-export async function blockCompany(name: string): Promise<Settings> {
+export async function blockCompany(name: string, sampleJobUrl?: string): Promise<Settings> {
   const key = normalizeCompanyKey(name);
   return updateSettings((s) => {
     if (s.blockedCompanies.some((c) => c.key === key)) return s;
-    return { ...s, blockedCompanies: [...s.blockedCompanies, { key, name, addedAt: new Date().toISOString() }] };
+    return { ...s, blockedCompanies: [...s.blockedCompanies, { key, name, sampleJobUrl, addedAt: new Date().toISOString() }] };
   });
 }
 

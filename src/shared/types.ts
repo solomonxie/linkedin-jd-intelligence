@@ -142,6 +142,10 @@ export interface BlockedJob {
   jobId: string;
   jobTitle: string;
   company: string;
+  /** The job posting's URL at the moment it was blocked — lets Settings link back to it even when
+   * jobTitle/company came back blank (e.g. blocked before analysis, on a page with no list rendered
+   * to read them from). May be absent on an entry blocked before this field existed. */
+  url?: string;
   addedAt: string;
 }
 
@@ -150,6 +154,10 @@ export interface BlockedJob {
 export interface BlockedCompany {
   key: string;
   name: string;
+  /** The URL of whichever job posting was open when this company was blocked — not the company
+   * itself, just a concrete reference so Settings can show something clickable. May be absent on an
+   * entry blocked before this field existed. */
+  sampleJobUrl?: string;
   addedAt: string;
 }
 
