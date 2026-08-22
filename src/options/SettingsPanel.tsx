@@ -1,10 +1,16 @@
 import { useEffect, useRef, useState, type ChangeEvent } from "react";
 import { useSettings } from "../shared/useSettings";
 import {
+  addCompanyBlockKeyword,
   addResumeProfile,
+  addRoleBlockKeyword,
   deleteResumeProfile,
+  removeCompanyBlockKeyword,
+  removeRoleBlockKeyword,
   renameResumeProfile,
   setActiveResumeProfile,
+  unblockCompany,
+  unblockJob,
   updateSettings,
 } from "../shared/storage";
 import { parseResumeFile } from "../shared/resumeParser";
@@ -166,6 +172,96 @@ export function SettingsPanel() {
         {uploadWarning && <p className="warning">{uploadWarning}</p>}
         {uploadError && <p className="error">{uploadError}</p>}
       </div>
+
+      <div className="field">
+        <h3>Blocked companies & jobs</h3>
+        <p className="muted">Added via "Block this job"/"Block this company" in the side panel.</p>
+        <ul className="blocked-list">
+          {settings.blockedCompanies.map((c) => (
+            <li key={c.key}>
+              <span>{c.name} (company)</span>
+              <button type="button" onClick={() => void unblockCompany(c.key)}>
+                Unblock
+              </button>
+            </li>
+          ))}
+          {settings.blockedJobs.map((j) => (
+            <li key={j.jobId}>
+              <span>
+                {j.jobTitle || "Untitled"} — {j.company || "Unknown company"}
+              </span>
+              <button type="button" onClick={() => void unblockJob(j.jobId)}>
+                Unblock
+              </button>
+            </li>
+          ))}
+          {settings.blockedCompanies.length === 0 && settings.blockedJobs.length === 0 && (
+            <li className="muted">None yet.</li>
+          )}
+        </ul>
+      </div>
+
+      <div className="field">
+        <h3>Company name block keywords</h3>
+        <p className="muted">A job is skipped automatically when its company name contains any of these.</p>
+        <ul className="blocked-list">
+          {settings.companyBlockKeywords.map((k) => (
+            <li key={k.id}>
+              <span>{k.value}</span>
+              <button type="button" onClick={() => void removeCompanyBlockKeyword(k.id)}>
+                Remove
+              </button>
+            </li>
+          ))}
+          {settings.companyBlockKeywords.length === 0 && <li className="muted">None yet.</li>}
+        </ul>
+        <KeywordAdder onAdd={(value) => void addCompanyBlockKeyword(value)} placeholder="e.g. Staffing Agency" />
+      </div>
+
+      <div className="field">
+        <h3>Role title block keywords</h3>
+        <p className="muted">A job is skipped automatically when its title contains any of these.</p>
+        <ul className="blocked-list">
+          {settings.roleBlockKeywords.map((k) => (
+            <li key={k.id}>
+              <span>{k.value}</span>
+              <button type="button" onClick={() => void removeRoleBlockKeyword(k.id)}>
+                Remove
+              </button>
+            </li>
+          ))}
+          {settings.roleBlockKeywords.length === 0 && <li className="muted">None yet.</li>}
+        </ul>
+        <KeywordAdder onAdd={(value) => void addRoleBlockKeyword(value)} placeholder="e.g. Contract" />
+      </div>
+    </div>
+  );
+}
+
+function KeywordAdder({ onAdd, placeholder }: { onAdd: (value: string) => void; placeholder: string }) {
+  const [value, setValue] = useState("");
+
+  function commit() {
+    const trimmed = value.trim();
+    if (!trimmed) return;
+    onAdd(trimmed);
+    setValue("");
+  }
+
+  return (
+    <div className="keyword-adder">
+      <input
+        type="text"
+        value={value}
+        placeholder={placeholder}
+        onChange={(e) => setValue(e.target.value)}
+        onKeyDown={(e) => {
+          if (e.key === "Enter") commit();
+        }}
+      />
+      <button type="button" onClick={commit}>
+        Add
+      </button>
     </div>
   );
 }
