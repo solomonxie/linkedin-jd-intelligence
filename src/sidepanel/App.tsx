@@ -57,6 +57,12 @@ export function App() {
   const isPendingStale = record?.status === "pending" && isStalePending(record);
   const busy = analyzing || isPendingFresh;
 
+  const errorMessage =
+    analyzeError ??
+    (isPendingStale ? "Previous analysis didn't complete — click Analyze to retry." : null) ??
+    (record?.status === "error" ? record.errorMessage : null) ??
+    (record?.status === "unparsed" ? `Couldn't parse the response: ${record.errorMessage}` : null);
+
   async function handleAnalyze() {
     if (!pageInfo?.jobId || !activeProfile) return;
     setAnalyzing(true);
@@ -220,17 +226,18 @@ export function App() {
         <button type="button" className="btn-primary" onClick={handleAnalyze} disabled={busy}>
           {busy ? `Analyzing… (${elapsedSeconds}s)` : record?.status === "ok" ? "Re-analyze" : "Analyze"}
         </button>
+
+        {errorMessage && (
+          <span className="error-icon" role="img" aria-label="Analysis error" title={errorMessage}>
+            ⚠
+          </span>
+        )}
       </div>
 
-      {analyzeError && <p className="error">{analyzeError}</p>}
-      {isPendingStale && <p className="error">Previous analysis didn't complete — click Analyze to retry.</p>}
-      {record?.status === "error" && <p className="error">{record.errorMessage}</p>}
-      {record?.status === "unparsed" && <p className="error">Couldn't parse the response: {record.errorMessage}</p>}
-
-      {/* While a fresh analysis is running, show the same cards with placeholder content (or the
-          previous result, on a re-analyze) instead of an empty gap — swapped for the real thing the
-          moment status flips to "ok". */}
-      {record && (record.status === "ok" || isPendingFresh) && (
+      {/* Whatever's already known (a previous successful analysis, or nothing yet) stays on screen
+          through a pending/error/unparsed status instead of being replaced by an error block — the
+          error itself only ever shows as the icon above, never blocking the content area. */}
+      {record && (
         <>
           {record.companyInfo && record.role ? (
             <CompanyRoleBrief record={record} onSaved={refresh} />
