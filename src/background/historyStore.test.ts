@@ -29,6 +29,7 @@ const sampleResult: AnalysisResult = {
     salaryRange: { value: null, source: "llm-estimate" },
     applicantCount: { value: 87, source: "page" },
     seniorHeadcount: { value: null, source: "page" },
+    applicantCountInsight: null,
   },
   roleClassification: { normalizedRole: "Data Engineer", rationale: "Pipelines, not just APIs." },
   requirements: [],

@@ -81,7 +81,9 @@ function preserveUserCompanyFacts(existing: CompanyInfo | null, fresh: CompanyIn
 function preserveUserRoleFacts(existing: RoleInfo | null, fresh: RoleInfo): RoleInfo {
   if (!existing) return fresh;
   const merged = { ...fresh };
-  for (const key of Object.keys(existing) as (keyof RoleInfo)[]) {
+  // applicantCountInsight isn't a Fact (no source, never hand-edited) — always take the fresh value.
+  const factKeys = (Object.keys(existing) as (keyof RoleInfo)[]).filter((key) => key !== "applicantCountInsight");
+  for (const key of factKeys) {
     if (existing[key].source === "user") merged[key] = existing[key] as never;
   }
   return merged;
