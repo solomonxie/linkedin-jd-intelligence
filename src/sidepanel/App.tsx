@@ -30,14 +30,16 @@ export function App() {
   const activeProfile = settings.resumeProfiles.find((p) => p.id === settings.activeResumeProfileId) ?? null;
   const prevalence = useSkillPrevalence(record?.regionBucket ?? null);
 
-  // Best-known company/title for the block check: the analyzed record's exact value once one
-  // exists, otherwise a best-effort guess from LinkedIn's SEO-slugged job URL — a miss just means
-  // a keyword block can't apply until the job is first analyzed, same tradeoff as the company-info
-  // cache's slug hint (see shared/companyKey.ts).
+  // Best-known company/title for the block check and for Block this job/company: the analyzed
+  // record's exact value once one exists, otherwise whatever the content script could read straight
+  // off the job's own row in a currently-rendered LinkedIn list (no LLM call — see
+  // listFilter.ts's findCurrentJobCardInfo), otherwise a best-effort guess from the job URL's SEO
+  // slug (mostly dead on current LinkedIn markup, kept as a last-resort fallback). A miss at every
+  // level just means blocking/keyword-matching can't apply until the job is analyzed.
   const companySlugHint = pageInfo?.url ? extractCompanySlugHint(pageInfo.url) : null;
   const titleSlugHint = pageInfo?.url ? extractTitleSlugHint(pageInfo.url) : null;
-  const bestCompany = record?.company ?? (companySlugHint ? humanizeSlug(companySlugHint) : null);
-  const bestJobTitle = record?.jobTitle ?? (titleSlugHint ? humanizeSlug(titleSlugHint) : null);
+  const bestCompany = record?.company ?? pageInfo?.company ?? (companySlugHint ? humanizeSlug(companySlugHint) : null);
+  const bestJobTitle = record?.jobTitle ?? pageInfo?.jobTitle ?? (titleSlugHint ? humanizeSlug(titleSlugHint) : null);
   const blockReason = pageInfo?.jobId
     ? checkBlocked(settings, { jobId: pageInfo.jobId, company: bestCompany, jobTitle: bestJobTitle })
     : null;
@@ -284,7 +286,12 @@ export function App() {
           disabled={!pageInfo?.jobId}
           onClick={() => {
             if (!pageInfo?.jobId) return;
-            void blockJob({ jobId: pageInfo.jobId, jobTitle: bestJobTitle ?? "", company: bestCompany ?? "" }).then(refresh);
+            void blockJob({
+              jobId: pageInfo.jobId,
+              jobTitle: bestJobTitle ?? "",
+              company: bestCompany ?? "",
+              url: pageInfo.url,
+            }).then(refresh);
           }}
         >
           Block this job
@@ -294,7 +301,7 @@ export function App() {
           disabled={!bestCompany}
           onClick={() => {
             if (!bestCompany) return;
-            void blockCompany(bestCompany).then(refresh);
+            void blockCompany(bestCompany, pageInfo?.url).then(refresh);
           }}
         >
           Block this company

@@ -27,6 +27,9 @@ interface CardInfo {
   card: HTMLElement;
   jobId: string;
   titleText: string;
+  /** Clean company name, from the 2nd <p> in the card (title, company, location, in that order —
+   * consistent across every sampled card). Empty string if a card doesn't follow that pattern. */
+  companyText: string;
   companyBlob: string;
 }
 
@@ -42,14 +45,26 @@ export function findJobCards(): CardInfo[] {
     // wrapper — keep only the first (outermost, in document order) match per job id.
     if (!jobId || seen.has(jobId)) continue;
     seen.add(jobId);
-    const titleText = el.querySelector("p")?.textContent?.trim() ?? "";
+    const paragraphs = el.querySelectorAll("p");
+    const titleText = paragraphs[0]?.textContent?.trim() ?? "";
+    const companyText = paragraphs[1]?.textContent?.trim() ?? "";
     const fullText = el.textContent?.trim() ?? "";
-    // Company name + location/meta, with the title text (found once) cut back out — there's no
-    // isolated company-name element to select, so this is a broad blob, not a clean field.
+    // Company name + location/meta, with the title text (found once) cut back out — kept as a
+    // fallback for matching on cards that don't follow the clean title/company/location <p> order.
     const companyBlob = titleText ? fullText.replace(titleText, " ") : fullText;
-    cards.push({ card: el, jobId, titleText, companyBlob });
+    cards.push({ card: el, jobId, titleText, companyText, companyBlob });
   }
   return cards;
+}
+
+/** Best-effort, LLM-free title/company for one job id, read straight from its own row in a
+ * currently-rendered list (search-results rail, "related jobs" rail) — lets the side panel offer
+ * "Block this job"/"Block this company" (and a non-blank label for either) before any analysis has
+ * run. Null fields when that job's row isn't present on the page right now (e.g. a bare
+ * /jobs/view/{id} page with no list rendered) — never a wrong guess, just sometimes unavailable. */
+export function findCurrentJobCardInfo(jobId: string): { jobTitle: string | null; company: string | null } {
+  const match = findJobCards().find((c) => c.jobId === jobId);
+  return { jobTitle: match?.titleText || null, company: match?.companyText || null };
 }
 
 /** Pure: derives the block reason (if any) for a card from its job id, title text, and the
