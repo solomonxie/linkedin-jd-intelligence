@@ -39,12 +39,21 @@ function factSchema<T extends z.ZodTypeAny>(valueSchema: T) {
   }, fact);
 }
 
+// The model occasionally returns "true"/"false" (or "yes"/"no") as a string,
+// or omits/nulls the field, instead of a real boolean — recover instead of
+// failing the whole response over it.
+const looseBooleanSchema = z.preprocess((v) => {
+  if (typeof v === "boolean") return v;
+  if (typeof v === "string") return /^(true|yes)$/i.test(v.trim());
+  return Boolean(v);
+}, z.boolean());
+
 const requirementNodeSchema: z.ZodType<RequirementNode> = z.lazy(() =>
   z.object({
     requirement: z.string(),
     tier: z.enum(["must-have", "nice-to-have", "implied"]),
     weight: z.number(),
-    matched: z.boolean(),
+    matched: looseBooleanSchema,
     evidence: z.string().nullable(),
     resumeSnippet: z.string().nullable(),
     // A leaf node sometimes comes back as `children: null` instead of `[]` —

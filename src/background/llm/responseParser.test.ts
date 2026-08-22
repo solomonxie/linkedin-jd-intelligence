@@ -138,6 +138,28 @@ describe("parseAnalysisResponse", () => {
     }
   });
 
+  it("recovers when a requirement's matched is a string instead of a boolean", () => {
+    const withStringMatched = validResultJson();
+    withStringMatched.requirements[0].matched = "true" as unknown as boolean;
+    const raw = "```json\n" + JSON.stringify(withStringMatched) + "\n```";
+    const result = parseAnalysisResponse(raw);
+    expect(result.ok).toBe(true);
+    if (result.ok) {
+      expect(result.result.requirements[0].matched).toBe(true);
+    }
+  });
+
+  it("recovers when a requirement's matched is null", () => {
+    const withNullMatched = validResultJson();
+    withNullMatched.requirements[0].matched = null as unknown as boolean;
+    const raw = "```json\n" + JSON.stringify(withNullMatched) + "\n```";
+    const result = parseAnalysisResponse(raw);
+    expect(result.ok).toBe(true);
+    if (result.ok) {
+      expect(result.result.requirements[0].matched).toBe(false);
+    }
+  });
+
   it("accepts companyInfo: null (the model was told it's already cached)", () => {
     const raw = "```json\n" + JSON.stringify(validResultJson({ companyInfo: null })) + "\n```";
     const result = parseAnalysisResponse(raw);
