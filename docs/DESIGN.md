@@ -162,7 +162,7 @@ Options page:
   "background": { "service_worker": "src/background/index.ts", "type": "module" },
   "side_panel": { "default_path": "src/sidepanel/index.html" },
   "options_ui": { "page": "src/options/index.html", "open_in_tab": true },
-  "content_scripts": [{ "matches": ["https://www.linkedin.com/jobs/*"], "js": ["src/content-scripts/linkedin/index.ts"], "run_at": "document_idle" }]
+  "content_scripts": [{ "matches": ["https://www.linkedin.com/jobs/*"], "js": ["src/content-scripts/linkedin/main.ts"], "run_at": "document_idle" }]
 }
 ```
 
@@ -180,7 +180,8 @@ src/
   content-scripts/
     linkedin/
       scraper.ts               # jobId (URL regex), raw page text (main-landmark → body fallback, length-capped), SPA nav watch
-      index.ts                 # entry: scrape + message background/side panel only
+      listFilter.ts             # dims blocked job cards in LinkedIn's own list — see "List dimming" below
+      main.ts                   # entry: scrape + message background/side panel, drives listFilter.ts
   options/                     # React: Settings (key, model, resume profiles) + History, one page
   sidepanel/                   # React: persistent per-job UI, cache-aware, brief + requirement tree
   shared/
@@ -303,6 +304,25 @@ company-info cache, see below), then a company-name keyword, then a role-title k
 blocked screen (reason + Unblock, or a pointer to Settings for a keyword match) instead of the normal
 panel, and skips auto-analyze — the point is to never spend an API call on a job the user has already
 ruled out.
+
+**List dimming** (`content-scripts/linkedin/listFilter.ts`): the block list only ever prevented
+*analysis* — LinkedIn's own job **list** (search-results rail, "related jobs" rail on a detail page) kept
+showing every card untouched. `listFilter.ts` dims a card (`opacity: 0.35`, grayscale, a small "🚫
+Blocked" badge) when `reasonForHref()` — the same `checkBlocked()` call, fed the same URL-slug-derived
+company/title guess `App.tsx` uses pre-analysis (see "Pre-analysis coverage" above) — finds a match on
+that card's `/jobs/view/...` anchor. Deliberately not a company/title DOM selector: a card is found via
+`anchor.closest("li")`, nothing more specific, so this degrades gracefully (a card just can't be
+evaluated) rather than breaking outright if LinkedIn renames a class or a card lacks the SEO slug in its
+href. Every card is re-evaluated from scratch on every pass (not tracked by DOM node identity), which also
+makes it correct against a virtualized/recycled list for free — a recycled node just gets its dim/badge
+added or removed to match whatever job it currently points to.
+
+Driven by the same `MutationObserver` `main.ts` already runs for SPA-navigation detection (one observer,
+not two), plus `onSettingsChanged` so blocking a company from the side panel re-dims an already-open list
+tab immediately. Registered *after* the `GET_PAGE_INFO` listener and wrapped in `try`/`catch` at every
+level (per-card, per-pass, at the call site in `main.ts`) — this is a bonus feature layered on top of the
+content script, and a failure in it must never take down JD scraping/analysis, which `main.ts` already
+provides independent of whether this module loaded cleanly.
 
 **Pre-analysis coverage**: company/title are only known *exactly* from a completed analysis — same
 chicken-and-egg problem the company-info cache hits. `checkBlocked()` reuses that cache's URL-slug hint
