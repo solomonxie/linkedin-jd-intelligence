@@ -9,6 +9,10 @@ import { getJobRecord } from "../shared/db";
 import { onJobRecordUpdated, onPageChanged, requestPageInfo, type PageInfoResponse } from "../shared/messaging";
 import type { JobRecord } from "../shared/types";
 
+// Mirrors manifest.config.ts's content_scripts match pattern — the content script is only ever
+// injected here, so anywhere else a missing response means "not an eligible page," not "reload me."
+const LINKEDIN_JOBS_URL_PATTERN = /^https:\/\/www\.linkedin\.com\/jobs\//;
+
 export interface ActiveJobState {
   tabId: number | null;
   pageInfo: PageInfoResponse | null;
@@ -72,14 +76,24 @@ export function useActiveJob(): ActiveJobState {
 
     (async () => {
       try {
+        const tab = await chrome.tabs.get(tabId);
+        if (!tab.url || !LINKEDIN_JOBS_URL_PATTERN.test(tab.url)) {
+          // No content script was ever going to answer here — this is just an ordinary
+          // "wrong page" state, not a recoverable content-script-missing one.
+          if (!cancelled) {
+            setPageInfo({ jobId: null, url: tab.url ?? "", rawPageText: "" });
+            setRecord(null);
+          }
+          return;
+        }
+
         const info = await requestPageInfo(tabId);
         if (cancelled) return;
         setPageInfo(info);
         setRecord(info.jobId ? ((await getJobRecord(info.jobId)) ?? null) : null);
       } catch {
-        // sendMessage rejects when no content script answered — either this
-        // tab doesn't match the content script's URL pattern, or it does but
-        // was already open before the extension was installed/reloaded.
+        // sendMessage rejected even though the tab matches the content script's URL pattern —
+        // it was open before the extension was installed/reloaded, so no script attached.
         if (!cancelled) {
           setPageInfo(null);
           setRecord(null);
