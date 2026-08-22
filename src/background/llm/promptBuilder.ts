@@ -31,7 +31,8 @@ SCHEMA
   "role": {
     "salaryRange": Fact<string>,
     "applicantCount": Fact<number>,
-    "seniorHeadcount": Fact<number>
+    "seniorHeadcount": Fact<number>,
+    "applicantCountInsight": string | null   // not a Fact — see APPLICANT COUNT INSIGHT below
   },
   "roleClassification": { "normalizedRole": string, "rationale": string },
   "requirements": RequirementNode[],
@@ -86,6 +87,17 @@ FACT-SOURCING RULES (apply to every Fact<T> field within companyInfo and role)
   applicantCount and round to the nearest whole number. Example: 100 applicants, panel says 50% Senior
   -> seniorHeadcount value is 50. If the posting shows no such panel, or applicantCount is null, return
   { "value": null, "source": "page" } — never estimate this from general knowledge about the company.
+
+APPLICANT COUNT INSIGHT (role.applicantCountInsight)
+Not a Fact — a plain string or null. Only write one when role.applicantCount.value is known (non-null)
+AND is unusually high (>= 400) or unusually low (< 100); for the ordinary 100-399 range, or when
+applicantCount is null, return null — do not force a guess.
+When it applies, write one short sentence suggesting a plausible reason, grounded in whatever you actually
+know about this specific posting — salary range, seniority level required, remote/hybrid/onsite, company
+brand recognition, how niche vs. broad the required skills are, how generic/senior the title reads, etc.
+This is explicitly speculative, not a verified fact — phrase it that way ("likely", "possibly", "may be"),
+never as a certainty. Examples: "Likely high given the above-market salary and fully-remote setup." /
+"Possibly low due to the narrow, senior-specific skill combination and no salary listed."
 
 INDUSTRY (companyInfo.industry)
 A company can belong to more than one industry/domain tag — return all that reasonably apply, e.g. a

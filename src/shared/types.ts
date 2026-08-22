@@ -40,6 +40,10 @@ export interface RoleInfo {
    * compare to others who clicked apply" panel, applied to applicantCount (e.g. 50% of 100 -> 50).
    * Must never be "llm-estimate" — same reasoning as applicantCount. */
   seniorHeadcount: Fact<number>;
+  /** A short, speculative reason applicantCount looks unusually high (400+) or low (<100) — e.g. salary,
+   * seniority, remote setup, niche skills. Not a Fact — always the LLM's own reasoning, never sourced
+   * from the page. Null whenever applicantCount is null or within the ordinary range. */
+  applicantCountInsight: string | null;
 }
 
 export interface RoleClassification {
