@@ -8,8 +8,8 @@ import { downloadAllData } from "../shared/exportData";
 import { countByTier } from "../shared/matchFacts";
 import { isStalePending } from "../shared/jobStatus";
 import { normalizeSkillName } from "../shared/skillPrevalence";
-import { RequirementTree } from "./RequirementTree";
-import { CompanyRoleBrief } from "./CompanyRoleBrief";
+import { RequirementTree, RequirementTreeSkeleton } from "./RequirementTree";
+import { CompanyRoleBrief, CompanyRoleBriefSkeleton } from "./CompanyRoleBrief";
 import { InterviewRounds } from "./InterviewRounds";
 import type { JobRecord, RequirementTier } from "../shared/types";
 
@@ -179,15 +179,30 @@ export function App() {
       {record?.status === "error" && <p className="error">{record.errorMessage}</p>}
       {record?.status === "unparsed" && <p className="error">Couldn't parse the response: {record.errorMessage}</p>}
 
-      {record?.status === "ok" && record.companyInfo && record.role && <CompanyRoleBrief record={record} onSaved={refresh} />}
-      {record?.status === "ok" && (
-        <div className="card">
-          <h3>Skill Match</h3>
-          <TierSummary requirements={record.requirements} />
-          <RequirementTree nodes={record.requirements} prevalenceTooltip={prevalenceTooltip} />
-        </div>
+      {/* While a fresh analysis is running, show the same cards with placeholder content (or the
+          previous result, on a re-analyze) instead of an empty gap — swapped for the real thing the
+          moment status flips to "ok". */}
+      {record && (record.status === "ok" || isPendingFresh) && (
+        <>
+          {record.companyInfo && record.role ? (
+            <CompanyRoleBrief record={record} onSaved={refresh} />
+          ) : (
+            <CompanyRoleBriefSkeleton />
+          )}
+          <div className="card">
+            <h3>Skill Match</h3>
+            {record.requirements.length > 0 ? (
+              <>
+                <TierSummary requirements={record.requirements} />
+                <RequirementTree nodes={record.requirements} prevalenceTooltip={prevalenceTooltip} />
+              </>
+            ) : (
+              <RequirementTreeSkeleton />
+            )}
+          </div>
+          <InterviewRounds record={record} onSaved={refresh} />
+        </>
       )}
-      {record?.status === "ok" && <InterviewRounds record={record} onSaved={refresh} />}
 
       <footer className="app-footer">
         <button type="button" onClick={() => chrome.runtime.openOptionsPage()}>

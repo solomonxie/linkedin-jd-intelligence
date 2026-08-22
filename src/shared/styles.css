@@ -440,7 +440,8 @@ li:hover .edit-icon {
   flex-shrink: 0;
 }
 
-.interview-rounds li.placeholder {
+.interview-rounds li.placeholder,
+.skeleton-row {
   color: var(--muted);
   font-style: italic;
 }
