@@ -8,13 +8,7 @@ const EMPTY_DRAFT = { label: "", durationMinutes: "", mode: "" };
 // Shown (not persisted) when nothing's been extracted or added yet, so the
 // section isn't just a blank "not mentioned" line — editing one commits it
 // as the first real round.
-const DEFAULT_LABELS = [
-  "Recruiter screen",
-  "Technical interview",
-  "Hiring manager interview",
-  "Team / panel interview",
-  "Final round / onsite",
-];
+const DEFAULT_LABELS = ["Recruiter screen", "Coding interview", "System design interview", "Hiring manager interview", "Final round"];
 
 function formatRound(round: InterviewRound, isPlaceholder: boolean): string {
   if (isPlaceholder) return `${round.label}: Unknown`;
