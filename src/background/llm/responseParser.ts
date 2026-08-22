@@ -23,11 +23,19 @@ function factSchema<T extends z.ZodTypeAny>(valueSchema: T) {
   // {value, source} despite the schema in the prompt — recover instead of
   // failing the whole response; "llm-estimate" is the safe default since we
   // can't tell whether an unwrapped value came from the page.
+  //
+  // Rarer failure mode, same shape: the model emits the *source tag itself*
+  // ("page"/"llm-estimate") as the bare value, e.g. `"engineeringSize":
+  // "llm-estimate"` instead of a real string — that string then survives
+  // straight through to the UI looking like real data. Treat that exact
+  // sentinel as "the model left this blank" (value: null) rather than a
+  // literal value.
   return z.preprocess((input) => {
     if (input !== null && typeof input === "object" && "value" in (input as Record<string, unknown>)) {
       return input;
     }
-    return { value: input ?? null, source: "llm-estimate" };
+    const value = input === "page" || input === "llm-estimate" ? null : (input ?? null);
+    return { value, source: "llm-estimate" };
   }, fact);
 }
 
