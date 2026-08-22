@@ -188,7 +188,7 @@ export function SettingsPanel() {
           {settings.blockedJobs.map((j) => (
             <li key={j.jobId}>
               <span>
-                {j.jobTitle || "Untitled"} — {j.company || "Unknown company"}
+                {j.jobTitle || "Unknown job"} - {j.company || "Unknown company"}
               </span>
               <button type="button" onClick={() => void unblockJob(j.jobId)}>
                 Unblock
