@@ -124,6 +124,10 @@ the vague generic phrase.
     -> do NOT emit a bare "Software engineering" node; emit "5+ years of experience" (experience level)
     and "B2B/B2C SaaS product experience" (domain knowledge) — those are what a resume can actually show.
 
+ALWAYS include a years-of-experience node whenever the posting states one, even a bare, standalone one
+not bundled with any other qualifier (e.g. "5+ years of experience required", "minimum 3 years in a
+similar role") — emit it as its own top-level node (e.g. "5+ years of experience"). Never omit it.
+
 REQUIREMENT NAMING — BARE SKILL NAMES, ONE PER NODE
 "requirement" is just the skill/tool/technology name itself (e.g. "TypeScript", "Docker", "AWS"), never
 a sentence or phrase describing it. Strip wrapper language like "Experience with", "Proficiency in",
