@@ -19,9 +19,8 @@ function validResultJson(overrides: Record<string, unknown> = {}) {
     },
     role: {
       salaryRange: { value: "$150K-$190K", source: "page" },
-      seniorHeadcount: { value: null, source: "llm-estimate" },
       applicantCount: { value: 87, source: "page" },
-      applicantInsights: { value: null, source: "page" },
+      seniorHeadcount: { value: 44, source: "page" },
     },
     roleClassification: { normalizedRole: "Data Engineer", rationale: "Focused on pipelines." },
     requirements: [

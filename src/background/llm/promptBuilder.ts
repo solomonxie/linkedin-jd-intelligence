@@ -30,9 +30,8 @@ SCHEMA
   "companyInfo": CompanyInfo | null,
   "role": {
     "salaryRange": Fact<string>,
-    "seniorHeadcount": Fact<string>,
     "applicantCount": Fact<number>,
-    "applicantInsights": Fact<string>
+    "seniorHeadcount": Fact<number>
   },
   "roleClassification": { "normalizedRole": string, "rationale": string },
   "requirements": RequirementNode[],
@@ -76,19 +75,17 @@ FACT-SOURCING RULES (apply to every Fact<T> field within companyInfo and role)
   Echo it back — do not invent or contradict what the page actually says.
 - source: "llm-estimate" means you filled a gap using general knowledge about the company/role/market.
   Return value: null instead of a specific-sounding guess whenever you are not reasonably confident —
-  this matters most for arr, fundingStage, engineeringSize, seniorHeadcount, and salaryRange when the
-  posting doesn't show a number itself. A confident-looking wrong number is worse than null.
+  this matters most for arr, fundingStage, engineeringSize, and salaryRange when the posting doesn't
+  show a number itself. A confident-looking wrong number is worse than null.
 - EXCEPTION: role.applicantCount must NEVER be "llm-estimate". If the posting doesn't literally show an
   applicant count, return { "value": null, "source": "page" }. There is no reasonable way to estimate a
   specific applicant count from general knowledge, unlike ARR or headcount.
-- EXCEPTION: role.applicantInsights must NEVER be "llm-estimate" either, for the same reason. This is
-  LinkedIn's own "See how you compare to others who clicked apply" panel — applicant seniority-level
-  and/or education-level percentage breakdowns, sometimes also a "candidates who clicked apply" count
-  broken out by recency (distinct from the single applicantCount number above, which is the plain
-  "X applicants" line near the job title, not this panel). Summarize what the panel states in one
-  compact line, e.g. "52% Senior, 43% Entry, 1% Manager; education: 18% Bachelor's, 14% Master's, 11%
-  Bachelor of Technology, 57% other". If the posting shows no such panel, return { "value": null,
-  "source": "page" } — never estimate this from general knowledge about the company or role.
+- EXCEPTION: role.seniorHeadcount must NEVER be "llm-estimate" either, for the same reason. This is
+  computed, not guessed: LinkedIn's own "See how you compare to others who clicked apply" panel states
+  a senior-level applicant percentage (e.g. "52% Senior level candidates") — multiply that percentage by
+  applicantCount and round to the nearest whole number. Example: 100 applicants, panel says 50% Senior
+  -> seniorHeadcount value is 50. If the posting shows no such panel, or applicantCount is null, return
+  { "value": null, "source": "page" } — never estimate this from general knowledge about the company.
 
 INDUSTRY (companyInfo.industry)
 A company can belong to more than one industry/domain tag — return all that reasonably apply, e.g. a
