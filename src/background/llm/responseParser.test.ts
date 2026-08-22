@@ -18,6 +18,8 @@ function validResultJson(overrides: Record<string, unknown> = {}) {
       techStack: { value: ["Python", "Go"], source: "llm-estimate" },
     },
     role: {
+      team: { value: "Data Platform", source: "page" },
+      teamMission: { value: "Owns the batch and streaming pipelines other teams build on.", source: "page" },
       salaryRange: { value: "$150K-$190K", source: "page" },
       applicantCount: { value: 87, source: "page" },
       seniorHeadcount: { value: 44, source: "page" },
