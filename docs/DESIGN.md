@@ -308,14 +308,25 @@ ruled out.
 **List dimming** (`content-scripts/linkedin/listFilter.ts`): the block list only ever prevented
 *analysis* — LinkedIn's own job **list** (search-results rail, "related jobs" rail on a detail page) kept
 showing every card untouched. `listFilter.ts` dims a card (`opacity: 0.35`, grayscale, a small "🚫
-Blocked" badge) when `reasonForHref()` — the same `checkBlocked()` call, fed the same URL-slug-derived
-company/title guess `App.tsx` uses pre-analysis (see "Pre-analysis coverage" above) — finds a match on
-that card's `/jobs/view/...` anchor. Deliberately not a company/title DOM selector: a card is found via
-`anchor.closest("li")`, nothing more specific, so this degrades gracefully (a card just can't be
-evaluated) rather than breaking outright if LinkedIn renames a class or a card lacks the SEO slug in its
-href. Every card is re-evaluated from scratch on every pass (not tracked by DOM node identity), which also
-makes it correct against a virtualized/recycled list for free — a recycled node just gets its dim/badge
-added or removed to match whatever job it currently points to.
+Blocked" badge) when a match is found.
+
+Two things this file first assumed about LinkedIn's markup turned out false once checked against a real
+page (see git history for the false-start version): cards aren't `<li>`-wrapped, and a card's
+`/jobs/view/...` anchor carries no SEO slug — just a bare `/jobs/view/{id}/?trackingId=...` — so neither
+`anchor.closest("li")` nor the company-info cache's URL-slug trick (used for the side panel's
+pre-analysis check, see above) applies here. What the real markup does give: the anchor's own text is the
+job title verbatim, and walking up from it, **the first ancestor whose text is meaningfully longer than
+the title alone** is the card — title, company, and location/meta all concatenated with no separator
+(e.g. `"AffirmSenior Software Engineer, Backend..."`). That's a structural heuristic, not a class name or
+fixed depth, so it survives LinkedIn renaming/adding a wrapper div. `reasonForCardContent()` then matches:
+job id exactly (from the href, unaffected by any of this); company and its keyword list as a **substring**
+of the concatenated "everything but the title" blob (not the side panel's exact key match — there's no
+isolated company-name field to key off here, so this is a deliberately looser, file-scoped tradeoff); role
+keyword against the title text alone, which *is* clean.
+
+Every card is re-evaluated from scratch on every pass (not tracked by DOM node identity), which also makes
+it correct against a virtualized/recycled list for free — a recycled node just gets its dim/badge added or
+removed to match whatever job it currently points to.
 
 Driven by the same `MutationObserver` `main.ts` already runs for SPA-navigation detection (one observer,
 not two), plus `onSettingsChanged` so blocking a company from the side panel re-dims an already-open list
