@@ -24,7 +24,7 @@ const FIELDS: FieldDef[] = [
   { key: "fundingStage", group: "companyInfo", label: "Stage", kind: "text" },
   { key: "ownership", group: "companyInfo", label: "Ownership", kind: "enum", enumOptions: ["public", "private"] },
   { key: "techStack", group: "companyInfo", label: "Tech stack", kind: "array" },
-  { key: "salaryRange", group: "role", label: "Salary", kind: "text", format: (v) => formatSalaryK(String(v)) },
+  { key: "salaryRange", group: "role", label: "Salary", kind: "text", format: (v) => formatSalaryDigits(String(v)) },
   {
     key: "applicantCount",
     group: "role",
@@ -35,23 +35,17 @@ const FIELDS: FieldDef[] = [
   {
     key: "seniorHeadcount",
     group: "role",
-    label: "Senior headcount",
+    label: "Senior level",
     kind: "number",
-    format: (v) => `senior applicants: ${v} applied`,
+    format: (v) => `${v} applied`,
   },
 ];
 
-// Compacts comma-grouped thousands in a salary string into "k" shorthand
-// ("$150,000-$190,000 CAD" -> "$150k-$190k CAD"), leaving currency codes and
-// any non-numeric text untouched.
-function formatSalaryK(raw: string): string {
-  return raw.replace(/(\$)?(\d[\d,]*)(\.\d+)?/g, (match, dollar: string | undefined, intPart: string, decPart: string | undefined) => {
-    const num = Number(intPart.replace(/,/g, "")) + (decPart ? Number(decPart) : 0);
-    if (num < 1000) return match;
-    const thousands = num / 1000;
-    const formatted = Number.isInteger(thousands) ? String(thousands) : thousands.toFixed(1);
-    return `${dollar ?? ""}${formatted}k`;
-  });
+// Strips thousands-separator commas from a salary string ("$150,000-$190,000
+// CAD" -> "$150000-$190000 CAD"), leaving the $ sign, currency code, and any
+// other non-numeric text untouched.
+function formatSalaryDigits(raw: string): string {
+  return raw.replace(/\d[\d,]*/g, (match) => match.replace(/,/g, ""));
 }
 
 function isBlank(value: unknown): boolean {
