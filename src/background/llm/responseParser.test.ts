@@ -120,6 +120,24 @@ describe("parseAnalysisResponse", () => {
     }
   });
 
+  it("recovers when summary is an array of bullet points instead of a string", () => {
+    const raw = "```json\n" + JSON.stringify(validResultJson({ summary: ["Point one.", "Point two."] })) + "\n```";
+    const result = parseAnalysisResponse(raw);
+    expect(result.ok).toBe(true);
+    if (result.ok) {
+      expect(result.result.summary).toBe("Point one. Point two.");
+    }
+  });
+
+  it("recovers when summary is null", () => {
+    const raw = "```json\n" + JSON.stringify(validResultJson({ summary: null })) + "\n```";
+    const result = parseAnalysisResponse(raw);
+    expect(result.ok).toBe(true);
+    if (result.ok) {
+      expect(result.result.summary).toBe("");
+    }
+  });
+
   it("accepts companyInfo: null (the model was told it's already cached)", () => {
     const raw = "```json\n" + JSON.stringify(validResultJson({ companyInfo: null })) + "\n```";
     const result = parseAnalysisResponse(raw);

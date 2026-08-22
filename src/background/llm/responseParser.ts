@@ -102,7 +102,10 @@ const analysisResultSchema = z.object({
   requirements: z.array(requirementNodeSchema),
   // Defaults to [] if the model omits it or sends null — nothing found is the common case.
   interviewRounds: z.preprocess((v) => v ?? [], z.array(interviewRoundSchema)),
-  summary: z.string(),
+  // The model occasionally returns an array of bullet points, or omits/nulls
+  // this, instead of one string — recover instead of failing the whole
+  // response over a summary.
+  summary: z.preprocess((v) => (typeof v === "string" ? v : Array.isArray(v) ? v.join(" ") : ""), z.string()),
 }) satisfies z.ZodType<AnalysisResponse>;
 
 export type ParseResult =
