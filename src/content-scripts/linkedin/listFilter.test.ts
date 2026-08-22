@@ -1,74 +1,93 @@
 // @vitest-environment jsdom
 import { describe, expect, it } from "vitest";
-import { applyCardState, findJobCards, reasonForHref } from "./listFilter";
+import { applyCardState, findJobCards, reasonForCardContent } from "./listFilter";
 import { DEFAULT_SETTINGS, type Settings } from "../../shared/types";
 
 function settingsWith(overrides: Partial<Settings>): Settings {
   return { ...DEFAULT_SETTINGS, ...overrides };
 }
 
-const SLUGGED_URL = "https://www.linkedin.com/jobs/view/senior-backend-engineer-at-affirm-4438379738/";
-const BARE_URL = "https://www.linkedin.com/jobs/view/4123456789/";
+const TITLE = "Senior Software Engineer, Backend";
+const HREF = "https://www.linkedin.com/jobs/view/4438392409/?trackingId=abc";
 
-describe("reasonForHref", () => {
-  it("returns null when nothing in settings matches", () => {
-    expect(reasonForHref(SLUGGED_URL, settingsWith({}))).toBeNull();
+describe("reasonForCardContent", () => {
+  const input = { jobId: "4438392409", titleText: TITLE, companyBlob: "Affirm London, ON · Reposted 2 weeks ago" };
+
+  it("returns null when nothing matches", () => {
+    expect(reasonForCardContent(input, settingsWith({}))).toBeNull();
   });
 
-  it("matches an explicitly blocked job by id, regardless of slug", () => {
+  it("matches an explicitly blocked job by id", () => {
     const settings = settingsWith({
-      blockedJobs: [{ jobId: "4438379738", jobTitle: "x", company: "x", addedAt: "2026-01-01" }],
+      blockedJobs: [{ jobId: "4438392409", jobTitle: "x", company: "x", addedAt: "2026-01-01" }],
     });
-    expect(reasonForHref(SLUGGED_URL, settings)).toEqual({ type: "job", jobId: "4438379738" });
+    expect(reasonForCardContent(input, settings)).toEqual({ type: "job", jobId: "4438392409" });
   });
 
-  it("matches a blocked company via the URL's company slug", () => {
+  it("matches a blocked company as a substring of the combined company/location/meta blob", () => {
     const settings = settingsWith({
       blockedCompanies: [{ key: "affirm", name: "Affirm", addedAt: "2026-01-01" }],
     });
-    expect(reasonForHref(SLUGGED_URL, settings)).toEqual({ type: "company", key: "affirm", name: "Affirm" });
+    expect(reasonForCardContent(input, settings)).toEqual({ type: "company", key: "affirm", name: "Affirm" });
   });
 
-  it("matches a company-name keyword via the humanized company slug", () => {
+  it("matches a company-name keyword as a substring of the blob", () => {
     const settings = settingsWith({
       companyBlockKeywords: [{ id: "kw1", value: "affirm", addedAt: "2026-01-01" }],
     });
-    expect(reasonForHref(SLUGGED_URL, settings)).toEqual({ type: "company-keyword", value: "affirm" });
+    expect(reasonForCardContent(input, settings)).toEqual({ type: "company-keyword", value: "affirm" });
   });
 
-  it("matches a role-title keyword via the humanized title slug", () => {
+  it("matches a role-title keyword against the title text alone", () => {
     const settings = settingsWith({
       roleBlockKeywords: [{ id: "kw2", value: "backend", addedAt: "2026-01-01" }],
     });
-    expect(reasonForHref(SLUGGED_URL, settings)).toEqual({ type: "role-keyword", value: "backend" });
+    expect(reasonForCardContent(input, settings)).toEqual({ type: "role-keyword", value: "backend" });
   });
 
-  it("still matches an explicit job block on a bare, unslugged URL", () => {
+  it("checks job block before company/keyword blocks", () => {
     const settings = settingsWith({
-      blockedJobs: [{ jobId: "4123456789", jobTitle: "x", company: "x", addedAt: "2026-01-01" }],
+      blockedJobs: [{ jobId: "4438392409", jobTitle: "x", company: "x", addedAt: "2026-01-01" }],
+      companyBlockKeywords: [{ id: "kw", value: "affirm", addedAt: "2026-01-01" }],
     });
-    expect(reasonForHref(BARE_URL, settings)).toEqual({ type: "job", jobId: "4123456789" });
-  });
-
-  it("can't apply a company/keyword block on a bare, unslugged URL — never a wrong block, just a miss", () => {
-    const settings = settingsWith({
-      blockedCompanies: [{ key: "affirm", name: "Affirm", addedAt: "2026-01-01" }],
-    });
-    expect(reasonForHref(BARE_URL, settings)).toBeNull();
+    expect(reasonForCardContent(input, settings)).toEqual({ type: "job", jobId: "4438392409" });
   });
 });
 
 describe("findJobCards", () => {
-  it("finds each <li> ancestor of a job-view anchor, de-duplicated", () => {
+  it("finds the card boundary as the ancestor whose text first grows past the title alone", () => {
     document.body.innerHTML = `
-      <ul>
-        <li id="card-1"><a href="${SLUGGED_URL}">Title</a><a href="${SLUGGED_URL}">Company</a></li>
-        <li id="card-2"><a href="${BARE_URL}">Other</a></li>
-        <div><a href="${SLUGGED_URL}">Not inside an li</a></div>
-      </ul>
+      <div id="outer">
+        <div id="card">
+          <div><p><a href="${HREF}">${TITLE}</a></p></div>
+          <span>Affirm</span>
+          <span>London, ON</span>
+        </div>
+      </div>
     `;
     const cards = findJobCards();
-    expect(cards.map((c) => c.id).sort()).toEqual(["card-1", "card-2"]);
+    expect(cards).toHaveLength(1);
+    expect(cards[0].card.id).toBe("card");
+    expect(cards[0].jobId).toBe("4438392409");
+    expect(cards[0].titleText).toBe(TITLE);
+    expect(cards[0].companyBlob).toContain("Affirm");
+    expect(cards[0].companyBlob).toContain("London, ON");
+  });
+
+  it("de-duplicates when multiple job-view anchors resolve to the same card boundary", () => {
+    document.body.innerHTML = `
+      <div id="card">
+        <a href="${HREF}">${TITLE}</a>
+        <a href="${HREF}">${TITLE}</a>
+        <span>Affirm</span>
+      </div>
+    `;
+    expect(findJobCards()).toHaveLength(1);
+  });
+
+  it("skips an anchor whose text never grows within the hop limit (no card found)", () => {
+    document.body.innerHTML = `<a href="${HREF}">${TITLE}</a>`;
+    expect(findJobCards()).toHaveLength(0);
   });
 });
 
