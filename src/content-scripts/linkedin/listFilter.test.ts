@@ -7,11 +7,22 @@ function settingsWith(overrides: Partial<Settings>): Settings {
   return { ...DEFAULT_SETTINGS, ...overrides };
 }
 
-const TITLE = "Senior Software Engineer, Backend";
-const HREF = "https://www.linkedin.com/jobs/view/4438392409/?trackingId=abc";
+const TITLE = "Senior Software Developer – Backend Services";
+
+function jobCardHtml(jobId: string, title: string, company: string, location: string): string {
+  return `
+    <div role="button" componentkey="job-card-component-ref-${jobId}">
+      <div componentkey="job-card-component-ref-${jobId}">
+        <p>${title}</p>
+        <div><p>${company}</p></div>
+        <p>${location}</p>
+      </div>
+    </div>
+  `;
+}
 
 describe("reasonForCardContent", () => {
-  const input = { jobId: "4438392409", titleText: TITLE, companyBlob: "Affirm London, ON · Reposted 2 weeks ago" };
+  const input = { jobId: "4454678676", titleText: TITLE, companyBlob: "PDF Solutions Vancouver, BC · 4 hours ago" };
 
   it("returns null when nothing matches", () => {
     expect(reasonForCardContent(input, settingsWith({}))).toBeNull();
@@ -19,23 +30,23 @@ describe("reasonForCardContent", () => {
 
   it("matches an explicitly blocked job by id", () => {
     const settings = settingsWith({
-      blockedJobs: [{ jobId: "4438392409", jobTitle: "x", company: "x", addedAt: "2026-01-01" }],
+      blockedJobs: [{ jobId: "4454678676", jobTitle: "x", company: "x", addedAt: "2026-01-01" }],
     });
-    expect(reasonForCardContent(input, settings)).toEqual({ type: "job", jobId: "4438392409" });
+    expect(reasonForCardContent(input, settings)).toEqual({ type: "job", jobId: "4454678676" });
   });
 
   it("matches a blocked company as a substring of the combined company/location/meta blob", () => {
     const settings = settingsWith({
-      blockedCompanies: [{ key: "affirm", name: "Affirm", addedAt: "2026-01-01" }],
+      blockedCompanies: [{ key: "pdfsolutions", name: "PDF Solutions", addedAt: "2026-01-01" }],
     });
-    expect(reasonForCardContent(input, settings)).toEqual({ type: "company", key: "affirm", name: "Affirm" });
+    expect(reasonForCardContent(input, settings)).toEqual({ type: "company", key: "pdfsolutions", name: "PDF Solutions" });
   });
 
   it("matches a company-name keyword as a substring of the blob", () => {
     const settings = settingsWith({
-      companyBlockKeywords: [{ id: "kw1", value: "affirm", addedAt: "2026-01-01" }],
+      companyBlockKeywords: [{ id: "kw1", value: "pdf solutions", addedAt: "2026-01-01" }],
     });
-    expect(reasonForCardContent(input, settings)).toEqual({ type: "company-keyword", value: "affirm" });
+    expect(reasonForCardContent(input, settings)).toEqual({ type: "company-keyword", value: "pdf solutions" });
   });
 
   it("matches a role-title keyword against the title text alone", () => {
@@ -47,73 +58,55 @@ describe("reasonForCardContent", () => {
 
   it("checks job block before company/keyword blocks", () => {
     const settings = settingsWith({
-      blockedJobs: [{ jobId: "4438392409", jobTitle: "x", company: "x", addedAt: "2026-01-01" }],
-      companyBlockKeywords: [{ id: "kw", value: "affirm", addedAt: "2026-01-01" }],
+      blockedJobs: [{ jobId: "4454678676", jobTitle: "x", company: "x", addedAt: "2026-01-01" }],
+      companyBlockKeywords: [{ id: "kw", value: "pdf", addedAt: "2026-01-01" }],
     });
-    expect(reasonForCardContent(input, settings)).toEqual({ type: "job", jobId: "4438392409" });
+    expect(reasonForCardContent(input, settings)).toEqual({ type: "job", jobId: "4454678676" });
   });
 });
 
 describe("findJobCards", () => {
-  it("finds the card boundary as the ancestor whose text first grows past the title alone", () => {
-    document.body.innerHTML = `
-      <div id="outer">
-        <div id="card">
-          <div><p><a href="${HREF}">${TITLE}</a></p></div>
-          <span>Affirm</span>
-          <span>London, ON</span>
-        </div>
-      </div>
-    `;
+  it("finds a card via its componentkey and extracts jobId/title/company blob", () => {
+    document.body.innerHTML = `<ul>${jobCardHtml("4454678676", TITLE, "PDF Solutions", "Vancouver, BC")}</ul>`;
     const cards = findJobCards();
     expect(cards).toHaveLength(1);
-    expect(cards[0].card.id).toBe("card");
-    expect(cards[0].jobId).toBe("4438392409");
+    expect(cards[0].jobId).toBe("4454678676");
     expect(cards[0].titleText).toBe(TITLE);
-    expect(cards[0].companyBlob).toContain("Affirm");
-    expect(cards[0].companyBlob).toContain("London, ON");
+    expect(cards[0].companyBlob).toContain("PDF Solutions");
+    expect(cards[0].companyBlob).toContain("Vancouver, BC");
   });
 
-  it("de-duplicates when multiple job-view anchors resolve to the same card boundary", () => {
-    document.body.innerHTML = `
-      <div id="card">
-        <a href="${HREF}">${TITLE}</a>
-        <a href="${HREF}">${TITLE}</a>
-        <span>Affirm</span>
-      </div>
-    `;
+  it("de-duplicates the outer/inner elements that share the same componentkey", () => {
+    document.body.innerHTML = jobCardHtml("4454678676", TITLE, "PDF Solutions", "Vancouver, BC");
     expect(findJobCards()).toHaveLength(1);
   });
 
-  it("skips an anchor whose text never grows within the hop limit (no card found)", () => {
-    document.body.innerHTML = `<a href="${HREF}">${TITLE}</a>`;
+  it("finds multiple distinct cards", () => {
+    document.body.innerHTML =
+      jobCardHtml("1", "Software Engineer", "Acme", "Remote") + jobCardHtml("2", "Data Engineer", "Beta Corp", "NYC");
+    const cards = findJobCards();
+    expect(cards.map((c) => c.jobId).sort()).toEqual(["1", "2"]);
+  });
+
+  it("ignores elements with no componentkey (e.g. the detail pane)", () => {
+    document.body.innerHTML = `<div role="button"><p>${TITLE}</p><p>PDF Solutions</p></div>`;
     expect(findJobCards()).toHaveLength(0);
   });
 });
 
 describe("applyCardState", () => {
-  it("dims the card and adds a badge when blocked", () => {
-    document.body.innerHTML = `<li id="card"></li>`;
+  it("hides the card entirely when blocked", () => {
+    document.body.innerHTML = `<div id="card"></div>`;
     const card = document.getElementById("card")!;
     applyCardState(card, { type: "job", jobId: "1" });
-    expect(card.style.opacity).toBe("0.35");
-    expect(card.querySelector(".jdi-blocked-badge")).not.toBeNull();
+    expect(card.style.display).toBe("none");
   });
 
-  it("is idempotent — running it twice doesn't add a second badge", () => {
-    document.body.innerHTML = `<li id="card"></li>`;
-    const card = document.getElementById("card")!;
-    applyCardState(card, { type: "job", jobId: "1" });
-    applyCardState(card, { type: "job", jobId: "1" });
-    expect(card.querySelectorAll(".jdi-blocked-badge").length).toBe(1);
-  });
-
-  it("undoes the dim and removes the badge once the card is no longer blocked", () => {
-    document.body.innerHTML = `<li id="card"></li>`;
+  it("un-hides the card once it's no longer blocked", () => {
+    document.body.innerHTML = `<div id="card"></div>`;
     const card = document.getElementById("card")!;
     applyCardState(card, { type: "job", jobId: "1" });
     applyCardState(card, null);
-    expect(card.style.opacity).toBe("");
-    expect(card.querySelector(".jdi-blocked-badge")).toBeNull();
+    expect(card.style.display).toBe("");
   });
 });
