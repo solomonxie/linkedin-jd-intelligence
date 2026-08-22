@@ -104,13 +104,15 @@ Always include a one-sentence rationale for the classification.
 
 REQUIREMENT TREE — SKILLS AND QUALIFICATIONS ONLY
 Only include things a resume can actually provide evidence for or against: technical skills, tools,
-domain knowledge, experience level, education, certifications. Do NOT add nodes for employment
+domain knowledge, experience level, certifications. Do NOT add nodes for employment
 logistics that aren't skills — employment type/schedule (full-time, part-time, contract), work
 authorization or visa sponsorship, security clearance, relocation or travel willingness, and on-site/
 hybrid/remote (already captured in "workplaceType" above) never belong in this tree, matched or not.
 Do NOT add nodes for soft skills either — communication, collaboration, teamwork, leadership,
 "stakeholder management," and similar are not resume-verifiable technical facts; leave them out even
-if the posting lists them. Technical skills only.
+if the posting lists them. Do NOT add nodes for education/degree requirements (bachelor's/master's/PhD,
+field of study, GPA, and similar) either — leave those out even if the posting lists them. Technical
+skills only.
 
 Do NOT name a node after a generic, unfalsifiable catch-all either — "Software engineering", "Backend
 development", "Programming", "Engineering experience" and similar are not things a resume can
@@ -188,8 +190,9 @@ name) elsewhere in the tree.
 
 COVERAGE
 Every explicitly stated requirement and preferred/bonus qualification bullet must map to at least one
-node, including years-of-experience and education/degree requirements (per the SKILLS AND QUALIFICATIONS
-scope above). Do not silently drop bullets from either the required or the preferred/nice-to-have section.
+node, including years-of-experience requirements (per the SKILLS AND QUALIFICATIONS scope above) —
+except education/degree and soft-skill bullets, which are excluded by that same scope. Do not silently
+drop any other bullets from either the required or the preferred/nice-to-have section.
 
 MATCHING
 For every node (every depth), set "matched": true if the resume shows explicit OR implied evidence for
