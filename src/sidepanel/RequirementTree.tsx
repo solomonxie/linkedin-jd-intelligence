@@ -16,6 +16,23 @@ const SECTION_LABELS: Record<RequirementTier, string> = {
   implied: "Implied skills",
 };
 
+/** Shown in place of RequirementTree while a first-time analysis is still running, so the panel's
+ * shape (both tier sections) is visible immediately instead of an empty gap. */
+export function RequirementTreeSkeleton() {
+  return (
+    <>
+      {TOP_LEVEL_TIERS.map((tier) => (
+        <section className="requirement-tier-section" key={tier}>
+          <h4 className="tier-section-heading">{SECTION_LABELS[tier]}</h4>
+          <ul className="requirement-tree">
+            <li className="skeleton-row">Analyzing…</li>
+          </ul>
+        </section>
+      ))}
+    </>
+  );
+}
+
 export function RequirementTree({
   nodes,
   prevalenceTooltip,
