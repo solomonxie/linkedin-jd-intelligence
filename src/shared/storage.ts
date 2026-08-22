@@ -2,6 +2,7 @@
 // (API key, model, resume profiles). Not encrypted beyond normal
 // browser-profile sandboxing.
 
+import { normalizeCompanyKey } from "./companyKey";
 import { DEFAULT_SETTINGS, type ResumeProfile, type Settings } from "./types";
 
 const STORAGE_KEY = "settings";
@@ -62,4 +63,49 @@ export async function deleteResumeProfile(id: string): Promise<Settings> {
 
 export async function setActiveResumeProfile(id: string): Promise<Settings> {
   return updateSettings((s) => ({ ...s, activeResumeProfileId: id }));
+}
+
+export async function blockJob(entry: { jobId: string; jobTitle: string; company: string }): Promise<Settings> {
+  return updateSettings((s) => {
+    if (s.blockedJobs.some((j) => j.jobId === entry.jobId)) return s;
+    return { ...s, blockedJobs: [...s.blockedJobs, { ...entry, addedAt: new Date().toISOString() }] };
+  });
+}
+
+export async function unblockJob(jobId: string): Promise<Settings> {
+  return updateSettings((s) => ({ ...s, blockedJobs: s.blockedJobs.filter((j) => j.jobId !== jobId) }));
+}
+
+export async function blockCompany(name: string): Promise<Settings> {
+  const key = normalizeCompanyKey(name);
+  return updateSettings((s) => {
+    if (s.blockedCompanies.some((c) => c.key === key)) return s;
+    return { ...s, blockedCompanies: [...s.blockedCompanies, { key, name, addedAt: new Date().toISOString() }] };
+  });
+}
+
+export async function unblockCompany(key: string): Promise<Settings> {
+  return updateSettings((s) => ({ ...s, blockedCompanies: s.blockedCompanies.filter((c) => c.key !== key) }));
+}
+
+export async function addCompanyBlockKeyword(value: string): Promise<Settings> {
+  return updateSettings((s) => ({
+    ...s,
+    companyBlockKeywords: [...s.companyBlockKeywords, { id: crypto.randomUUID(), value, addedAt: new Date().toISOString() }],
+  }));
+}
+
+export async function removeCompanyBlockKeyword(id: string): Promise<Settings> {
+  return updateSettings((s) => ({ ...s, companyBlockKeywords: s.companyBlockKeywords.filter((k) => k.id !== id) }));
+}
+
+export async function addRoleBlockKeyword(value: string): Promise<Settings> {
+  return updateSettings((s) => ({
+    ...s,
+    roleBlockKeywords: [...s.roleBlockKeywords, { id: crypto.randomUUID(), value, addedAt: new Date().toISOString() }],
+  }));
+}
+
+export async function removeRoleBlockKeyword(id: string): Promise<Settings> {
+  return updateSettings((s) => ({ ...s, roleBlockKeywords: s.roleBlockKeywords.filter((k) => k.id !== id) }));
 }
