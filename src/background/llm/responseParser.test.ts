@@ -108,6 +108,18 @@ describe("parseAnalysisResponse", () => {
     }
   });
 
+  it("nulls out a flattened value that is literally the source-tag string itself", () => {
+    const flattened = validResultJson({
+      companyInfo: { ...validResultJson().companyInfo, engineeringSize: "llm-estimate" },
+    });
+    const raw = "```json\n" + JSON.stringify(flattened) + "\n```";
+    const result = parseAnalysisResponse(raw);
+    expect(result.ok).toBe(true);
+    if (result.ok) {
+      expect(result.result.companyInfo?.engineeringSize).toEqual({ value: null, source: "llm-estimate" });
+    }
+  });
+
   it("accepts companyInfo: null (the model was told it's already cached)", () => {
     const raw = "```json\n" + JSON.stringify(validResultJson({ companyInfo: null })) + "\n```";
     const result = parseAnalysisResponse(raw);
