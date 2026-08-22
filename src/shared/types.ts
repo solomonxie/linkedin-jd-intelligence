@@ -33,6 +33,11 @@ export interface CompanyInfo {
 }
 
 export interface RoleInfo {
+  /** Short team name (e.g. "Data Platform", "DevOps", "BI", "Support") — named explicitly on the
+   * posting when stated, otherwise the LLM's best guess from the role's responsibilities. */
+  team: Fact<string>;
+  /** One short sentence on what that team does/owns. Same sourcing as `team`. */
+  teamMission: Fact<string>;
   salaryRange: Fact<string>;
   /** Must never be "llm-estimate" — null unless literally shown on the page. */
   applicantCount: Fact<number>;

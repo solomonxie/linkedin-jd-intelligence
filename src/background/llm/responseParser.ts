@@ -79,6 +79,8 @@ const companyInfoSchema = z.object({
 });
 
 const roleInfoSchema = z.object({
+  team: factSchema(z.string()),
+  teamMission: factSchema(z.string()),
   salaryRange: factSchema(z.string()),
   applicantCount: factSchema(z.number()),
   seniorHeadcount: factSchema(z.number()),
