@@ -312,35 +312,38 @@ blocked screen (reason + Unblock, or a pointer to Settings for a keyword match) 
 panel, and skips auto-analyze — the point is to never spend an API call on a job the user has already
 ruled out.
 
-**List dimming** (`content-scripts/linkedin/listFilter.ts`): the block list only ever prevented
+**List hiding** (`content-scripts/linkedin/listFilter.ts`): the block list only ever prevented
 *analysis* — LinkedIn's own job **list** (search-results rail, "related jobs" rail on a detail page) kept
-showing every card untouched. `listFilter.ts` dims a card (`opacity: 0.35`, grayscale, a small "🚫
-Blocked" badge) when a match is found.
+showing every card untouched. `listFilter.ts` sets `display: none` on a card entirely (not a dim/badge —
+that was an earlier version, see below) when a match is found, and clears it once a card no longer
+matches; the pass is idempotent either way.
 
-Two things this file first assumed about LinkedIn's markup turned out false once checked against a real
-page (see git history for the false-start version): cards aren't `<li>`-wrapped, and a card's
-`/jobs/view/...` anchor carries no SEO slug — just a bare `/jobs/view/{id}/?trackingId=...` — so neither
-`anchor.closest("li")` nor the company-info cache's URL-slug trick (used for the side panel's
-pre-analysis check, see above) applies here. What the real markup does give: the anchor's own text is the
-job title verbatim, and walking up from it, **the first ancestor whose text is meaningfully longer than
-the title alone** is the card — title, company, and location/meta all concatenated with no separator
-(e.g. `"AffirmSenior Software Engineer, Backend..."`). That's a structural heuristic, not a class name or
-fixed depth, so it survives LinkedIn renaming/adding a wrapper div. `reasonForCardContent()` then matches:
-job id exactly (from the href, unaffected by any of this); company and its keyword list as a **substring**
-of the concatenated "everything but the title" blob (not the side panel's exact key match — there's no
-isolated company-name field to key off here, so this is a deliberately looser, file-scoped tradeoff); role
-keyword against the title text alone, which *is* clean.
+This file has gone through two false starts, both caught by checking against a real page's markup rather
+than guessing further (see git history): first assuming cards are `<li>`-wrapped (they aren't), then
+assuming a card has a `/jobs/view/...` anchor carrying an SEO slug — list cards in the search-results rail
+turn out to have **no `<a href>` at all**; they're `<div role="button">` with a JS click handler, and the
+one real `/jobs/view/...` anchor present belonged to the *detail pane*, not any list card, which is what
+caused the second version to hide/dim the currently-open job's header instead of the list. What actually
+identifies a card, reliably: `componentkey="job-card-component-ref-{jobId}"` on its outer element — a
+semantically-named React tracking attribute, not a hashed CSS-module class, present on both the outer
+`[role="button"]` and an inner wrapper (deduplicated by job id, keeping the outermost). Nothing in the
+detail pane carries this attribute, so this selector structurally can't touch it. `reasonForCardContent()`
+matches: job id exactly (straight from the `componentkey` value, no href parsing needed at all); company
+and its keyword list as a **substring** of the card's full text with its title cut back out (there's no
+isolated company-name element to select, so this stays a blob match — a deliberately looser tradeoff than
+the side panel's exact key match, scoped to this one file); role keyword against the title text alone
+(the card's first `<p>`), which *is* clean.
 
 Every card is re-evaluated from scratch on every pass (not tracked by DOM node identity), which also makes
-it correct against a virtualized/recycled list for free — a recycled node just gets its dim/badge added or
-removed to match whatever job it currently points to.
+it correct against a virtualized/recycled list for free — a recycled node just gets `display` toggled to
+match whatever job it currently points to.
 
 Driven by the same `MutationObserver` `main.ts` already runs for SPA-navigation detection (one observer,
-not two), plus `onSettingsChanged` so blocking a company from the side panel re-dims an already-open list
-tab immediately. Registered *after* the `GET_PAGE_INFO` listener and wrapped in `try`/`catch` at every
-level (per-card, per-pass, at the call site in `main.ts`) — this is a bonus feature layered on top of the
-content script, and a failure in it must never take down JD scraping/analysis, which `main.ts` already
-provides independent of whether this module loaded cleanly.
+not two), plus `onSettingsChanged` so blocking a company from the side panel hides it from an already-open
+list tab immediately. Registered *after* the `GET_PAGE_INFO` listener and wrapped in `try`/`catch` at
+every level (per-card, per-pass, at the call site in `main.ts`) — this is a bonus feature layered on top
+of the content script, and a failure in it must never take down JD scraping/analysis, which `main.ts`
+already provides independent of whether this module loaded cleanly.
 
 **Pre-analysis coverage**: company/title are only known *exactly* from a completed analysis — same
 chicken-and-egg problem the company-info cache hits. `checkBlocked()` reuses that cache's URL-slug hint

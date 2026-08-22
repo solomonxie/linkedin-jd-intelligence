@@ -1,44 +1,31 @@
-// Dims job cards in LinkedIn's job list (search-results rail, "related jobs"
-// rail on a detail page, etc.) that match the block list.
+// Hides job cards in LinkedIn's job list (search-results rail, "related jobs" rail on a detail
+// page, etc.) that match the block list.
 //
-// LinkedIn's list markup has no <li> wrapper and no stable class name (every
-// class here is a hashed CSS-module name that changes across deploys), and a
-// card's job-view anchor carries no SEO slug — just a bare
-// /jobs/view/{id}/?trackingId=... — so neither of this file's first attempt
-// at finding "the card" and "the company name" holds up. What *is* stable:
-// the anchor's own text is the job title, and walking up from it, the first
-// ancestor whose text is meaningfully longer than the title alone is the
-// card (title + company + location + meta all concatenated with no
-// separator, e.g. "AffirmSenior Software Engineer, Backend..."). Company
-// matching against that blob is necessarily substring-based, not the exact
-// key match the side panel uses — a deliberate, looser tradeoff scoped to
-// this file alone (see reasonForCardContent).
+// Two earlier attempts at this got the card boundary wrong — first assuming an <li> wrapper (there
+// isn't one), then assuming a job-view anchor with an SEO slug (list cards aren't <a> elements at
+// all — they're <div role="button"> with a JS click handler, no href). Checked against a real page,
+// each card carries a stable, semantically-named marker instead of either:
+// componentkey="job-card-component-ref-{jobId}" — clearly a React tracking key, not a hashed
+// CSS-module class, so far less likely to shift on a LinkedIn redeploy than anything else on the
+// page. Nothing on the detail pane (the currently-open job's own content) carries this attribute,
+// so targeting it can't touch that pane — a real bug the anchor-based version had, since a handful
+// of unrelated detail-pane links (feedback widget, footer, company-insight citations) happened to
+// carry the open job's id as a query param and got matched instead of any list card.
 //
-// Every card, and the pass as a whole, is wrapped defensively: a malformed
-// card or a settings-read failure only skips filtering, it never throws out
-// of this module and never touches the rest of the content script (the JD
-// scraper in main.ts keeps working regardless).
+// Every card, and the pass as a whole, is wrapped defensively: a malformed card or a settings-read
+// failure only skips filtering, it never throws out of this module and never touches the rest of
+// the content script (the JD scraper in main.ts keeps working regardless).
 
 import type { BlockReason } from "../../shared/blockList";
 import { getSettings, onSettingsChanged } from "../../shared/storage";
 import type { Settings } from "../../shared/types";
-import { extractJobId } from "./scraper";
 
-const BADGE_CLASS = "jdi-blocked-badge";
-const BADGE_STYLE =
-  "position:absolute;top:4px;right:4px;background:#b91c1c;color:#fff;font:600 11px system-ui,sans-serif;" +
-  "padding:2px 6px;border-radius:4px;z-index:2;pointer-events:none;";
-
-// A card boundary must have at least this much text beyond the title alone (company + location +
-// meta) — filters out trivial single-wrapper-div hops that don't actually add anything.
-const MIN_EXTRA_TEXT = 5;
-// Safety cap so a title-less/textless anchor (icon-only link, unexpected markup) can't walk this
-// all the way up to <body> and have every card on the page collapse into one "card."
-const MAX_ANCESTOR_HOPS = 10;
+const CARD_SELECTOR = '[componentkey^="job-card-component-ref-"]';
+const CARD_KEY_PREFIX = "job-card-component-ref-";
 
 interface CardInfo {
   card: HTMLElement;
-  jobId: string | null;
+  jobId: string;
   titleText: string;
   companyBlob: string;
 }
@@ -46,42 +33,29 @@ interface CardInfo {
 let currentSettings: Settings | null = null;
 let passScheduled = false;
 
-/** Walks up from a job-view anchor to the smallest ancestor whose text is meaningfully longer than
- * the anchor's own — see the module comment for why depth/class name aren't usable instead. */
-function findCardBoundary(anchor: HTMLAnchorElement): HTMLElement | null {
-  const anchorText = anchor.textContent?.trim() ?? "";
-  let el: HTMLElement | null = anchor;
-  for (let i = 0; i < MAX_ANCESTOR_HOPS && el; i++) {
-    const text = el.textContent?.trim() ?? "";
-    if (text.length >= anchorText.length + MIN_EXTRA_TEXT) return el;
-    el = el.parentElement;
-  }
-  return null;
-}
-
 export function findJobCards(): CardInfo[] {
-  const anchors = document.querySelectorAll<HTMLAnchorElement>('a[href*="/jobs/view/"]');
-  const seen = new Set<HTMLElement>();
+  const seen = new Set<string>();
   const cards: CardInfo[] = [];
-  for (const anchor of anchors) {
-    const card = findCardBoundary(anchor);
-    if (!card || seen.has(card)) continue;
-    seen.add(card);
-    const titleText = anchor.textContent?.trim() ?? "";
-    const fullText = card.textContent?.trim() ?? "";
-    // Company name + location/meta, with the title text (found once) cut back out — see module
-    // comment. Order between what was before/after the title in the DOM doesn't matter, both ends
-    // just get concatenated; that's still fine for a substring check.
+  for (const el of document.querySelectorAll<HTMLElement>(CARD_SELECTOR)) {
+    const jobId = el.getAttribute("componentkey")?.slice(CARD_KEY_PREFIX.length) ?? "";
+    // The same card renders componentkey on both its outer <div role="button"> and an inner
+    // wrapper — keep only the first (outermost, in document order) match per job id.
+    if (!jobId || seen.has(jobId)) continue;
+    seen.add(jobId);
+    const titleText = el.querySelector("p")?.textContent?.trim() ?? "";
+    const fullText = el.textContent?.trim() ?? "";
+    // Company name + location/meta, with the title text (found once) cut back out — there's no
+    // isolated company-name element to select, so this is a broad blob, not a clean field.
     const companyBlob = titleText ? fullText.replace(titleText, " ") : fullText;
-    cards.push({ card, jobId: extractJobId(anchor.href), titleText, companyBlob });
+    cards.push({ card: el, jobId, titleText, companyBlob });
   }
   return cards;
 }
 
-/** Pure: derives the block reason (if any) for a card from its title text + the surrounding
- * "everything else" blob — no DOM, no chrome APIs, so this is the part of the module worth
- * unit-testing directly. Company matching is a substring check against the blob (not the side
- * panel's exact key match) since the card gives no isolated company-name field to key off. */
+/** Pure: derives the block reason (if any) for a card from its job id, title text, and the
+ * surrounding "everything else" blob — no DOM, no chrome APIs, so this is the part of the module
+ * worth unit-testing directly. Company matching is a substring check against the blob (not the
+ * side panel's exact key match) since the card gives no isolated company-name field to key off. */
 export function reasonForCardContent(
   input: { jobId: string | null; titleText: string; companyBlob: string },
   settings: Settings,
@@ -105,24 +79,10 @@ export function reasonForCardContent(
   return null;
 }
 
+/** Hides (not dims) a blocked card entirely, and un-hides one that no longer matches — idempotent,
+ * so re-running it every pass with no change is a no-op either way. */
 export function applyCardState(card: HTMLElement, reason: BlockReason | null): void {
-  const badge = card.querySelector<HTMLElement>(`.${BADGE_CLASS}`);
-  if (!reason) {
-    card.style.opacity = "";
-    card.style.filter = "";
-    badge?.remove();
-    return;
-  }
-  card.style.opacity = "0.35";
-  card.style.filter = "grayscale(1)";
-  if (!badge) {
-    if (getComputedStyle(card).position === "static") card.style.position = "relative";
-    const el = document.createElement("div");
-    el.className = BADGE_CLASS;
-    el.textContent = "🚫 Blocked";
-    el.style.cssText = BADGE_STYLE;
-    card.appendChild(el);
-  }
+  card.style.display = reason ? "none" : "";
 }
 
 function runFilterPass(): void {

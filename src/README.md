@@ -19,8 +19,8 @@ Read top to bottom; each arrow is "calls" or "sends a message to".
           scrapeRawPageText()  - `main` landmark -> document.body fallback, length-capped
           watches MutationObserver + URL changes (LinkedIn is an SPA)
      -> src/content-scripts/linkedin/listFilter.ts
-          dims job cards matching the block list on LinkedIn's own list pages
-          (search-results, "related jobs") — see docs/DESIGN.md "List dimming"
+          hides job cards matching the block list on LinkedIn's own list pages
+          (search-results, "related jobs") — see docs/DESIGN.md "List hiding"
      -> listens for GET_PAGE_INFO                    [src/shared/messaging.ts]
 
 2) User opens the side panel (toolbar icon)
@@ -72,6 +72,6 @@ Read top to bottom; each arrow is "calls" or "sends a message to".
 
 - `manifest.config.ts`, `vite.config.ts`, `tsconfig.json` — build/MV3 config, start here to see what gets built and how.
 - `src/background/` — the service worker; all LLM calls and cache writes happen here, not in the UI.
-- `src/content-scripts/linkedin/` — the only code that touches LinkedIn's DOM: raw text + a URL-derived job id for scraping (no per-field selectors), plus the block-list list-dimming pass.
+- `src/content-scripts/linkedin/` — the only code that touches LinkedIn's DOM: raw text + a URL-derived job id for scraping (no per-field selectors), plus the block-list list-hiding pass.
 - `src/sidepanel/`, `src/options/` — the two React UI surfaces.
 - `src/shared/` — everything both sides depend on: types, storage/db wrappers, the messaging envelope, the block-list check, and the pure computation modules (`matchFacts.ts`, `skillPrevalence.ts`, `resumeParser/`).
