@@ -346,11 +346,21 @@ of the content script, and a failure in it must never take down JD scraping/anal
 already provides independent of whether this module loaded cleanly.
 
 **Pre-analysis coverage**: company/title are only known *exactly* from a completed analysis — same
-chicken-and-egg problem the company-info cache hits. `checkBlocked()` reuses that cache's URL-slug hint
-(`extractCompanySlugHint`) plus a new `extractTitleSlugHint` (same regex family, captures the slug before
-`-at-` instead of after), humanized by turning dashes into spaces, as a best-effort pre-analysis guess so a
-keyword block can apply *before* the first analysis, not just on a revisit. A miss just means the block
-can't apply until the job is analyzed once — never a wrong block.
+chicken-and-egg problem the company-info cache hits. `App.tsx`'s `bestCompany`/`bestJobTitle` fall back
+through three sources in order: the analyzed record; `PageInfoResponse.jobTitle`/`.company`, read
+LLM-free by `listFilter.ts`'s `findCurrentJobCardInfo()` straight off the current job's own row in a
+currently-rendered LinkedIn list (see "List hiding" above — same card lookup, just returning the clean
+title/company pair instead of a block verdict); and last, `extractCompanySlugHint`/`extractTitleSlugHint`
+from the job URL's SEO slug — mostly dead weight now that LinkedIn's list-card/detail links don't carry
+that slug, kept only as a final fallback in case a slugged URL is ever seen again. This is what lets
+**Block this job/company** and a real (not "Unknown") label work immediately, before any analysis has
+run — not just a keyword block. Any level missing just falls through to the next; a full miss just means
+blocking/keyword-matching can't apply (or the label reads "Unknown") until the job is analyzed once —
+never a wrong guess.
+
+`BlockedJob.url` / `BlockedCompany.sampleJobUrl` additionally capture the job posting's URL at the moment
+of blocking (optional — absent on entries blocked before this field existed), so the Settings page can
+render each blocked entry as a link back to it even when the title/company came back blank.
 
 ### Company info cache (`shared/companyKey.ts`, `shared/db.ts` "companies" store)
 

@@ -179,7 +179,16 @@ export function SettingsPanel() {
         <ul className="blocked-list">
           {settings.blockedCompanies.map((c) => (
             <li key={c.key}>
-              <span>{c.name} (company)</span>
+              <span>
+                {c.sampleJobUrl ? (
+                  <a href={c.sampleJobUrl} target="_blank" rel="noreferrer">
+                    {c.name}
+                  </a>
+                ) : (
+                  c.name
+                )}{" "}
+                (company)
+              </span>
               <button type="button" onClick={() => void unblockCompany(c.key)}>
                 Unblock
               </button>
@@ -188,7 +197,15 @@ export function SettingsPanel() {
           {settings.blockedJobs.map((j) => (
             <li key={j.jobId}>
               <span>
-                {j.jobTitle || "Unknown job"} - {j.company || "Unknown company"}
+                {j.url ? (
+                  <a href={j.url} target="_blank" rel="noreferrer">
+                    {j.jobTitle || "Unknown job"} - {j.company || "Unknown company"}
+                  </a>
+                ) : (
+                  <>
+                    {j.jobTitle || "Unknown job"} - {j.company || "Unknown company"}
+                  </>
+                )}
               </span>
               <button type="button" onClick={() => void unblockJob(j.jobId)}>
                 Unblock

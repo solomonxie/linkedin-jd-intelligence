@@ -1,6 +1,6 @@
 // @vitest-environment jsdom
 import { describe, expect, it } from "vitest";
-import { applyCardState, findJobCards, reasonForCardContent } from "./listFilter";
+import { applyCardState, findCurrentJobCardInfo, findJobCards, reasonForCardContent } from "./listFilter";
 import { DEFAULT_SETTINGS, type Settings } from "../../shared/types";
 
 function settingsWith(overrides: Partial<Settings>): Settings {
@@ -91,6 +91,18 @@ describe("findJobCards", () => {
   it("ignores elements with no componentkey (e.g. the detail pane)", () => {
     document.body.innerHTML = `<div role="button"><p>${TITLE}</p><p>PDF Solutions</p></div>`;
     expect(findJobCards()).toHaveLength(0);
+  });
+});
+
+describe("findCurrentJobCardInfo", () => {
+  it("reads title/company for a job id whose row is on the page", () => {
+    document.body.innerHTML = jobCardHtml("4454678676", TITLE, "PDF Solutions", "Vancouver, BC");
+    expect(findCurrentJobCardInfo("4454678676")).toEqual({ jobTitle: TITLE, company: "PDF Solutions" });
+  });
+
+  it("returns nulls when that job's row isn't rendered (e.g. a bare detail page)", () => {
+    document.body.innerHTML = jobCardHtml("1", "Other Job", "Other Co", "Remote");
+    expect(findCurrentJobCardInfo("4454678676")).toEqual({ jobTitle: null, company: null });
   });
 });
 

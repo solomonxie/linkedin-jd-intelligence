@@ -81,7 +81,7 @@ export function useActiveJob(): ActiveJobState {
           // No content script was ever going to answer here — this is just an ordinary
           // "wrong page" state, not a recoverable content-script-missing one.
           if (!cancelled) {
-            setPageInfo({ jobId: null, url: tab.url ?? "", rawPageText: "" });
+            setPageInfo({ jobId: null, url: tab.url ?? "", rawPageText: "", jobTitle: null, company: null });
             setRecord(null);
           }
           return;
