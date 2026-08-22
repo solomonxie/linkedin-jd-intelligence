@@ -29,6 +29,8 @@ SCHEMA
   "workplaceType": "remote" | "hybrid" | "onsite" | null,
   "companyInfo": CompanyInfo | null,
   "role": {
+    "team": Fact<string>,          // see TEAM below
+    "teamMission": Fact<string>,   // see TEAM below
     "salaryRange": Fact<string>,
     "applicantCount": Fact<number>,
     "seniorHeadcount": Fact<number>,
@@ -87,6 +89,15 @@ FACT-SOURCING RULES (apply to every Fact<T> field within companyInfo and role)
   applicantCount and round to the nearest whole number. Example: 100 applicants, panel says 50% Senior
   -> seniorHeadcount value is 50. If the posting shows no such panel, or applicantCount is null, return
   { "value": null, "source": "page" } — never estimate this from general knowledge about the company.
+
+TEAM (role.team, role.teamMission)
+role.team is a short team name — "Data Platform", "DevOps", "Platform", "BI", "Support", "Growth", etc.
+role.teamMission is one short sentence on what that team does or owns. source: "page" when the posting
+names the team explicitly (e.g. "join our Developer Experience team") or clearly describes its charter;
+"llm-estimate" when there's no explicit team name and you're inferring a plausible one from the role's own
+responsibilities (same spirit as ROLE CLASSIFICATION below — infer the real function from what the job
+actually does). Return { "value": null, "source": "page" } for either field when the posting gives too
+little to even reasonably infer one — do not force a guess for a role with no team-shaped context at all.
 
 APPLICANT COUNT INSIGHT (role.applicantCountInsight)
 Not a Fact — a plain string or null. Only write one when role.applicantCount.value is known (non-null)
