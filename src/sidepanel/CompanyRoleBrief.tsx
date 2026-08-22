@@ -176,6 +176,8 @@ export function CompanyRoleBrief({ record, onSaved }: { record: JobRecord; onSav
         })}
       </ul>
 
+      {role.applicantCountInsight && <p className="applicant-insight">💡 {role.applicantCountInsight}</p>}
+
       {blankFields.length > 0 && (
         <div className="brief-add-field">
           <select

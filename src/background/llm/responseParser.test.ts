@@ -21,6 +21,7 @@ function validResultJson(overrides: Record<string, unknown> = {}) {
       salaryRange: { value: "$150K-$190K", source: "page" },
       applicantCount: { value: 87, source: "page" },
       seniorHeadcount: { value: 44, source: "page" },
+      applicantCountInsight: null,
     },
     roleClassification: { normalizedRole: "Data Engineer", rationale: "Focused on pipelines." },
     requirements: [
@@ -157,6 +158,34 @@ describe("parseAnalysisResponse", () => {
     expect(result.ok).toBe(true);
     if (result.ok) {
       expect(result.result.requirements[0].matched).toBe(false);
+    }
+  });
+
+  it("passes through a real applicantCountInsight string", () => {
+    const raw =
+      "```json\n" +
+      JSON.stringify(
+        validResultJson({
+          role: { ...validResultJson().role, applicantCountInsight: "Likely high given the above-market salary." },
+        }),
+      ) +
+      "\n```";
+    const result = parseAnalysisResponse(raw);
+    expect(result.ok).toBe(true);
+    if (result.ok) {
+      expect(result.result.role.applicantCountInsight).toBe("Likely high given the above-market salary.");
+    }
+  });
+
+  it("recovers when applicantCountInsight is an array instead of a string", () => {
+    const raw =
+      "```json\n" +
+      JSON.stringify(validResultJson({ role: { ...validResultJson().role, applicantCountInsight: ["Point one.", "Point two."] } })) +
+      "\n```";
+    const result = parseAnalysisResponse(raw);
+    expect(result.ok).toBe(true);
+    if (result.ok) {
+      expect(result.result.role.applicantCountInsight).toBe("Point one. Point two.");
     }
   });
 
