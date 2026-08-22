@@ -78,6 +78,24 @@ function displayValue(def: FieldDef, value: unknown): string {
   return def.format ? def.format(value) : Array.isArray(value) ? value.join(", ") : String(value);
 }
 
+/** Shown in place of CompanyRoleBrief while a first-time analysis is still running, so the panel's
+ * shape is visible immediately instead of an empty gap. */
+export function CompanyRoleBriefSkeleton() {
+  return (
+    <div className="brief card">
+      <h3>Company & Role Brief</h3>
+      <ul>
+        {FIELDS.map((def) => (
+          <li key={def.key}>
+            <span className="brief-label">{def.label}</span>
+            <span className="skeleton-row">…</span>
+          </li>
+        ))}
+      </ul>
+    </div>
+  );
+}
+
 export function CompanyRoleBrief({ record, onSaved }: { record: JobRecord; onSaved?: () => void }) {
   const [editingKey, setEditingKey] = useState<string | null>(null);
   const [draft, setDraft] = useState("");
