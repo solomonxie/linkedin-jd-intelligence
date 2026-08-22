@@ -5,6 +5,7 @@
 
 import { broadcastPageChanged, isGetPageInfoRequest, type PageInfoResponse } from "../../shared/messaging";
 import { extractJobId, extractRawPageTextWhenReady } from "./scraper";
+import { initListFilter, scheduleListFilterPass } from "./listFilter";
 
 async function buildPageInfo(): Promise<PageInfoResponse> {
   return {
@@ -19,6 +20,15 @@ chrome.runtime.onMessage.addListener((message, _sender, sendResponse) => {
   void buildPageInfo().then(sendResponse);
   return true; // async response — keep the message channel open until it resolves
 });
+
+// Registered after the message listener above so a failure here can never stop this tab from
+// answering GET_PAGE_INFO — block-list list-dimming is a bonus, not core functionality.
+try {
+  initListFilter();
+} catch {
+  // See listFilter.ts's own module comment — this shouldn't throw, but never let it take the rest
+  // of this content script down if it somehow does.
+}
 
 let lastUrl = location.href;
 
@@ -41,9 +51,18 @@ patchHistoryMethod("replaceState");
 window.addEventListener("popstate", notifyIfUrlChanged);
 
 // Fallback safety net in case a navigation changes the URL some other way
-// (debounced since job-detail panels re-render often on their own).
+// (debounced since job-detail panels re-render often on their own). Also
+// drives the block-list list-dimming pass — same DOM churn is what would
+// reveal newly-rendered job cards, so one shared observer covers both.
 let mutationDebounce: ReturnType<typeof setTimeout> | undefined;
 new MutationObserver(() => {
   clearTimeout(mutationDebounce);
-  mutationDebounce = setTimeout(notifyIfUrlChanged, 300);
+  mutationDebounce = setTimeout(() => {
+    notifyIfUrlChanged();
+    try {
+      scheduleListFilterPass();
+    } catch {
+      // Same defensive stance as the initListFilter() call above.
+    }
+  }, 300);
 }).observe(document.body, { childList: true, subtree: true });
