@@ -36,9 +36,8 @@ function makeRecord(overrides: {
     companyInfo: null,
     role: {
       salaryRange: { value: null, source: "llm-estimate" },
-      seniorHeadcount: { value: null, source: "llm-estimate" },
       applicantCount: { value: overrides.applicantCount, source: "page" },
-      applicantInsights: { value: null, source: "page" },
+      seniorHeadcount: { value: null, source: "page" },
     },
     roleClassification: null,
     requirements: overrides.skills.map(mustHave),
