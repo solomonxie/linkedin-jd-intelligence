@@ -39,7 +39,6 @@ const FIELDS: FieldDef[] = [
     kind: "number",
     format: (v) => `${v} senior applicants`,
   },
-  { key: "applicantInsights", group: "role", label: "Applicant insights", kind: "text" },
 ];
 
 function isBlank(value: unknown): boolean {
