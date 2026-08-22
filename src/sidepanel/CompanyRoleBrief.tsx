@@ -17,7 +17,7 @@ interface FieldDef {
 
 const FIELDS: FieldDef[] = [
   { key: "industry", group: "companyInfo", label: "Industry", kind: "array" },
-  { key: "mainProducts", group: "companyInfo", label: "Main products", kind: "array" },
+  { key: "mainProducts", group: "companyInfo", label: "Products", kind: "array" },
   { key: "employeeSize", group: "companyInfo", label: "Size", kind: "text" },
   { key: "engineeringSize", group: "companyInfo", label: "Eng. size", kind: "text" },
   { key: "arr", group: "companyInfo", label: "ARR", kind: "text" },
@@ -32,7 +32,13 @@ const FIELDS: FieldDef[] = [
     kind: "number",
     format: (v) => `${v} applicants`,
   },
-  { key: "seniorHeadcount", group: "role", label: "Senior eng. headcount", kind: "text" },
+  {
+    key: "seniorHeadcount",
+    group: "role",
+    label: "Senior headcount",
+    kind: "number",
+    format: (v) => `${v} senior applicants`,
+  },
   { key: "applicantInsights", group: "role", label: "Applicant insights", kind: "text" },
 ];
 
