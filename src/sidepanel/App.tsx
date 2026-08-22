@@ -3,11 +3,13 @@ import { useActiveJob } from "./useActiveJob";
 import { useSettings } from "../shared/useSettings";
 import { useSkillPrevalence } from "./useSkillPrevalence";
 import { requestAnalyze } from "../shared/messaging";
-import { setActiveResumeProfile } from "../shared/storage";
+import { blockCompany, blockJob, setActiveResumeProfile, unblockCompany, unblockJob } from "../shared/storage";
 import { downloadAllData } from "../shared/exportData";
 import { countByTier } from "../shared/matchFacts";
 import { isStalePending } from "../shared/jobStatus";
 import { normalizeSkillName } from "../shared/skillPrevalence";
+import { extractCompanySlugHint, extractTitleSlugHint, humanizeSlug } from "../shared/companyKey";
+import { blockReasonText, checkBlocked } from "../shared/blockList";
 import { RequirementTree, RequirementTreeSkeleton } from "./RequirementTree";
 import { CompanyRoleBrief, CompanyRoleBriefSkeleton } from "./CompanyRoleBrief";
 import { InterviewRounds } from "./InterviewRounds";
@@ -27,6 +29,18 @@ export function App() {
 
   const activeProfile = settings.resumeProfiles.find((p) => p.id === settings.activeResumeProfileId) ?? null;
   const prevalence = useSkillPrevalence(record?.regionBucket ?? null);
+
+  // Best-known company/title for the block check: the analyzed record's exact value once one
+  // exists, otherwise a best-effort guess from LinkedIn's SEO-slugged job URL — a miss just means
+  // a keyword block can't apply until the job is first analyzed, same tradeoff as the company-info
+  // cache's slug hint (see shared/companyKey.ts).
+  const companySlugHint = pageInfo?.url ? extractCompanySlugHint(pageInfo.url) : null;
+  const titleSlugHint = pageInfo?.url ? extractTitleSlugHint(pageInfo.url) : null;
+  const bestCompany = record?.company ?? (companySlugHint ? humanizeSlug(companySlugHint) : null);
+  const bestJobTitle = record?.jobTitle ?? (titleSlugHint ? humanizeSlug(titleSlugHint) : null);
+  const blockReason = pageInfo?.jobId
+    ? checkBlocked(settings, { jobId: pageInfo.jobId, company: bestCompany, jobTitle: bestJobTitle })
+    : null;
 
   function prevalenceTooltip(skill: string): string | null {
     const region = record?.regionBucket;
@@ -66,11 +80,12 @@ export function App() {
   useEffect(() => {
     const jobId = pageInfo?.jobId;
     if (!jobId || !activeProfile || !settings.openaiApiKey) return;
+    if (blockReason) return;
     if (record !== null) return;
     if (autoAnalyzedJobId.current === jobId) return;
     autoAnalyzedJobId.current = jobId;
     void handleAnalyze();
-  }, [pageInfo?.jobId, activeProfile, settings.openaiApiKey, record]);
+  }, [pageInfo?.jobId, activeProfile, settings.openaiApiKey, record, blockReason]);
 
   // OpenAI's response isn't streamed, so there's no real completion percentage —
   // an elapsed-time counter is the honest "progress info" available. Ticks once
@@ -117,6 +132,39 @@ export function App() {
     return (
       <Shell>
         <p className="empty-state">Open a LinkedIn job posting to analyze it.</p>
+      </Shell>
+    );
+  }
+  if (blockReason) {
+    return (
+      <Shell>
+        <div className="empty-state">
+          <p>{blockReasonText(blockReason)}</p>
+          {blockReason.type === "job" && (
+            <button
+              type="button"
+              className="btn-primary"
+              onClick={() => void unblockJob(blockReason.jobId).then(refresh)}
+            >
+              Unblock this job
+            </button>
+          )}
+          {blockReason.type === "company" && (
+            <button
+              type="button"
+              className="btn-primary"
+              onClick={() => void unblockCompany(blockReason.key).then(refresh)}
+            >
+              Unblock this company
+            </button>
+          )}
+          {(blockReason.type === "company-keyword" || blockReason.type === "role-keyword") && (
+            <p className="muted">Manage blocked keywords in Settings.</p>
+          )}
+          <button type="button" onClick={() => chrome.runtime.openOptionsPage()}>
+            Open Settings
+          </button>
+        </div>
       </Shell>
     );
   }
@@ -223,6 +271,26 @@ export function App() {
         </button>
         <button type="button" onClick={() => void downloadAllData()}>
           Export entire DB
+        </button>
+        <button
+          type="button"
+          disabled={!pageInfo?.jobId}
+          onClick={() => {
+            if (!pageInfo?.jobId) return;
+            void blockJob({ jobId: pageInfo.jobId, jobTitle: bestJobTitle ?? "", company: bestCompany ?? "" }).then(refresh);
+          }}
+        >
+          Block this job
+        </button>
+        <button
+          type="button"
+          disabled={!bestCompany}
+          onClick={() => {
+            if (!bestCompany) return;
+            void blockCompany(bestCompany).then(refresh);
+          }}
+        >
+          Block this company
         </button>
       </footer>
     </Shell>

@@ -286,6 +286,28 @@ instead of `App`, with the requirement tree and brief pre-expanded (no interacti
 them with), then calls `window.print()` once the layout settles — a normal tab prints fine, so the
 browser's native "Save as PDF" destination in that dialog is the actual PDF output.
 
+### Block list (`shared/blockList.ts`, `shared/storage.ts`)
+
+The side panel footer has "Block this job"/"Block this company" links; the Options Settings page has a
+"Blocked companies & jobs" list (with per-entry Unblock) plus two free-form keyword lists — company-name
+keywords and role-title keywords, each matched as a case-insensitive substring. All four lists live on the
+`Settings` singleton (`blockedJobs`, `blockedCompanies`, `companyBlockKeywords`, `roleBlockKeywords`), not
+`JobRecord`/IndexedDB — blocking hides a job from analysis, it never deletes history.
+
+`checkBlocked()` (pure, `shared/blockList.ts`) runs in the side panel before both the auto-analyze effect
+and the manual Analyze button render, in priority order: exact job id, then exact company (keyed like the
+company-info cache, see below), then a company-name keyword, then a role-title keyword. A match renders a
+blocked screen (reason + Unblock, or a pointer to Settings for a keyword match) instead of the normal
+panel, and skips auto-analyze — the point is to never spend an API call on a job the user has already
+ruled out.
+
+**Pre-analysis coverage**: company/title are only known *exactly* from a completed analysis — same
+chicken-and-egg problem the company-info cache hits. `checkBlocked()` reuses that cache's URL-slug hint
+(`extractCompanySlugHint`) plus a new `extractTitleSlugHint` (same regex family, captures the slug before
+`-at-` instead of after), humanized by turning dashes into spaces, as a best-effort pre-analysis guess so a
+keyword block can apply *before* the first analysis, not just on a revisit. A miss just means the block
+can't apply until the job is analyzed once — never a wrong block.
+
 ### Company info cache (`shared/companyKey.ts`, `shared/db.ts` "companies" store)
 
 `companyInfo` rarely changes job-to-job for the same company, so it's persisted separately from

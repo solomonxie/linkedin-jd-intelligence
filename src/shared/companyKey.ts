@@ -25,3 +25,21 @@ export function extractCompanySlugHint(url: string): string | null {
   const match = url.match(/\/jobs\/view\/.*-at-([a-z0-9-]+)-\d+(?:[/?]|$)/i);
   return match ? match[1] : null;
 }
+
+/**
+ * Best-effort job title guess from the same SEO-slugged URL, for the same
+ * reason as `extractCompanySlugHint` — lets the block list check a job title
+ * keyword before the LLM has ever run, so a blocked posting never spends a
+ * call. Null (no "-at-" segment, or an unslugged/numeric-only URL) just falls
+ * back to the normal per-analysis title once one exists.
+ */
+export function extractTitleSlugHint(url: string): string | null {
+  const match = url.match(/\/jobs\/view\/([a-z0-9-]+)-at-[a-z0-9-]+-\d+(?:[/?]|$)/i);
+  return match ? match[1] : null;
+}
+
+/** Turns a URL slug into rough, space-separated text for keyword substring matching
+ * ("software-engineer-at-affirm" -> "software engineer at affirm"). */
+export function humanizeSlug(slug: string): string {
+  return slug.replace(/-/g, " ");
+}

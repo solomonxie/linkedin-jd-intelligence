@@ -532,17 +532,33 @@ li:hover .edit-icon {
   font-weight: 650;
 }
 
-.resume-profile-list {
+.resume-profile-list,
+.blocked-list {
   list-style: none;
   padding: 0;
 }
 
-.resume-profile-list li {
+.resume-profile-list li,
+.blocked-list li {
   display: flex;
   align-items: center;
   gap: 8px;
   padding: 5px 0;
   border-bottom: 1px solid var(--border);
+}
+
+.blocked-list li span {
+  flex: 1;
+}
+
+.keyword-adder {
+  display: flex;
+  gap: 8px;
+  margin-top: 8px;
+}
+
+.keyword-adder input {
+  flex: 1;
 }
 
 .history-controls {
