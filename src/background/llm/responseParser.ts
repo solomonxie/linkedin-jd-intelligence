@@ -82,6 +82,12 @@ const roleInfoSchema = z.object({
   salaryRange: factSchema(z.string()),
   applicantCount: factSchema(z.number()),
   seniorHeadcount: factSchema(z.number()),
+  // Not a Fact (see shared/types.ts) — same array/non-string recovery as `summary` below, but nullable
+  // since most jobs shouldn't get one at all (ordinary applicant count).
+  applicantCountInsight: z.preprocess(
+    (v) => (typeof v === "string" ? v : Array.isArray(v) ? v.join(" ") : null),
+    z.string().nullable(),
+  ),
 });
 
 const interviewRoundSchema = z.object({

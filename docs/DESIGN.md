@@ -216,7 +216,8 @@ One prompt, one fenced JSON block, built from `{ resumeText, rawPageText }`:
     arr: Fact<string>, fundingStage: Fact<string>,
     ownership: Fact<"public"|"private">, techStack: Fact<string[]>
   } | null,   // null when already cached — see "Company info cache" below
-  role: { salaryRange: Fact<string>, seniorHeadcount: Fact<string>, applicantCount: Fact<number> },
+  role: { salaryRange: Fact<string>, seniorHeadcount: Fact<number>, applicantCount: Fact<number>,
+           applicantCountInsight: string|null },
   roleClassification: { normalizedRole: string, rationale: string },
   requirements: RequirementNode[],
   interviewRounds: InterviewRound[],
@@ -231,6 +232,8 @@ One prompt, one fenced JSON block, built from `{ resumeText, rawPageText }`:
 ```
 
 `source: "page"` means the model found that fact literally in `rawPageText` (it must not invent or contradict what's actually on the page); `"llm-estimate"` means it filled a gap from general training knowledge, with an explicit instruction to return `value: null` rather than a specific-sounding guess when not reasonably confident — this applies hardest to ARR, funding stage, engineering headcount, senior headcount, and salary-when-not-shown. **`role.applicantCount` is the one field that must never fall back to `"llm-estimate"`** — if the count isn't literally present in the page text, the correct answer is `null`, since there's no reasonable general-knowledge basis for guessing a specific applicant number (unlike ARR or headcount, which have loose public-knowledge anchors).
+
+**Applicant count insight** (`role.applicantCountInsight`): not a `Fact` — a plain, nullable string, always the model's own reasoning, never page-sourced. Only populated when `applicantCount.value` is known and unusually high (≥400) or low (<100); the ordinary 100-399 range gets `null`, same as when the count itself is unknown. When populated, it's one short, explicitly speculative sentence ("likely", "possibly") suggesting why, grounded in whatever the model actually knows about that posting — salary, seniority, remote/hybrid/onsite, company brand, how niche the required skills are. Shown in the side panel's Company & Role Brief, below the Applicants/Senior level rows, only when non-null. Always re-derived fresh on re-analysis — unlike the `Fact` fields around it, there's no hand-edit path for it to preserve.
 
 **Role classification**: asks the model to classify what the role *actually is* from its responsibilities, not the literal title — titles are frequently misleading (e.g. "Software Engineer, Data Platform" describing what is really Data Engineering work). The prompt offers a suggested (not enforced) taxonomy from `roleTaxonomy.ts` — Software Engineer (Backend/Frontend/Full-Stack), Data Engineer, Data Scientist, Data Analyst, ML Engineer, MLOps Engineer, DevOps/SRE, Platform/Infrastructure Engineer, Mobile Engineer, QA/Test Engineer, Security Engineer, Engineering Manager — with a free-form fallback plus a one-sentence rationale when none fit well.
 

@@ -399,6 +399,14 @@ li:hover .edit-icon {
   padding: 3px 6px;
 }
 
+.applicant-insight {
+  margin-top: 8px;
+  padding-top: 8px;
+  border-top: 1px dashed var(--border);
+  font-size: 13px;
+  color: var(--muted);
+}
+
 .brief-add-field {
   margin-top: 8px;
   padding-top: 8px;
