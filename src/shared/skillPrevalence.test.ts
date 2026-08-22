@@ -35,6 +35,8 @@ function makeRecord(overrides: {
     workplaceType: null,
     companyInfo: null,
     role: {
+      team: { value: null, source: "llm-estimate" },
+      teamMission: { value: null, source: "llm-estimate" },
       salaryRange: { value: null, source: "llm-estimate" },
       applicantCount: { value: overrides.applicantCount, source: "page" },
       seniorHeadcount: { value: null, source: "page" },

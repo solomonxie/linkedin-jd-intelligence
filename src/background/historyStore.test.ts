@@ -26,6 +26,8 @@ const sampleResult: AnalysisResult = {
     techStack: { value: null, source: "llm-estimate" },
   },
   role: {
+    team: { value: null, source: "llm-estimate" },
+    teamMission: { value: null, source: "llm-estimate" },
     salaryRange: { value: null, source: "llm-estimate" },
     applicantCount: { value: 87, source: "page" },
     seniorHeadcount: { value: null, source: "page" },

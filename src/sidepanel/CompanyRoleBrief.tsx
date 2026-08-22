@@ -24,6 +24,8 @@ const FIELDS: FieldDef[] = [
   { key: "fundingStage", group: "companyInfo", label: "Stage", kind: "text" },
   { key: "ownership", group: "companyInfo", label: "Ownership", kind: "enum", enumOptions: ["public", "private"] },
   { key: "techStack", group: "companyInfo", label: "Tech stack", kind: "array" },
+  { key: "team", group: "role", label: "Team", kind: "text" },
+  { key: "teamMission", group: "role", label: "Team mission", kind: "text" },
   { key: "salaryRange", group: "role", label: "Salary", kind: "text", format: (v) => formatSalaryDigits(String(v)) },
   {
     key: "applicantCount",
