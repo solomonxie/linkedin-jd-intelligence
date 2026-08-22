@@ -63,9 +63,8 @@ const companyInfoSchema = z.object({
 
 const roleInfoSchema = z.object({
   salaryRange: factSchema(z.string()),
-  seniorHeadcount: factSchema(z.string()),
   applicantCount: factSchema(z.number()),
-  applicantInsights: factSchema(z.string()),
+  seniorHeadcount: factSchema(z.number()),
 });
 
 const interviewRoundSchema = z.object({

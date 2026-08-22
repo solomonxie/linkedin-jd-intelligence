@@ -27,9 +27,8 @@ const sampleResult: AnalysisResult = {
   },
   role: {
     salaryRange: { value: null, source: "llm-estimate" },
-    seniorHeadcount: { value: null, source: "llm-estimate" },
     applicantCount: { value: 87, source: "page" },
-    applicantInsights: { value: null, source: "page" },
+    seniorHeadcount: { value: null, source: "page" },
   },
   roleClassification: { normalizedRole: "Data Engineer", rationale: "Pipelines, not just APIs." },
   requirements: [],
