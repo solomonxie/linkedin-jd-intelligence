@@ -238,7 +238,7 @@ export function App() {
             <CompanyRoleBriefSkeleton />
           )}
           <div className="card">
-            <h3>Skill Match</h3>
+            <h3>Skill / Experience Match</h3>
             {record.requirements.length > 0 ? (
               <>
                 <TierSummary requirements={record.requirements} />
