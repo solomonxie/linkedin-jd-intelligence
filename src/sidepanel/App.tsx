@@ -267,6 +267,12 @@ export function App() {
         </button>
         <button
           type="button"
+          onClick={() => chrome.tabs.create({ url: chrome.runtime.getURL("src/options/index.html?tab=history") })}
+        >
+          History
+        </button>
+        <button
+          type="button"
           disabled={record?.status !== "ok"}
           onClick={() => {
             if (!record) return;
