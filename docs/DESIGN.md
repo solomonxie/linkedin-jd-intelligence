@@ -235,10 +235,11 @@ One prompt, one fenced JSON block, built from `{ resumeText, rawPageText }`:
 `source: "page"` means the model found that fact literally in `rawPageText` (it must not invent or contradict what's actually on the page); `"llm-estimate"` means it filled a gap from general training knowledge, with an explicit instruction to return `value: null` rather than a specific-sounding guess when not reasonably confident — this applies hardest to ARR, funding stage, engineering headcount, senior headcount, and salary-when-not-shown. **`role.applicantCount` is the one field that must never fall back to `"llm-estimate"`** — if the count isn't literally present in the page text, the correct answer is `null`, since there's no reasonable general-knowledge basis for guessing a specific applicant number (unlike ARR or headcount, which have loose public-knowledge anchors).
 
 **Team** (`role.team`, `role.teamMission`): a short team name (e.g. "Data Platform", "DevOps", "BI") and a
-one-sentence mission, same `Fact<string>` shape and same `source` semantics as everything else — `"page"`
-when the posting names the team or clearly states its charter, `"llm-estimate"` when inferred from the
-role's own responsibilities (same spirit as role classification below), `null` for either when the posting
-gives too little to even reasonably guess.
+mission stated in under 5 words (e.g. "Owns the checkout pipeline") rather than a sentence, same
+`Fact<string>` shape and same `source` semantics as everything else — `"page"` when the posting names the
+team or clearly states its charter, `"llm-estimate"` when inferred from the role's own responsibilities
+(same spirit as role classification below), `null` for either when the posting gives too little to even
+reasonably guess.
 
 **Headquarters** (`companyInfo.headquarters`): the company's HQ city (state/country added only to
 disambiguate), same `Fact<string>` shape and `source` semantics as the rest of `companyInfo`. Shown in the
