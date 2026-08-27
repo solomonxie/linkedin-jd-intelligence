@@ -14,10 +14,12 @@ import {
   updateSettings,
 } from "../shared/storage";
 import { parseResumeFile } from "../shared/resumeParser";
-import { DEFAULT_SETTINGS } from "../shared/types";
-import { verifyOpenAiApiKey } from "../background/llm/openaiClient";
+import { DEFAULT_SETTINGS, type ReasoningEffort } from "../shared/types";
+import { supportsReasoningEffort, verifyOpenAiApiKey } from "../background/llm/openaiClient";
 
-const MODEL_OPTIONS = ["gpt-4o-mini", "gpt-4o", "gpt-4.1-mini", "gpt-4.1"];
+// Highest-capability first, since that's the pick a user reaches for by default.
+const MODEL_OPTIONS = ["gpt-5", "gpt-5-mini", "gpt-5-nano", "gpt-4.1", "gpt-4.1-mini", "gpt-4o", "gpt-4o-mini"];
+const REASONING_EFFORT_OPTIONS: ReasoningEffort[] = ["minimal", "low", "medium", "high"];
 
 export function SettingsPanel() {
   const settings = useSettings();
@@ -141,6 +143,24 @@ export function SettingsPanel() {
           ))}
         </select>
       </div>
+
+      {supportsReasoningEffort(settings.openaiModel) && (
+        <div className="field">
+          <label htmlFor="reasoning-effort">Reasoning effort</label>
+          <select
+            id="reasoning-effort"
+            value={settings.openaiReasoningEffort}
+            onChange={(e) => void updateSettings({ openaiReasoningEffort: e.target.value as ReasoningEffort })}
+          >
+            {REASONING_EFFORT_OPTIONS.map((effort) => (
+              <option key={effort} value={effort}>
+                {effort}
+              </option>
+            ))}
+          </select>
+          <p className="muted">Higher effort thinks longer before answering — slower, but more accurate on harder postings.</p>
+        </div>
+      )}
 
       <div className="field">
         <h3>Resume profiles</h3>
