@@ -17,11 +17,12 @@ interface FieldDef {
 
 const FIELDS: FieldDef[] = [
   { key: "industry", group: "companyInfo", label: "Industry", kind: "array" },
+  { key: "headquarters", group: "companyInfo", label: "Headquarters", kind: "text" },
   { key: "mainProducts", group: "companyInfo", label: "Products", kind: "array" },
   { key: "employeeSize", group: "companyInfo", label: "Size", kind: "text" },
   { key: "engineeringSize", group: "companyInfo", label: "Eng. size", kind: "text" },
   { key: "arr", group: "companyInfo", label: "ARR", kind: "text" },
-  { key: "fundingStage", group: "companyInfo", label: "Stage", kind: "text" },
+  // "ownership" is rendered specially below, combined with fundingStage — see formatOwnership().
   { key: "ownership", group: "companyInfo", label: "Ownership", kind: "enum", enumOptions: ["public", "private"] },
   { key: "techStack", group: "companyInfo", label: "Tech stack", kind: "array" },
   { key: "team", group: "role", label: "Team", kind: "text" },
@@ -48,6 +49,25 @@ const FIELDS: FieldDef[] = [
 // other non-numeric text untouched.
 function formatSalaryDigits(raw: string): string {
   return raw.replace(/\d[\d,]*/g, (match) => match.replace(/,/g, ""));
+}
+
+// Public ownership makes funding stage moot, so the "Ownership" row folds both facts into one line
+// instead of showing a separate, usually-empty "Stage" row for public companies.
+function formatOwnership(ownership: string | null, fundingStage: string | null): string {
+  if (ownership === "public") return "Public";
+  if (ownership === "private") return fundingStage ? `Private, ${fundingStage}` : "Private";
+  return fundingStage ?? "";
+}
+
+function ownershipBlank(companyInfo: CompanyInfo): boolean {
+  return isBlank(companyInfo.ownership.value) && isBlank(companyInfo.fundingStage.value);
+}
+
+function ownershipBadge(companyInfo: CompanyInfo): "edited" | "est" | null {
+  const { ownership, fundingStage } = companyInfo;
+  if (ownership.source === "user" || fundingStage.source === "user") return "edited";
+  if (ownership.source === "llm-estimate" || fundingStage.source === "llm-estimate") return "est";
+  return null;
 }
 
 function isBlank(value: unknown): boolean {
@@ -147,15 +167,61 @@ export function CompanyRoleBrief({ record, onSaved }: { record: JobRecord; onSav
     setAddDraft("");
   }
 
-  const blankFields = FIELDS.filter((def) => isBlank(factOf(def, companyInfo, role).value));
+  async function saveOwnership(ownership: "public" | "private" | null, fundingStage: string | null) {
+    const updated: JobRecord = {
+      ...record,
+      companyInfo: {
+        ...companyInfo,
+        ownership: { value: ownership, source: "user" },
+        fundingStage: { value: fundingStage, source: "user" },
+      },
+    };
+    await upsertJobRecord(updated);
+    broadcastJobRecordUpdated(record.id);
+    onSaved?.();
+  }
+
+  const blankFields = FIELDS.filter((def) =>
+    def.key === "ownership" ? ownershipBlank(companyInfo) : isBlank(factOf(def, companyInfo, role).value),
+  );
 
   return (
     <div className="brief card">
       <h3>Company & Role Brief</h3>
       <ul>
         {FIELDS.map((def) => {
-          const fact = factOf(def, companyInfo, role);
           const editing = editingKey === def.key;
+
+          if (def.key === "ownership") {
+            if (ownershipBlank(companyInfo) && !editing) return null;
+            const badge = ownershipBadge(companyInfo);
+            return (
+              <li key={def.key}>
+                <span className="brief-label">{def.label}</span>
+                {editing ? (
+                  <OwnershipEditor
+                    ownership={companyInfo.ownership.value}
+                    fundingStage={companyInfo.fundingStage.value}
+                    onSave={(ownership, fundingStage) => {
+                      void saveOwnership(ownership, fundingStage);
+                      setEditingKey(null);
+                    }}
+                    onCancel={() => setEditingKey(null)}
+                  />
+                ) : (
+                  <>
+                    <span>{formatOwnership(companyInfo.ownership.value, companyInfo.fundingStage.value)}</span>
+                    {badge && <span className="source-badge">{badge}</span>}
+                    <button type="button" className="edit-icon" onClick={() => setEditingKey(def.key)} aria-label="Edit Ownership">
+                      ✎
+                    </button>
+                  </>
+                )}
+              </li>
+            );
+          }
+
+          const fact = factOf(def, companyInfo, role);
           if (isBlank(fact.value) && !editing) return null;
 
           return (
@@ -196,7 +262,18 @@ export function CompanyRoleBrief({ record, onSaved }: { record: JobRecord; onSav
               </option>
             ))}
           </select>
-          {addingKey && (
+          {addingKey === "ownership" && (
+            <OwnershipEditor
+              ownership={companyInfo.ownership.value}
+              fundingStage={companyInfo.fundingStage.value}
+              onSave={(ownership, fundingStage) => {
+                void saveOwnership(ownership, fundingStage);
+                setAddingKey("");
+              }}
+              onCancel={() => setAddingKey("")}
+            />
+          )}
+          {addingKey && addingKey !== "ownership" && (
             <FieldEditor
               def={FIELDS.find((f) => f.key === addingKey)!}
               value={addDraft}
@@ -250,6 +327,52 @@ function FieldEditor({
         />
       )}
       <button type="button" onClick={onSave}>
+        Save
+      </button>
+      <button type="button" onClick={onCancel}>
+        Cancel
+      </button>
+    </span>
+  );
+}
+
+// The stage input only shows while private is selected — a public company has no stage to enter.
+function OwnershipEditor({
+  ownership,
+  fundingStage,
+  onSave,
+  onCancel,
+}: {
+  ownership: "public" | "private" | null;
+  fundingStage: string | null;
+  onSave: (ownership: "public" | "private" | null, fundingStage: string | null) => void;
+  onCancel: () => void;
+}) {
+  const [ownershipDraft, setOwnershipDraft] = useState(ownership ?? "");
+  const [stageDraft, setStageDraft] = useState(fundingStage ?? "");
+
+  return (
+    <span className="field-editor">
+      <select value={ownershipDraft} onChange={(e) => setOwnershipDraft(e.target.value)}>
+        <option value="">—</option>
+        <option value="public">public</option>
+        <option value="private">private</option>
+      </select>
+      {ownershipDraft === "private" && (
+        <input
+          type="text"
+          value={stageDraft}
+          placeholder="funding stage, e.g. Series A"
+          onChange={(e) => setStageDraft(e.target.value)}
+          autoFocus
+        />
+      )}
+      <button
+        type="button"
+        onClick={() =>
+          onSave(ownershipDraft === "" ? null : (ownershipDraft as "public" | "private"), stageDraft.trim() || null)
+        }
+      >
         Save
       </button>
       <button type="button" onClick={onCancel}>

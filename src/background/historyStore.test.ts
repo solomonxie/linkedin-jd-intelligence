@@ -17,6 +17,7 @@ const sampleResult: AnalysisResult = {
   workplaceType: "hybrid",
   companyInfo: {
     industry: { value: ["Tech"], source: "llm-estimate" },
+    headquarters: { value: null, source: "llm-estimate" },
     mainProducts: { value: null, source: "llm-estimate" },
     employeeSize: { value: null, source: "llm-estimate" },
     engineeringSize: { value: null, source: "llm-estimate" },
