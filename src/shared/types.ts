@@ -52,6 +52,37 @@ export interface RoleInfo {
   applicantCountInsight: string | null;
 }
 
+/** An all-blank CompanyInfo — used to seed a pending JobRecord when there's no cached company info yet,
+ * so the shape is always a real CompanyInfo (never a special-cased null) for the UI to render against. */
+export function blankCompanyInfo(): CompanyInfo {
+  const blank = { value: null, source: "llm-estimate" as const };
+  return {
+    industry: blank,
+    headquarters: blank,
+    mainProducts: blank,
+    employeeSize: blank,
+    engineeringSize: blank,
+    arr: blank,
+    fundingStage: blank,
+    ownership: blank,
+    techStack: blank,
+  };
+}
+
+/** An all-blank RoleInfo — see blankCompanyInfo() above; seeds a pending record so the brief can render
+ * (with its role rows simply hidden, per CompanyRoleBrief's isBlank check) before the LLM has run. */
+export function blankRoleInfo(): RoleInfo {
+  const blank = { value: null, source: "llm-estimate" as const };
+  return {
+    team: blank,
+    teamMission: blank,
+    salaryRange: blank,
+    applicantCount: blank,
+    seniorHeadcount: blank,
+    applicantCountInsight: null,
+  };
+}
+
 export interface RoleClassification {
   normalizedRole: string;
   rationale: string;

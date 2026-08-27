@@ -364,10 +364,10 @@ currently-rendered LinkedIn list (see "List hiding" above — same card lookup, 
 title/company pair instead of a block verdict); and last, `extractCompanySlugHint`/`extractTitleSlugHint`
 from the job URL's SEO slug — mostly dead weight now that LinkedIn's list-card/detail links don't carry
 that slug, kept only as a final fallback in case a slugged URL is ever seen again. This is what lets
-**Block this job/company** and a real (not "Unknown") label work immediately, before any analysis has
-run — not just a keyword block. Any level missing just falls through to the next; a full miss just means
-blocking/keyword-matching can't apply (or the label reads "Unknown") until the job is analyzed once —
-never a wrong guess.
+**Block this job/company**, the header's title/company, and a real (not "Unknown") label work immediately,
+before any analysis has run — not just a keyword block. Any level missing just falls through to the next;
+a full miss just means blocking/keyword-matching can't apply (or the label reads "Unknown"/"Detecting…")
+until the job is analyzed once — never a wrong guess.
 
 `BlockedJob.url` / `BlockedCompany.sampleJobUrl` additionally capture the job posting's URL at the moment
 of blocking (optional — absent on entries blocked before this field existed), so the Settings page can
@@ -388,6 +388,11 @@ render each blocked entry as a link back to it even when the title/company came 
   `"companyInfo": null` instead of re-deriving it — real token savings, since the caller fills the field
   back in from the cache before the record is stored. A miss (unslugged URL, or no cache entry yet) just
   falls back to asking the LLM as normal — never wrong, only sometimes skips the saving.
+- **Shows up immediately, not just cheaper**: the same pre-call lookup also seeds the *pending* record's
+  `companyInfo` (via `beginAnalysis`'s `cachedCompanyInfo` param), before the LLM call even starts. The
+  side panel renders `CompanyRoleBrief` off `companyInfo` alone (stubbing a blank `role` — see
+  `blankRoleInfo()` — since the role is genuinely unknown until this specific job is analyzed), so a known
+  company's brief fields appear the instant the pending record is written, not after the round-trip.
 - **Write-back**: whenever companyInfo *is* freshly derived, it's upserted under both the name-derived key
   and the URL-slug key (when they differ) so a future lookup by either route hits.
 - **No expiry**: persisted indefinitely in its own store, not a TTL cache — company facts drift slowly
