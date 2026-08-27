@@ -8,7 +8,7 @@ A Chrome extension (Manifest V3) that, on a LinkedIn job posting, scans the page
 
 - extract job requirements as a **weighted, expandable hierarchy** (main skills with nested sub-skills, ordered by importance), including skills a requirement *implies* and not just literal keywords
 - compare those requirements against the user's resume and show what's matched vs. missing
-- assemble a short **company & role brief** (industry, size, ARR, funding stage, tech stack, salary range, applicant count, senior headcount), pulling whatever's visible on the page and filling gaps from the model's general knowledge — no live web search
+- assemble a short **company & role brief** (industry, headquarters, size, ARR, ownership/funding stage, tech stack, salary range, applicant count, senior headcount), pulling whatever's visible on the page and filling gaps from the model's general knowledge — no live web search
 - produce a **normalized role classification**, since job titles are often misleading (e.g. "Software Engineer, Data Platform" is really a Data Engineering role)
 - show a **regional skill-prevalence estimate** per requirement, computed locally from the user's own analyzed-job history
 
@@ -211,7 +211,7 @@ One prompt, one fenced JSON block, built from `{ resumeText, rawPageText }`:
   jobTitle: string, company: string, location: string,
   workplaceType: "remote"|"hybrid"|"onsite"|null,
   companyInfo: {
-    industry: Fact<string[]>, mainProducts: Fact<string[]>,
+    industry: Fact<string[]>, headquarters: Fact<string>, mainProducts: Fact<string[]>,
     employeeSize: Fact<string>, engineeringSize: Fact<string>,
     arr: Fact<string>, fundingStage: Fact<string>,
     ownership: Fact<"public"|"private">, techStack: Fact<string[]>
@@ -239,6 +239,17 @@ one-sentence mission, same `Fact<string>` shape and same `source` semantics as e
 when the posting names the team or clearly states its charter, `"llm-estimate"` when inferred from the
 role's own responsibilities (same spirit as role classification below), `null` for either when the posting
 gives too little to even reasonably guess.
+
+**Headquarters** (`companyInfo.headquarters`): the company's HQ city (state/country added only to
+disambiguate), same `Fact<string>` shape and `source` semantics as the rest of `companyInfo`. Shown in the
+Company & Role Brief directly below Industry.
+
+**Ownership + funding stage, shown as one row**: `companyInfo.ownership` and `companyInfo.fundingStage`
+stay separate `Fact`s in the data model (and in the LLM response), but `CompanyRoleBrief.tsx` renders them
+as a single "Ownership" row — `"Public"` when `ownership.value === "public"` (funding stage is moot once a
+company is public, so it's dropped from the display in that case); `"Private, {fundingStage}"` (e.g.
+"Private, Series A") when private and a stage is known, else just `"Private"`. Editing the row shows a
+public/private toggle plus a stage text input that only appears while private is selected.
 
 **Applicant count insight** (`role.applicantCountInsight`): not a `Fact` — a plain, nullable string, always the model's own reasoning, never page-sourced. Only populated when `applicantCount.value` is known and unusually high (≥400) or low (<100); the ordinary 100-399 range gets `null`, same as when the count itself is unknown. When populated, it's one short, explicitly speculative sentence ("likely", "possibly") suggesting why, grounded in whatever the model actually knows about that posting — salary, seniority, remote/hybrid/onsite, company brand, how niche the required skills are. Shown in the side panel's Company & Role Brief, below the Applicants/Senior level rows, only when non-null. Always re-derived fresh on re-analysis — unlike the `Fact` fields around it, there's no hand-edit path for it to preserve.
 

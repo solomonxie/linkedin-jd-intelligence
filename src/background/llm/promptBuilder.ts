@@ -43,9 +43,9 @@ SCHEMA
 }
 // Fact<T> = { "value": T | null, "source": "page" | "llm-estimate" }
 // CompanyInfo = {
-//   "industry": Fact<string[]>, "mainProducts": Fact<string[]>, "employeeSize": Fact<string>,
-//   "engineeringSize": Fact<string>, "arr": Fact<string>, "fundingStage": Fact<string>,
-//   "ownership": Fact<"public"|"private">, "techStack": Fact<string[]>
+//   "industry": Fact<string[]>, "headquarters": Fact<string>, "mainProducts": Fact<string[]>,
+//   "employeeSize": Fact<string>, "engineeringSize": Fact<string>, "arr": Fact<string>,
+//   "fundingStage": Fact<string>, "ownership": Fact<"public"|"private">, "techStack": Fact<string[]>
 // }
 // RequirementNode = {
 //   "requirement": string, "tier": "must-have" | "nice-to-have" | "implied",
@@ -109,6 +109,11 @@ brand recognition, how niche vs. broad the required skills are, how generic/seni
 This is explicitly speculative, not a verified fact — phrase it that way ("likely", "possibly", "may be"),
 never as a certainty. Examples: "Likely high given the above-market salary and fully-remote setup." /
 "Possibly low due to the narrow, senior-specific skill combination and no salary listed."
+
+HEADQUARTERS (companyInfo.headquarters)
+The company's headquarters city (and state/country if useful to disambiguate, e.g. "San Francisco, CA" or
+"London, UK"). Follow the same FACT-SOURCING RULES as above — "page" only if the posting states it,
+"llm-estimate" from general knowledge otherwise, null if not reasonably confident.
 
 INDUSTRY (companyInfo.industry)
 A company can belong to more than one industry/domain tag — return all that reasonably apply, e.g. a

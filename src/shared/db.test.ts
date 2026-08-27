@@ -17,6 +17,7 @@ describe("company records", () => {
       name: "Affirm",
       companyInfo: {
         industry: { value: ["FinTech"], source: "page" },
+        headquarters: { value: "San Francisco, CA", source: "page" },
         mainProducts: { value: ["BNPL"], source: "llm-estimate" },
         employeeSize: { value: null, source: "llm-estimate" },
         engineeringSize: { value: null, source: "llm-estimate" },
@@ -39,6 +40,7 @@ describe("company records", () => {
       name: "Acme",
       companyInfo: {
         industry: { value: null, source: "llm-estimate" },
+        headquarters: { value: null, source: "llm-estimate" },
         mainProducts: { value: null, source: "llm-estimate" },
         employeeSize: { value: null, source: "llm-estimate" },
         engineeringSize: { value: null, source: "llm-estimate" },
@@ -78,5 +80,30 @@ describe("company records", () => {
 
     const record = await getCompanyRecord(key);
     expect(record?.companyInfo.industry).toEqual({ value: ["SaaS"], source: "page" });
+  });
+
+  it("defaults headquarters to a blank fact on a record written before that field existed", async () => {
+    const key = "pre-headquarters-co";
+    const { headquarters: _omitted, ...companyInfoWithoutHeadquarters } = {
+      headquarters: { value: null, source: "llm-estimate" as const },
+      industry: { value: null, source: "llm-estimate" as const },
+      mainProducts: { value: null, source: "llm-estimate" as const },
+      employeeSize: { value: null, source: "llm-estimate" as const },
+      engineeringSize: { value: null, source: "llm-estimate" as const },
+      arr: { value: null, source: "llm-estimate" as const },
+      fundingStage: { value: null, source: "llm-estimate" as const },
+      ownership: { value: null, source: "llm-estimate" as const },
+      techStack: { value: null, source: "llm-estimate" as const },
+    };
+    // Bypass the CompanyInfo type to simulate a record written before headquarters was added.
+    await upsertCompanyRecord({
+      key,
+      name: "Pre-Headquarters Co",
+      companyInfo: companyInfoWithoutHeadquarters as unknown as CompanyRecord["companyInfo"],
+      updatedAt: "2026-01-01T00:00:00.000Z",
+    });
+
+    const record = await getCompanyRecord(key);
+    expect(record?.companyInfo.headquarters).toEqual({ value: null, source: "llm-estimate" });
   });
 });

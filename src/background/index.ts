@@ -116,6 +116,7 @@ function blankCompanyInfo(): CompanyInfo {
   const empty = { value: null, source: "llm-estimate" as const };
   return {
     industry: empty,
+    headquarters: empty,
     mainProducts: empty,
     employeeSize: empty,
     engineeringSize: empty,

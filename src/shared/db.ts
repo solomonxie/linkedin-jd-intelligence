@@ -9,12 +9,20 @@ import type { CompanyInfo, CompanyRecord, Fact, JobRecord } from "./types";
 // the old field only — normalize on read so the UI never sees a missing
 // `industry` and crashes reading `.value` off it.
 function normalizeCompanyInfo(info: CompanyInfo): CompanyInfo {
-  if (info.industry) return info;
-  const legacyDomain = (info as unknown as { domain?: Fact<string> }).domain;
-  const industry: Fact<string[]> = legacyDomain
-    ? { value: legacyDomain.value ? [legacyDomain.value] : null, source: legacyDomain.source }
-    : { value: null, source: "llm-estimate" };
-  return { ...info, industry };
+  let normalized = info;
+  if (!normalized.industry) {
+    const legacyDomain = (normalized as unknown as { domain?: Fact<string> }).domain;
+    const industry: Fact<string[]> = legacyDomain
+      ? { value: legacyDomain.value ? [legacyDomain.value] : null, source: legacyDomain.source }
+      : { value: null, source: "llm-estimate" };
+    normalized = { ...normalized, industry };
+  }
+  // Records written before companyInfo.headquarters existed — same missing-field crash risk, no
+  // legacy field to migrate from, just default it blank.
+  if (!normalized.headquarters) {
+    normalized = { ...normalized, headquarters: { value: null, source: "llm-estimate" } };
+  }
+  return normalized;
 }
 
 function normalizeJobRecord(record: JobRecord): JobRecord {
