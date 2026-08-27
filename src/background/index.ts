@@ -12,7 +12,7 @@ import { buildAnalysisPrompt } from "./llm/promptBuilder";
 import { callOpenAI } from "./llm/openaiClient";
 import { parseAnalysisResponse } from "./llm/responseParser";
 import { beginAnalysis, completeAnalysisError, completeAnalysisOk, completeAnalysisUnparsed } from "./historyStore";
-import type { AnalysisResult, CompanyInfo, CompanyRecord } from "../shared/types";
+import type { AnalysisResult, CompanyInfo, CompanyRecord, ReasoningEffort } from "../shared/types";
 
 chrome.sidePanel
   .setPanelBehavior({ openPanelOnActionClick: true })
@@ -49,9 +49,11 @@ async function handleAnalyzeRequest(request: AnalyzeRequest): Promise<AnalyzeAck
 
   // Fire-and-forget: the caller already has its ack; this keeps running (and
   // keeps writing to IndexedDB) even if the side panel that asked closes.
-  runAnalysis(request, settings.openaiApiKey, settings.openaiModel, profile.text).catch((error) => {
-    console.error("Unhandled error running analysis", error);
-  });
+  runAnalysis(request, settings.openaiApiKey, settings.openaiModel, settings.openaiReasoningEffort, profile.text).catch(
+    (error) => {
+      console.error("Unhandled error running analysis", error);
+    },
+  );
 
   return { ok: true };
 }
@@ -60,6 +62,7 @@ async function runAnalysis(
   request: AnalyzeRequest,
   apiKey: string,
   model: string,
+  reasoningEffort: ReasoningEffort,
   resumeText: string,
 ): Promise<void> {
   try {
@@ -75,7 +78,7 @@ async function runAnalysis(
       rawPageText: request.rawPageText,
       cachedCompanyInfo: cached ? { name: cached.name, info: cached.companyInfo } : null,
     });
-    const rawResponse = await callOpenAI({ prompt, apiKey, model });
+    const rawResponse = await callOpenAI({ prompt, apiKey, model, reasoningEffort });
     const parsed = parseAnalysisResponse(rawResponse);
     if (parsed.ok) {
       const companyInfo = parsed.result.companyInfo ?? cached?.companyInfo ?? blankCompanyInfo();

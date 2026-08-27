@@ -168,9 +168,15 @@ export interface BlockKeyword {
   addedAt: string;
 }
 
+/** OpenAI's reasoning-effort levels — only meaningful for a reasoning-capable model (see
+ * background/llm/openaiClient.ts supportsReasoningEffort); ignored otherwise. */
+export type ReasoningEffort = "minimal" | "low" | "medium" | "high";
+
 export interface Settings {
   openaiApiKey: string | null;
   openaiModel: string;
+  /** Only sent to the API when openaiModel supports it. */
+  openaiReasoningEffort: ReasoningEffort;
   activeResumeProfileId: string | null;
   resumeProfiles: ResumeProfile[];
   blockedJobs: BlockedJob[];
@@ -179,11 +185,12 @@ export interface Settings {
   roleBlockKeywords: BlockKeyword[];
 }
 
-export const DEFAULT_OPENAI_MODEL = "gpt-4.1-mini";
+export const DEFAULT_OPENAI_MODEL = "gpt-5";
 
 export const DEFAULT_SETTINGS: Settings = {
   openaiApiKey: null,
   openaiModel: DEFAULT_OPENAI_MODEL,
+  openaiReasoningEffort: "medium",
   activeResumeProfileId: null,
   resumeProfiles: [],
   blockedJobs: [],
