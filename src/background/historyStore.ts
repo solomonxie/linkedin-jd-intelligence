@@ -11,6 +11,11 @@ export interface BeginAnalysisParams {
   url: string;
   resumeProfileId: string;
   resumeProfileName: string;
+  /** Already-cached company info (see shared/companyKey.ts "Company info cache") for this posting's
+   * company, if any — seeds the pending record so the brief's company fields render immediately
+   * instead of sitting behind the skeleton for the whole LLM round-trip. Ignored once a record already
+   * has its own companyInfo (re-analysis case, handled by `existing` below). */
+  cachedCompanyInfo?: CompanyInfo | null;
 }
 
 /** Upserts a "pending" record *before* the LLM call starts, so status survives a crash/restart. */
@@ -29,7 +34,7 @@ export async function beginAnalysis(params: BeginAnalysisParams): Promise<JobRec
     company: existing?.company ?? null,
     location: existing?.location ?? null,
     workplaceType: existing?.workplaceType ?? null,
-    companyInfo: existing?.companyInfo ?? null,
+    companyInfo: existing?.companyInfo ?? params.cachedCompanyInfo ?? null,
     role: existing?.role ?? null,
     roleClassification: existing?.roleClassification ?? null,
     requirements: existing?.requirements ?? [],

@@ -8,6 +8,7 @@ import {
   isStalePending,
 } from "./historyStore";
 import { getAllJobRecords, getJobRecord, upsertJobRecord } from "../shared/db";
+import { blankCompanyInfo } from "../shared/types";
 import type { AnalysisResult, JobRecord } from "../shared/types";
 
 const sampleResult: AnalysisResult = {
@@ -57,6 +58,38 @@ describe("historyStore", () => {
 
     const stored = await getJobRecord("job-1");
     expect(stored?.status).toBe("pending");
+  });
+
+  it("seeds a brand-new pending record's companyInfo from the company cache, so it renders before the LLM responds", async () => {
+    const cachedCompanyInfo = { ...blankCompanyInfo(), industry: { value: ["FinTech"], source: "page" as const } };
+    const record = await beginAnalysis({
+      jobId: "job-cache-seed",
+      url: "https://www.linkedin.com/jobs/view/job-cache-seed",
+      resumeProfileId: "p1",
+      resumeProfileName: "Backend",
+      cachedCompanyInfo,
+    });
+    expect(record.companyInfo).toEqual(cachedCompanyInfo);
+    expect(record.role).toBeNull(); // still genuinely unknown until this job's own analysis runs
+  });
+
+  it("keeps a re-analyzed job's own companyInfo over the company cache", async () => {
+    await beginAnalysis({
+      jobId: "job-4",
+      url: "https://www.linkedin.com/jobs/view/job-4",
+      resumeProfileId: "p1",
+      resumeProfileName: "Backend",
+    });
+    await completeAnalysisOk("job-4", sampleResult);
+
+    const reAnalyzed = await beginAnalysis({
+      jobId: "job-4",
+      url: "https://www.linkedin.com/jobs/view/job-4",
+      resumeProfileId: "p1",
+      resumeProfileName: "Backend",
+      cachedCompanyInfo: blankCompanyInfo(),
+    });
+    expect(reAnalyzed.companyInfo).toEqual(sampleResult.companyInfo);
   });
 
   it("completes analysis ok, deriving regionBucket from the result location", async () => {

@@ -13,7 +13,7 @@ import { blockReasonText, checkBlocked } from "../shared/blockList";
 import { RequirementTree, RequirementTreeSkeleton } from "./RequirementTree";
 import { CompanyRoleBrief, CompanyRoleBriefSkeleton } from "./CompanyRoleBrief";
 import { InterviewRounds } from "./InterviewRounds";
-import type { JobRecord, RequirementTier } from "../shared/types";
+import { blankRoleInfo, type JobRecord, type RequirementTier } from "../shared/types";
 
 const TIER_LABELS: Record<RequirementTier, string> = {
   "must-have": "Required",
@@ -204,10 +204,12 @@ export function App() {
   return (
     <Shell>
       <header className="job-header">
-        <h2>{record?.jobTitle ?? "Detecting…"}</h2>
+        {/* bestJobTitle/bestCompany fall back to the LinkedIn list row's own text (no LLM call) — shows
+            immediately instead of sitting on "Detecting…" for the whole analysis round-trip. */}
+        <h2>{bestJobTitle ?? "Detecting…"}</h2>
         {record?.roleClassification && <p className="muted">→ classified as: {record.roleClassification.normalizedRole}</p>}
         <p className="subtitle">
-          {record?.company ?? ""}
+          {bestCompany ?? ""}
           {record?.location ? ` · ${record.location}` : ""}
           {record?.workplaceType ? ` (${record.workplaceType})` : ""}
         </p>
@@ -241,8 +243,11 @@ export function App() {
           error itself only ever shows as the icon above, never blocking the content area. */}
       {record && (
         <>
-          {record.companyInfo && record.role ? (
-            <CompanyRoleBrief record={record} onSaved={refresh} />
+          {record.companyInfo ? (
+            // A cache hit (see background/index.ts) can seed companyInfo before analysis of *this*
+            // job has run at all — role is still genuinely unknown then, so it's stubbed blank rather
+            // than waiting on it too; CompanyRoleBrief already hides any all-blank row.
+            <CompanyRoleBrief record={{ ...record, role: record.role ?? blankRoleInfo() }} onSaved={refresh} />
           ) : (
             <CompanyRoleBriefSkeleton />
           )}
