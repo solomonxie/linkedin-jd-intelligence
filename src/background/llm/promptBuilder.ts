@@ -92,7 +92,9 @@ FACT-SOURCING RULES (apply to every Fact<T> field within companyInfo and role)
 
 TEAM (role.team, role.teamMission)
 role.team is a short team name — "Data Platform", "DevOps", "Platform", "BI", "Support", "Growth", etc.
-role.teamMission is one short sentence on what that team does or owns. source: "page" when the posting
+role.teamMission is what that team does or owns, in UNDER 5 WORDS — a short phrase, not a sentence (e.g.
+"Owns the checkout pipeline", "Builds internal dev tooling"), never punctuated as a full sentence.
+source: "page" when the posting
 names the team explicitly (e.g. "join our Developer Experience team") or clearly describes its charter;
 "llm-estimate" when there's no explicit team name and you're inferring a plausible one from the role's own
 responsibilities (same spirit as ROLE CLASSIFICATION below — infer the real function from what the job
