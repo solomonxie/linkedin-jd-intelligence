@@ -3,13 +3,22 @@
 // instruction already in the prompt — responseParser.ts handles both a bare
 // JSON body (what json_object mode actually returns) and a fenced one.
 
+import type { ReasoningEffort } from "../../shared/types";
+
+/** Reasoning-capable models accept reasoning_effort; sending it to a model that doesn't support it
+ * (e.g. gpt-4o, gpt-4.1) errors, so it's only included for models matching this. */
+export function supportsReasoningEffort(model: string): boolean {
+  return /^(gpt-5|o1|o3|o4)/.test(model);
+}
+
 export interface CallOpenAIParams {
   prompt: string;
   apiKey: string;
   model: string;
+  reasoningEffort?: ReasoningEffort;
 }
 
-export async function callOpenAI({ prompt, apiKey, model }: CallOpenAIParams): Promise<string> {
+export async function callOpenAI({ prompt, apiKey, model, reasoningEffort }: CallOpenAIParams): Promise<string> {
   const response = await fetch("https://api.openai.com/v1/chat/completions", {
     method: "POST",
     headers: {
@@ -20,6 +29,7 @@ export async function callOpenAI({ prompt, apiKey, model }: CallOpenAIParams): P
       model,
       messages: [{ role: "user", content: prompt }],
       response_format: { type: "json_object" },
+      ...(reasoningEffort && supportsReasoningEffort(model) ? { reasoning_effort: reasoningEffort } : {}),
     }),
   });
 
