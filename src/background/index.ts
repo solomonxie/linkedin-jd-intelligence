@@ -12,6 +12,7 @@ import { buildAnalysisPrompt } from "./llm/promptBuilder";
 import { callOpenAI } from "./llm/openaiClient";
 import { parseAnalysisResponse } from "./llm/responseParser";
 import { beginAnalysis, completeAnalysisError, completeAnalysisOk, completeAnalysisUnparsed } from "./historyStore";
+import { blankCompanyInfo } from "../shared/types";
 import type { AnalysisResult, CompanyInfo, CompanyRecord, ReasoningEffort } from "../shared/types";
 
 chrome.sidePanel
@@ -35,12 +36,21 @@ async function handleAnalyzeRequest(request: AnalyzeRequest): Promise<AnalyzeAck
     return { ok: false, error: "Selected resume profile not found." };
   }
 
+  // Best-effort company guess from the URL, so the prompt can skip re-deriving companyInfo when we
+  // already have it cached — see shared/companyKey.ts for why this is a hint, not ground truth. Looked
+  // up *before* beginAnalysis so a cache hit can seed the pending record immediately: the brief's
+  // company fields then render right away instead of waiting behind the whole LLM round-trip.
+  const slugHint = extractCompanySlugHint(request.url);
+  const slugKey = slugHint ? normalizeCompanyKey(slugHint) : null;
+  const cached = slugKey ? await getCompanyRecord(slugKey) : undefined;
+
   try {
     await beginAnalysis({
       jobId: request.jobId,
       url: request.url,
       resumeProfileId: profile.id,
       resumeProfileName: profile.name,
+      cachedCompanyInfo: cached?.companyInfo,
     });
   } catch (error) {
     return { ok: false, error: (error as Error).message };
@@ -49,7 +59,7 @@ async function handleAnalyzeRequest(request: AnalyzeRequest): Promise<AnalyzeAck
 
   // Fire-and-forget: the caller already has its ack; this keeps running (and
   // keeps writing to IndexedDB) even if the side panel that asked closes.
-  runAnalysis(request, settings.openaiApiKey, settings.openaiModel, settings.openaiReasoningEffort, profile.text).catch(
+  runAnalysis(request, settings.openaiApiKey, settings.openaiModel, settings.openaiReasoningEffort, profile.text, cached, slugKey).catch(
     (error) => {
       console.error("Unhandled error running analysis", error);
     },
@@ -64,15 +74,10 @@ async function runAnalysis(
   model: string,
   reasoningEffort: ReasoningEffort,
   resumeText: string,
+  cached: CompanyRecord | undefined,
+  slugKey: string | null,
 ): Promise<void> {
   try {
-    // Best-effort company guess from the URL, so the prompt can skip
-    // re-deriving companyInfo when we already have it cached — see
-    // shared/companyKey.ts for why this is a hint, not ground truth.
-    const slugHint = extractCompanySlugHint(request.url);
-    const slugKey = slugHint ? normalizeCompanyKey(slugHint) : null;
-    const cached = slugKey ? await getCompanyRecord(slugKey) : undefined;
-
     const prompt = buildAnalysisPrompt({
       resumeText,
       rawPageText: request.rawPageText,
@@ -110,19 +115,4 @@ async function cacheCompanyInfo(companyName: string, companyInfo: CompanyInfo, s
   if (slugKey && slugKey !== nameKey) {
     await upsertCompanyRecord({ ...record, key: slugKey });
   }
-}
-
-function blankCompanyInfo(): CompanyInfo {
-  const empty = { value: null, source: "llm-estimate" as const };
-  return {
-    industry: empty,
-    headquarters: empty,
-    mainProducts: empty,
-    employeeSize: empty,
-    engineeringSize: empty,
-    arr: empty,
-    fundingStage: empty,
-    ownership: empty,
-    techStack: empty,
-  };
 }
