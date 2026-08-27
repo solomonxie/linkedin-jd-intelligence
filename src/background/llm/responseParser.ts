@@ -69,6 +69,7 @@ const stringArraySchema = z.preprocess((v) => (typeof v === "string" ? [v] : v),
 
 const companyInfoSchema = z.object({
   industry: factSchema(stringArraySchema),
+  headquarters: factSchema(z.string()),
   mainProducts: factSchema(z.array(z.string())),
   employeeSize: factSchema(z.string()),
   engineeringSize: factSchema(z.string()),
