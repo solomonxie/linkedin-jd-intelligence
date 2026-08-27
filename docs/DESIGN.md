@@ -132,13 +132,12 @@ Side panel:
 └─────────────────────────────────┘
 ```
 
-Options page:
+Options page (Settings only — History is a separate page, opened via the side panel's footer link, not an in-page tab):
 ```
 ┌──────────────────────────────────────────┐
-│  Settings   │   History                   │
-├──────────────────────────────────────────┤
 │ OpenAI API key   [ ********************* ]  │
-│ Model            [ gpt-4o-mini        ▾ ]   │
+│ Model            [ gpt-5              ▾ ]   │
+│ Reasoning effort [ medium             ▾ ]   │ (only shown for a reasoning-capable model)
 │                                              │
 │ Resume profiles                             │
 │   • Backend  (active)   [rename] [delete]   │
@@ -182,7 +181,7 @@ src/
       scraper.ts               # jobId (URL regex), raw page text (main-landmark → body fallback, length-capped), SPA nav watch
       listFilter.ts             # dims blocked job cards in LinkedIn's own list — see "List dimming" below
       main.ts                   # entry: scrape + message background/side panel, drives listFilter.ts
-  options/                     # React: Settings (key, model, resume profiles) + History, one page
+  options/                     # React: Settings (key, model, resume profiles) + History — one page, routed by ?tab=
   sidepanel/                   # React: persistent per-job UI, cache-aware, brief + requirement tree
   shared/
     types.ts                   # JobRecord, AnalysisResult, RequirementNode, CompanyInfo, RoleInfo, Fact<T>, Settings, ResumeProfile
