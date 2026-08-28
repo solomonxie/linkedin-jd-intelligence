@@ -1,18 +1,35 @@
-// Extracts and validates the fenced JSON block the LLM was asked to return.
-// Tab/API responses aren't guaranteed-well-formed, so this is defensive:
-// fenced -> bare-fenced -> first-{-to-last-} fallback, then zod validation.
+// Extracts and validates the fenced JSON block each LLM call was asked to
+// return. Tab/API responses aren't guaranteed-well-formed, so this is
+// defensive: fenced -> bare-fenced -> first-{-to-last-} fallback, then zod
+// validation. Two response shapes, one per promptBuilder prompt: extraction
+// (job/company/role fields) and requirements (the weighted tree) — see
+// background/index.ts for how the caller merges them into one AnalysisResult.
 
 import { z } from "zod";
-import type { AnalysisResult, RequirementNode } from "../../shared/types";
+import type { CompanyInfo, InterviewRound, RequirementNode, RoleClassification, RoleInfo, WorkplaceType } from "../../shared/types";
 
 /**
- * The LLM's raw response shape — companyInfo may legitimately be null when
- * the prompt told it company research was already cached (see
+ * The extraction call's raw response shape — companyInfo may legitimately be
+ * null when the prompt told it company research was already cached (see
  * promptBuilder's CACHED COMPANY INFO section). The caller resolves this down
- * to a full AnalysisResult (companyInfo always populated, from the response
- * or from the cache) before it's persisted.
+ * to a full CompanyInfo (from the response or from the cache) before it's
+ * persisted.
  */
-export type AnalysisResponse = Omit<AnalysisResult, "companyInfo"> & { companyInfo: AnalysisResult["companyInfo"] | null };
+export interface ExtractionResponse {
+  jobTitle: string;
+  company: string;
+  location: string;
+  workplaceType: WorkplaceType | null;
+  companyInfo: CompanyInfo | null;
+  role: RoleInfo;
+  roleClassification: RoleClassification;
+  interviewRounds: InterviewRound[];
+  summary: string;
+}
+
+export interface RequirementsResponse {
+  requirements: RequirementNode[];
+}
 
 function factSchema<T extends z.ZodTypeAny>(valueSchema: T) {
   const fact = z.object({
@@ -102,7 +119,15 @@ const interviewRoundSchema = z.object({
   source: z.enum(["page", "user"]).catch("page"),
 });
 
-const analysisResultSchema = z.object({
+// The model occasionally returns an array of bullet points, or omits/nulls
+// this, instead of one string — recover instead of failing the whole
+// response over a summary.
+const summarySchema = z.preprocess(
+  (v) => (typeof v === "string" ? v : Array.isArray(v) ? v.join(" ") : ""),
+  z.string(),
+);
+
+const extractionResponseSchema = z.object({
   jobTitle: z.string(),
   company: z.string(),
   location: z.string(),
@@ -117,20 +142,26 @@ const analysisResultSchema = z.object({
     normalizedRole: z.string(),
     rationale: z.string(),
   }),
-  requirements: z.array(requirementNodeSchema),
   // Defaults to [] if the model omits it or sends null — nothing found is the common case.
   interviewRounds: z.preprocess((v) => v ?? [], z.array(interviewRoundSchema)),
-  // The model occasionally returns an array of bullet points, or omits/nulls
-  // this, instead of one string — recover instead of failing the whole
-  // response over a summary.
-  summary: z.preprocess((v) => (typeof v === "string" ? v : Array.isArray(v) ? v.join(" ") : ""), z.string()),
-}) satisfies z.ZodType<AnalysisResponse>;
+  summary: summarySchema,
+}) satisfies z.ZodType<ExtractionResponse>;
 
-export type ParseResult =
-  | { ok: true; result: AnalysisResponse }
-  | { ok: false; rawText: string; reason: string };
+const requirementsResponseSchema = z.object({
+  requirements: z.array(requirementNodeSchema),
+}) satisfies z.ZodType<RequirementsResponse>;
 
-export function parseAnalysisResponse(rawText: string): ParseResult {
+export type ParseResult<T> = { ok: true; result: T } | { ok: false; rawText: string; reason: string };
+
+export function parseExtractionResponse(rawText: string): ParseResult<ExtractionResponse> {
+  return parse(rawText, extractionResponseSchema);
+}
+
+export function parseRequirementsResponse(rawText: string): ParseResult<RequirementsResponse> {
+  return parse(rawText, requirementsResponseSchema);
+}
+
+function parse<T>(rawText: string, schema: z.ZodType<T>): ParseResult<T> {
   const candidate = extractJsonCandidate(rawText);
   if (!candidate) {
     return { ok: false, rawText, reason: "no JSON object found in response" };
@@ -143,7 +174,7 @@ export function parseAnalysisResponse(rawText: string): ParseResult {
     return { ok: false, rawText, reason: `invalid JSON: ${(error as Error).message}` };
   }
 
-  const validated = analysisResultSchema.safeParse(parsed);
+  const validated = schema.safeParse(parsed);
   if (!validated.success) {
     return { ok: false, rawText, reason: `schema validation failed: ${validated.error.message}` };
   }
