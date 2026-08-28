@@ -6,6 +6,12 @@ Chrome browser extension: Smart LinkedIn JD intelligence.
 
 Not affiliated with, endorsed by, or sponsored by LinkedIn Corporation.
 
+## Disclaimer
+
+This is a personal tool for manually initiated analysis. It does not automate scraping,
+bulk data collection, or other activity intended to circumvent LinkedIn controls, and it
+must be used in accordance with LinkedIn's User Agreement and applicable policies.
+
 Full design (architecture, diagrams, data model, algorithms) lives in
 [`docs/DESIGN.md`](docs/DESIGN.md). For a guided tour of the code — the file layout and how a click
 on "Analyze" actually flows end to end — see [`src/README.md`](src/README.md).
