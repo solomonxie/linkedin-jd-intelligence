@@ -204,7 +204,21 @@ This trades a bit of extraction precision for resilience: the extension only bre
 
 ### Prompt/response contract
 
-One prompt, one fenced JSON block, built from `{ resumeText, rawPageText }`:
+Two prompts, run concurrently (`Promise.all` in `runAnalysis`), each producing its own fenced JSON block,
+merged into one `AnalysisResult` by the caller:
+
+- **Extraction** (`buildExtractionPrompt`, from `rawPageText` alone — no resume): `jobTitle`, `company`,
+  `location`, `workplaceType`, `companyInfo`, `role`, `roleClassification`, `interviewRounds`, `summary`.
+- **Requirements** (`buildRequirementsPrompt`, from `rawPageText` + `resumeText`): the weighted,
+  resume-matched requirement tree.
+
+Split this way because the requirement tree's rules and skill-implication reference are the majority of
+the combined prompt's instruction tokens, and extraction doesn't need any of that (or the resume) — one
+call stays light and fast, the other stays focused, and neither waits behind the other. A failure in
+either call (bad JSON, schema mismatch) still fails the whole analysis (`completeAnalysisUnparsed`) so the
+persisted record never has one half fresh and the other stale.
+
+The merged shape:
 
 ```
 {

@@ -1,25 +1,27 @@
-// Builds the single prompt that produces the entire AnalysisResult in one
-// LLM call — job/company/role extraction, brief, role classification, and
-// the weighted requirement tree, all from raw page text + resume text.
-// See docs/DESIGN.md "Prompt/response contract" for the rationale.
+// Builds the two prompts that together produce a full AnalysisResult:
+// extraction (job/company/role fields, from page text alone) and requirements
+// (the weighted, resume-matched requirement tree, from page text + resume).
+// Split so the light extraction call doesn't pay for the requirement tree's
+// rules/skill-reference bulk, and so it can run concurrently with the heavy
+// requirements call instead of serializing both behind one giant prompt. See
+// docs/DESIGN.md "Prompt/response contract" for the rationale.
 
 import { ROLE_TAXONOMY } from "../../shared/roleTaxonomy";
 import { formatIndustryPresetsForPrompt } from "./industryPresets";
 import { formatSkillPresetsForPrompt } from "./skillPresets";
 import type { CompanyInfo } from "../../shared/types";
 
-export interface BuildPromptParams {
-  resumeText: string;
+export interface BuildExtractionPromptParams {
   rawPageText: string;
   /** When set, company research is already known — skip re-deriving it (see CACHED COMPANY INFO below). */
   cachedCompanyInfo?: { name: string; info: CompanyInfo } | null;
 }
 
-export function buildAnalysisPrompt({ resumeText, rawPageText, cachedCompanyInfo }: BuildPromptParams): string {
-  return `You are helping a job seeker evaluate a LinkedIn job posting against their resume.
-You will be given the raw visible text of the job posting page and the candidate's resume text.
-Extract structured information and respond with EXACTLY ONE fenced JSON code block (\`\`\`json ... \`\`\`)
-matching the schema below. Do not include any text outside that one code block.
+export function buildExtractionPrompt({ rawPageText, cachedCompanyInfo }: BuildExtractionPromptParams): string {
+  return `You are helping a job seeker evaluate a LinkedIn job posting.
+You will be given the raw visible text of the job posting page. Extract structured information and
+respond with EXACTLY ONE fenced JSON code block (\`\`\`json ... \`\`\`) matching the schema below. Do not
+include any text outside that one code block.
 
 SCHEMA
 {
@@ -37,7 +39,6 @@ SCHEMA
     "applicantCountInsight": string | null   // not a Fact — see APPLICANT COUNT INSIGHT below
   },
   "roleClassification": { "normalizedRole": string, "rationale": string },
-  "requirements": RequirementNode[],
   "interviewRounds": InterviewRound[],
   "summary": string
 }
@@ -46,12 +47,6 @@ SCHEMA
 //   "industry": Fact<string[]>, "headquarters": Fact<string>, "mainProducts": Fact<string[]>,
 //   "employeeSize": Fact<string>, "engineeringSize": Fact<string>, "arr": Fact<string>,
 //   "fundingStage": Fact<string>, "ownership": Fact<"public"|"private">, "techStack": Fact<string[]>
-// }
-// RequirementNode = {
-//   "requirement": string, "tier": "must-have" | "nice-to-have" | "implied",
-//   "weight": number,          // 0-100, importance relative to sibling nodes
-//   "matched": boolean, "evidence": string | null, "resumeSnippet": string | null,
-//   "children": RequirementNode[]   // [] if none
 // }
 // InterviewRound = { "label": string, "durationMinutes": number | null, "mode": string | null, "source": "page" }
 
@@ -111,7 +106,10 @@ brand recognition, how niche vs. broad the required skills are, how generic/seni
 This is explicitly speculative, not a verified fact — phrase it that way ("likely", "possibly", "may be"),
 never as a certainty. Examples: "Likely high given the above-market salary and fully-remote setup." /
 "Possibly low due to the narrow, senior-specific skill combination and no salary listed."
-
+${
+  cachedCompanyInfo
+    ? ""
+    : `
 HEADQUARTERS (companyInfo.headquarters)
 The company's headquarters city (and state/country if useful to disambiguate, e.g. "San Francisco, CA" or
 "London, UK"). Follow the same FACT-SOURCING RULES as above — "page" only if the posting states it,
@@ -123,7 +121,8 @@ venture capital firm is ["VC"], Google is ["Tech"], a university is ["Education"
 ["FinTech", "SaaS"]. Prefer one or more of these when they fit reasonably well, otherwise add a short
 custom tag alongside them:
 ${formatIndustryPresetsForPrompt()}
-
+`
+}
 ROLE CLASSIFICATION
 Classify what the role actually IS from its responsibilities and requirements, not its literal title —
 titles are frequently misleading (e.g. "Software Engineer, Data Platform" is often really Data
@@ -132,12 +131,50 @@ custom label:
 ${ROLE_TAXONOMY.map((role) => `  - ${role}`).join("\n")}
 Always include a one-sentence rationale for the classification.
 
+INTERVIEW ROUNDS
+Only include a round if the posting explicitly describes its interview/hiring process (e.g. a numbered
+list, a "Our process" section, "3 rounds: ..."). Do NOT guess or fill in a typical/expected process from
+general knowledge — "source" must always be "page" here; if the posting doesn't describe its process,
+return "interviewRounds": [] rather than inventing one. For each round found, "label" is a short name
+(e.g. "Recruiter screen", "Technical interview", "System design", "Onsite", "Hiring manager chat"),
+"durationMinutes" and "mode" (e.g. "virtual", "onsite", "phone") are whatever the posting states, or null
+if not stated. Order rounds as the posting presents them.
+
+INPUTS
+
+[JOB POSTING PAGE TEXT]
+${rawPageText}
+[END JOB POSTING PAGE TEXT]
+
+Respond now with exactly one \`\`\`json ... \`\`\` code block matching the schema above.`;
+}
+
+export interface BuildRequirementsPromptParams {
+  resumeText: string;
+  rawPageText: string;
+}
+
+export function buildRequirementsPrompt({ resumeText, rawPageText }: BuildRequirementsPromptParams): string {
+  return `You are helping a job seeker evaluate a LinkedIn job posting against their resume.
+You will be given the raw visible text of the job posting page and the candidate's resume text. Build the
+weighted requirement tree described below and respond with EXACTLY ONE fenced JSON code block
+(\`\`\`json ... \`\`\`) matching the schema. Do not include any text outside that one code block.
+
+SCHEMA
+{ "requirements": RequirementNode[] }
+// RequirementNode = {
+//   "requirement": string, "tier": "must-have" | "nice-to-have" | "implied",
+//   "weight": number,          // 0-100, importance relative to sibling nodes
+//   "matched": boolean, "evidence": string | null, "resumeSnippet": string | null,
+//   "children": RequirementNode[]   // [] if none
+// }
+
 REQUIREMENT TREE — SKILLS AND QUALIFICATIONS ONLY
 Only include things a resume can actually provide evidence for or against: technical skills, tools,
 domain knowledge, experience level, certifications. Do NOT add nodes for employment
 logistics that aren't skills — employment type/schedule (full-time, part-time, contract), work
 authorization or visa sponsorship, security clearance, relocation or travel willingness, and on-site/
-hybrid/remote (already captured in "workplaceType" above) never belong in this tree, matched or not.
+hybrid/remote (already captured separately) never belong in this tree, matched or not.
 Do NOT add nodes for soft skills either — communication, collaboration, teamwork, leadership,
 "stakeholder management," and similar are not resume-verifiable technical facts; leave them out even
 if the posting lists them. Do NOT add nodes for education/degree requirements (bachelor's/master's/PhD,
@@ -233,15 +270,6 @@ For every node (every depth), set "matched": true if the resume shows explicit O
 it — e.g. a "Python" requirement is matched, with evidence noting the inference, if the resume only
 lists "Django". Put a short quote or paraphrase in "evidence" and, if applicable, the relevant resume
 fragment in "resumeSnippet". Leave both null if nothing in the resume supports it.
-
-INTERVIEW ROUNDS
-Only include a round if the posting explicitly describes its interview/hiring process (e.g. a numbered
-list, a "Our process" section, "3 rounds: ..."). Do NOT guess or fill in a typical/expected process from
-general knowledge — "source" must always be "page" here; if the posting doesn't describe its process,
-return "interviewRounds": [] rather than inventing one. For each round found, "label" is a short name
-(e.g. "Recruiter screen", "Technical interview", "System design", "Onsite", "Hiring manager chat"),
-"durationMinutes" and "mode" (e.g. "virtual", "onsite", "phone") are whatever the posting states, or null
-if not stated. Order rounds as the posting presents them.
 
 INPUTS
 
