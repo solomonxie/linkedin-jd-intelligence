@@ -8,9 +8,9 @@ import { getCompanyRecord, upsertCompanyRecord } from "../shared/db";
 import { extractCompanySlugHint, normalizeCompanyKey } from "../shared/companyKey";
 import type { AnalyzeAck, AnalyzeRequest } from "../shared/messaging";
 import { broadcastJobRecordUpdated, isAnalyzeRequest } from "../shared/messaging";
-import { buildAnalysisPrompt } from "./llm/promptBuilder";
+import { buildExtractionPrompt, buildRequirementsPrompt } from "./llm/promptBuilder";
 import { callOpenAI } from "./llm/openaiClient";
-import { parseAnalysisResponse } from "./llm/responseParser";
+import { parseExtractionResponse, parseRequirementsResponse } from "./llm/responseParser";
 import { beginAnalysis, completeAnalysisError, completeAnalysisOk, completeAnalysisUnparsed } from "./historyStore";
 import { blankCompanyInfo } from "../shared/types";
 import type { AnalysisResult, CompanyInfo, CompanyRecord, ReasoningEffort } from "../shared/types";
@@ -78,25 +78,47 @@ async function runAnalysis(
   slugKey: string | null,
 ): Promise<void> {
   try {
-    const prompt = buildAnalysisPrompt({
-      resumeText,
+    const extractionPrompt = buildExtractionPrompt({
       rawPageText: request.rawPageText,
       cachedCompanyInfo: cached ? { name: cached.name, info: cached.companyInfo } : null,
     });
-    const rawResponse = await callOpenAI({ prompt, apiKey, model, reasoningEffort });
-    const parsed = parseAnalysisResponse(rawResponse);
-    if (parsed.ok) {
-      const companyInfo = parsed.result.companyInfo ?? cached?.companyInfo ?? blankCompanyInfo();
-      const result: AnalysisResult = { ...parsed.result, companyInfo };
-      await completeAnalysisOk(request.jobId, result);
+    const requirementsPrompt = buildRequirementsPrompt({ resumeText, rawPageText: request.rawPageText });
 
-      // Only persist when freshly derived — a cache hit already reflects
-      // what's stored, no need to rewrite it.
-      if (parsed.result.companyInfo) {
-        await cacheCompanyInfo(result.company, companyInfo, slugKey);
-      }
-    } else {
-      await completeAnalysisUnparsed(request.jobId, parsed.rawText, parsed.reason);
+    // Two independent calls run concurrently instead of one prompt that pays for both instruction sets
+    // serially — extraction doesn't need the requirement tree's rules/skill-reference bulk (or the resume
+    // at all), and requirements doesn't need the company/role instructions. See promptBuilder.ts.
+    const [extractionRaw, requirementsRaw] = await Promise.all([
+      callOpenAI({ prompt: extractionPrompt, apiKey, model, reasoningEffort }),
+      callOpenAI({ prompt: requirementsPrompt, apiKey, model, reasoningEffort }),
+    ]);
+    const extractionParsed = parseExtractionResponse(extractionRaw);
+    const requirementsParsed = parseRequirementsResponse(requirementsRaw);
+
+    if (!extractionParsed.ok || !requirementsParsed.ok) {
+      const rawText = [
+        !extractionParsed.ok ? `[extraction]\n${extractionParsed.rawText}` : null,
+        !requirementsParsed.ok ? `[requirements]\n${requirementsParsed.rawText}` : null,
+      ]
+        .filter((part): part is string => part !== null)
+        .join("\n\n");
+      const reason = [
+        !extractionParsed.ok ? `extraction: ${extractionParsed.reason}` : null,
+        !requirementsParsed.ok ? `requirements: ${requirementsParsed.reason}` : null,
+      ]
+        .filter((part): part is string => part !== null)
+        .join("; ");
+      await completeAnalysisUnparsed(request.jobId, rawText, reason);
+      return;
+    }
+
+    const companyInfo = extractionParsed.result.companyInfo ?? cached?.companyInfo ?? blankCompanyInfo();
+    const result: AnalysisResult = { ...extractionParsed.result, companyInfo, requirements: requirementsParsed.result.requirements };
+    await completeAnalysisOk(request.jobId, result);
+
+    // Only persist when freshly derived — a cache hit already reflects
+    // what's stored, no need to rewrite it.
+    if (extractionParsed.result.companyInfo) {
+      await cacheCompanyInfo(result.company, companyInfo, slugKey);
     }
   } catch (error) {
     await completeAnalysisError(request.jobId, (error as Error).message);

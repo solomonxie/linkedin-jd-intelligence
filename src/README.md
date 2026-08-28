@@ -44,13 +44,18 @@ Read top to bottom; each arrow is "calls" or "sends a message to".
      -> upsertJobRecord({ status: "pending", ... })   [src/shared/db.ts]
      -> getSettings()                                 [src/shared/storage.ts]
           resolves the API key/model + the active resume profile's text
-     -> buildAnalysisPrompt({ resumeText, rawPageText })
+     -> buildExtractionPrompt({ rawPageText, cachedCompanyInfo })
+        buildRequirementsPrompt({ resumeText, rawPageText })
                                                        [src/background/llm/promptBuilder.ts]
-          uses ROLE_TAXONOMY                          [src/shared/roleTaxonomy.ts]
-     -> callOpenAI(prompt, apiKey, model)              [src/background/llm/openaiClient.ts]
-          -> fetch https://api.openai.com/...
-     -> parseAnalysisResponse(rawText)                 [src/background/llm/responseParser.ts]
-          zod-validates against AnalysisResult         [src/shared/types.ts]
+          extraction uses ROLE_TAXONOMY                [src/shared/roleTaxonomy.ts]
+          requirements uses SKILL_PRESETS              [src/background/llm/skillPresets.ts]
+     -> Promise.all, run concurrently:
+          callOpenAI(extractionPrompt, apiKey, model)  [src/background/llm/openaiClient.ts]
+          callOpenAI(requirementsPrompt, apiKey, model)
+          -> fetch https://api.openai.com/... (x2)
+     -> parseExtractionResponse(rawText)                [src/background/llm/responseParser.ts]
+        parseRequirementsResponse(rawText)
+          zod-validates each, merged into one AnalysisResult [src/shared/types.ts]
      -> upsertJobRecord({ status: "ok"|"unparsed"|"error", ... })
                                                        [src/shared/db.ts]
      -> broadcastJobRecordUpdated(jobId)               [src/shared/messaging.ts]
