@@ -4,6 +4,8 @@
 
 Chrome browser extension: Smart LinkedIn JD intelligence.
 
+**[Install from the Chrome Web Store](https://chromewebstore.google.com/detail/linkedin-jd-intelligence/cbigdbaklnmnjoehphidondmogiaehne)**
+
 Not affiliated with, endorsed by, or sponsored by LinkedIn Corporation.
 
 ## Disclaimer
@@ -51,6 +53,8 @@ npm run build      # tsc --noEmit && vite build -> dist/
 ```
 
 Then `chrome://extensions` → Developer mode → "Load unpacked" → select `dist/`.
+
+Or grab a prebuilt zip from the [Releases page](https://github.com/solomonxie/linkedin-jd-intelligence/releases) and load it unpacked after unzipping.
 
 ## Screenshots
 
