@@ -15,8 +15,7 @@ from store_png import cmd_shoot
 
 ROOT = Path(__file__).resolve().parent.parent
 ICONS = ROOT / "public" / "icons"
-ASSETS = ROOT / "src" / "assets"
-STORE = ROOT / "docs" / "screenshots" / "store"
+DOCS = ROOT / "docs"
 SIZES = (16, 32, 48, 128)
 
 
@@ -46,11 +45,10 @@ def lockup_svg():
 
 def main():
     ICONS.mkdir(parents=True, exist_ok=True)
-    STORE.mkdir(parents=True, exist_ok=True)
-    ASSETS.mkdir(parents=True, exist_ok=True)
+    DOCS.mkdir(parents=True, exist_ok=True)
 
-    (ASSETS / "logo-icon.svg").write_text(brand.mark_svg())
-    (ASSETS / "logo-full.svg").write_text(lockup_svg())
+    (DOCS / "logo-icon.svg").write_text(brand.mark_svg())
+    (DOCS / "logo-full.svg").write_text(lockup_svg())
 
     with tempfile.TemporaryDirectory(prefix="icons-") as tmp:
         for size in SIZES:
@@ -58,7 +56,7 @@ def main():
             html.write_text(page(size))
             cmd_shoot(html, size, size, ICONS / f"icon-{size}.png")
 
-    store_icon = STORE / "store-icon-128.png"
+    store_icon = DOCS / "store-icon-128.png"
     store_icon.write_bytes((ICONS / "icon-128.png").read_bytes())
     print(f"{store_icon.relative_to(ROOT)}  128x128  24-bit RGB (copy of icon-128)")
 

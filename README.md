@@ -49,10 +49,10 @@ Full details, including exactly what's collected and why: [`PRIVACY.md`](PRIVACY
 
 ```
 npm install
-npm run build      # tsc --noEmit && vite build -> dist/
+npm run build      # tsc --noEmit && vite build -> extension/
 ```
 
-Then `chrome://extensions` → Developer mode → "Load unpacked" → select `dist/`.
+Then `chrome://extensions` → Developer mode → "Load unpacked" → select `extension/`.
 
 Or grab a prebuilt zip from the [Releases page](https://github.com/solomonxie/linkedin-jd-intelligence/releases) and load it unpacked after unzipping.
 
@@ -60,6 +60,6 @@ Or grab a prebuilt zip from the [Releases page](https://github.com/solomonxie/li
 
 | Skill / experience match | Settings — resumes, model, block list |
 |---|---|
-| ![Skill match against a resume, with company & role brief](docs/screenshots/linkedin-jd-int-screenshot-fullpage-2-skillmatch.png) | ![Settings page: API key, resume profiles, blocked companies/jobs, keyword blocks](docs/screenshots/linkedin-jd-int-screenshot-settings.png) |
+| ![Skill match against a resume, with company & role brief](docs/screenshot-skillmatch.png) | ![Settings page: API key, resume profiles, blocked companies/jobs, keyword blocks](docs/screenshot-settings.png) |
 
-![Interview process and footer actions](docs/screenshots/linkedin-jd-int-screenshot-section-interview-rounds.png)
+![Interview process and footer actions](docs/screenshot-interview-rounds.png)

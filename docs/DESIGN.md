@@ -443,7 +443,7 @@ Analyze button disables while a request is in flight. If PDF/DOCX parsing yields
 
 ## Verification plan
 
-1. `npm run build` → load `dist/` unpacked via `chrome://extensions` (Developer mode).
+1. `npm run build` → load `extension/` unpacked via `chrome://extensions` (Developer mode).
 2. Set a real OpenAI key in Options, open a LinkedIn job, click Analyze in the side panel, confirm a network call to `api.openai.com`, confirm the brief (page-sourced vs. `est`-flagged fields), role classification, and the weighted/expandable requirement tree render, confirm a `JobRecord` is upserted (check via the extension's Application/Storage DevTools panel).
 3. Caching: analyze a job, switch to a different LinkedIn tab and back, confirm the cached result reloads without a new API call; click Re-analyze and confirm it replaces (not duplicates) the record.
 4. Durability: click Analyze, then immediately refresh the LinkedIn tab (and separately, close the side panel) before it completes — confirm the analysis still finishes and the result is there when you reopen the panel. Kill Chrome entirely mid-analysis, relaunch, reopen the side panel — confirm it does not hang forever, and instead shows the "didn't complete, retry" state once the staleness threshold passes.
