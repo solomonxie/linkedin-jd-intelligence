@@ -93,16 +93,20 @@ Privacy policy URL: https://github.com/solomonxie/linkedin-jd-intelligence/blob/
 
 ## Listing art
 
-All store-ready images live in `docs/screenshots/store/` — JPEG or 24-bit RGB PNG (no alpha), the
-only formats the dashboard accepts.
+Every upload-ready image lives in `docs/` under a `store-` prefix — JPEG or 24-bit RGB PNG (no
+alpha), the only formats the dashboard accepts.
 
 | Slot | File | Regenerate |
 |---|---|---|
 | Store icon 128x128 | `store-icon-128.png` | `make icons` |
-| Small promo tile 440x280 | `small-promo-tile-440x280.png` | `make assets` |
-| Marquee promo tile 1400x560 | `marquee-promo-tile-1400x560.png` | `make assets` |
-| Screenshots 1280x800 | `*-store.jpg` | hand-captured |
+| Small promo tile 440x280 | `store-promo-small-440x280.png` | `make assets` |
+| Marquee promo tile 1400x560 | `store-promo-marquee-1400x560.png` | `make assets` |
+| Screenshots 1280x800 | `store-screenshot-*.jpg` | hand-captured |
 
-`make icons` also rewrites `public/icons/*.png` (the extension icons) and the SVG logo sources from
-the single geometry/palette source, `scripts/brand.py`. `make check-assets` verifies size and colour
-type before upload.
+The rest of `docs/` is repo-facing: `screenshot-*.png` are the README captures and `logo-*.svg` the
+brand sources.
+
+`make icons` rewrites `public/icons/*.png` (the shipped icons — RGBA, so the mark floats on light and
+dark toolbars), `docs/logo-*.svg`, and the flattened `store-icon-128.png`, all from the single
+geometry/palette source `scripts/brand.py`. `make check-assets` verifies size and colour type before
+upload.

@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Regenerate the Chrome Web Store promo tiles in docs/screenshots/store/.
+"""Regenerate the Chrome Web Store promo tiles in docs/.
 
 Rendered in headless Chrome and re-encoded to 24-bit RGB PNG (no alpha), which
 is what the Developer Dashboard accepts.
@@ -14,7 +14,7 @@ import brand
 from store_png import cmd_shoot
 
 ROOT = Path(__file__).resolve().parent.parent
-OUT = ROOT / "docs" / "screenshots" / "store"
+OUT = ROOT / "docs"
 
 NAME = "LinkedIn JD Intelligence"
 TAGLINE = "Every LinkedIn job posting, read against your resume"
@@ -79,8 +79,8 @@ p { font-size: 27px; margin-top: 18px; line-height: 1.35; }
 def main():
     OUT.mkdir(parents=True, exist_ok=True)
     jobs = [
-        ("small-promo-tile-440x280.png", small_tile(), 440, 280),
-        ("marquee-promo-tile-1400x560.png", marquee_tile(), 1400, 560),
+        ("store-promo-small-440x280.png", small_tile(), 440, 280),
+        ("store-promo-marquee-1400x560.png", marquee_tile(), 1400, 560),
     ]
     with tempfile.TemporaryDirectory(prefix="store-assets-") as tmp:
         for name, html, width, height in jobs:

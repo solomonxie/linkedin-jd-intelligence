@@ -5,4 +5,5 @@ import manifest from "./manifest.config.ts";
 
 export default defineConfig({
   plugins: [react(), crx({ manifest })],
+  build: { outDir: "extension", emptyOutDir: true },
 });
