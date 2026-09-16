@@ -10,7 +10,7 @@ Read top to bottom; each arrow is "calls" or "sends a message to".
 ```
 0) Build time
    manifest.config.ts  (MV3 manifest, read by vite.config.ts via @crxjs/vite-plugin)
-     -> wires up every entry point named below into dist/manifest.json
+     -> wires up every entry point named below into extension/manifest.json
 
 1) A LinkedIn job tab is open
    src/content-scripts/linkedin/main.ts              (content script entry)
