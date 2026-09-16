@@ -16,7 +16,7 @@ TILE_EDGE = "#E3E8EF"
 LIGHT = {
     "back": "#DCE2EA", "avatar": "#94A3B5",
     "card": BLUE, "ink": "#FFFFFF", "line": "#7FB2E6",
-    "lens": "#FFFFFF", "ring": BLUE, "handle": BLUE_DEEP, "spark": BLUE,
+    "lens": "#FFFFFF", "ring": BLUE, "handle": BLUE, "spark": BLUE,
 }
 DARK = {
     "back": "#B9CDE4", "avatar": "#5E7FA6",
@@ -88,15 +88,16 @@ def glyph_svg(size, dark=False, compact=False, cls=""):
     )
 
 
-def mark_svg(size=None, radius=14, edge=False, compact=False):
-    """The full icon: white tile plus the light-colourway glyph."""
+def mark_svg(size=None, tile=None, radius=14, compact=False):
+    """The full mark. `tile` paints a rounded backing square; None leaves the
+    background transparent, which is what the shipped icons need so they don't
+    sit on a white card in a dark-theme toolbar."""
     dims = f'width="{size}" height="{size}" ' if size else ""
-    frame = (
-        f'<rect x="0.5" y="0.5" width="63" height="63" rx="{radius - 0.5}"'
-        f' fill="none" stroke="{TILE_EDGE}"/>' if edge else ""
+    back = (
+        f'<rect width="64" height="64" rx="{radius}" fill="{tile}"/>' if tile else ""
     )
     return f"""<svg {dims}viewBox="0 0 64 64" xmlns="http://www.w3.org/2000/svg">
-  <rect width="64" height="64" rx="{radius}" fill="{TILE_WHITE}"/>{frame}{glyph(compact=compact)}</svg>
+  {back}{glyph(compact=compact)}</svg>
 """
 
 

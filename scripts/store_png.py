@@ -135,7 +135,8 @@ def cmd_check(paths):
     return 1 if failed else 0
 
 
-def cmd_shoot(html, width, height, out):
+def cmd_shoot(html, width, height, out, flatten=True):
+    """flatten=False keeps Chrome's RGBA output — for icons that need alpha."""
     subprocess.run(
         [
             CHROME,
@@ -145,6 +146,7 @@ def cmd_shoot(html, width, height, out):
             "--force-device-scale-factor=1",
             "--allow-file-access-from-files",
             "--virtual-time-budget=4000",
+            *([] if flatten else ["--default-background-color=00000000"]),
             f"--window-size={width},{height}",
             f"--screenshot={out}",
             f"file://{Path(html).resolve()}",
@@ -155,8 +157,9 @@ def cmd_shoot(html, width, height, out):
     w, h, channels, pixels = decode(out)
     if (w, h) != (width, height):
         raise SystemExit(f"got {w}x{h}, want {width}x{height}")
-    write_rgb(out, w, h, channels, pixels)
-    print(f"{out}  {w}x{h}  24-bit RGB")
+    if flatten:
+        write_rgb(out, w, h, channels, pixels)
+    print(f"{out}  {w}x{h}  {'24-bit RGB' if flatten else 'RGBA'}")
     return 0
 
 
