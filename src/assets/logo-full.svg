@@ -1,37 +1,21 @@
-<svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" viewBox="0 0 200 200">
+<svg viewBox="0 0 560 120" xmlns="http://www.w3.org/2000/svg">
   <defs>
-    <linearGradient id="badgeGrad" x1="0%" y1="0%" x2="100%" y2="100%">
-      <stop offset="0%" stop-color="#334155"/>
-      <stop offset="100%" stop-color="#0F172A"/>
-    </linearGradient>
-    <!-- Approximate LinkedIn #OpenToWork frame green — not pulled from an
-         official brand asset, since no exact hex could be confirmed. -->
-    <linearGradient id="ringGrad" x1="0%" y1="0%" x2="100%" y2="0%">
-      <stop offset="0%" stop-color="#478C33"/>
-      <stop offset="100%" stop-color="#7DC242"/>
+    <linearGradient id="lockupBg" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#1B7BDC"/>
+      <stop offset="0.55" stop-color="#0A66C2"/>
+      <stop offset="1" stop-color="#084C93"/>
     </linearGradient>
   </defs>
-
-  <path id="ringPath" d="M 18,100 A 82,82 0 0,0 182,100" fill="none"
-        stroke="url(#ringGrad)" stroke-width="18" stroke-linecap="round"/>
-
-  <circle cx="100" cy="100" r="68" fill="url(#badgeGrad)"/>
-
-  <!-- Magnifying glass: lens + handle -->
-  <circle cx="90" cy="90" r="26" fill="none" stroke="#FFFFFF" stroke-width="11"/>
-  <line x1="109" y1="109" x2="134" y2="134" stroke="#FFFFFF" stroke-width="11" stroke-linecap="round"/>
-
-  <g font-family="Helvetica, Arial, sans-serif" font-weight="700" font-size="18" fill="#FFFFFF">
-    <text x="32.83" y="147.03" transform="rotate(55.00 32.83 147.03)" text-anchor="middle" dominant-baseline="central">#</text>
-    <text x="43.04" y="158.99" transform="rotate(44.00 43.04 158.99)" text-anchor="middle" dominant-baseline="central">O</text>
-    <text x="55.34" y="168.77" transform="rotate(33.00 55.34 168.77)" text-anchor="middle" dominant-baseline="central">P</text>
-    <text x="69.28" y="176.03" transform="rotate(22.00 69.28 176.03)" text-anchor="middle" dominant-baseline="central">E</text>
-    <text x="84.35" y="180.49" transform="rotate(11.00 84.35 180.49)" text-anchor="middle" dominant-baseline="central">N</text>
-    <text x="100.00" y="182.00" transform="rotate(0.00 100.00 182.00)" text-anchor="middle" dominant-baseline="central">T</text>
-    <text x="115.65" y="180.49" transform="rotate(-11.00 115.65 180.49)" text-anchor="middle" dominant-baseline="central">O</text>
-    <text x="130.72" y="176.03" transform="rotate(-22.00 130.72 176.03)" text-anchor="middle" dominant-baseline="central">W</text>
-    <text x="144.66" y="168.77" transform="rotate(-33.00 144.66 168.77)" text-anchor="middle" dominant-baseline="central">O</text>
-    <text x="156.96" y="158.99" transform="rotate(-44.00 156.96 158.99)" text-anchor="middle" dominant-baseline="central">R</text>
-    <text x="167.17" y="147.03" transform="rotate(-55.00 167.17 147.03)" text-anchor="middle" dominant-baseline="central">K</text>
-  </g>
+  <rect x="0" y="10" width="100" height="100" rx="24" fill="url(#lockupBg)"/>
+  <g transform="translate(10 20) scale(5)">
+<circle cx="7" cy="6.9" r="4.3" fill="#fff"/>
+<rect x="9.2" y="10.2" width="4.9" height="2.5" rx="1.25" fill="#fff"
+      transform="rotate(45 9.2 10.2)"/>
+<path d="M4.9 6.9 L6.45 8.5 L9.2 5.1" fill="none" stroke="#16A34A"
+      stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
+</g>
+  <text x="124" y="52" font-family="-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif" font-size="34" font-weight="700"
+        fill="#0A66C2">LinkedIn JD Intelligence</text>
+  <text x="126" y="82" font-family="-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif" font-size="17"
+        fill="#64748B">Skill match · company brief · interview process</text>
 </svg>

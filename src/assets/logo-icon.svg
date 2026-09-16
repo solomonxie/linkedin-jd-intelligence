@@ -1,23 +1,15 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 200">
+<svg viewBox="0 0 16 16" xmlns="http://www.w3.org/2000/svg">
   <defs>
-    <linearGradient id="badgeGrad" x1="0%" y1="0%" x2="100%" y2="100%">
-      <stop offset="0%" stop-color="#334155"/>
-      <stop offset="100%" stop-color="#0F172A"/>
-    </linearGradient>
-    <!-- Approximate LinkedIn #OpenToWork frame green — not pulled from an
-         official brand asset, since no exact hex could be confirmed. -->
-    <linearGradient id="ringGrad" x1="0%" y1="0%" x2="100%" y2="0%">
-      <stop offset="0%" stop-color="#478C33"/>
-      <stop offset="100%" stop-color="#7DC242"/>
+    <linearGradient id="markBg" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#1B7BDC"/>
+      <stop offset="0.55" stop-color="#0A66C2"/>
+      <stop offset="1" stop-color="#084C93"/>
     </linearGradient>
   </defs>
-
-  <path d="M 18,100 A 82,82 0 0,0 182,100" fill="none"
-        stroke="url(#ringGrad)" stroke-width="18" stroke-linecap="round"/>
-
-  <circle cx="100" cy="100" r="68" fill="url(#badgeGrad)"/>
-
-  <!-- Magnifying glass: lens + handle -->
-  <circle cx="90" cy="90" r="26" fill="none" stroke="#FFFFFF" stroke-width="11"/>
-  <line x1="109" y1="109" x2="134" y2="134" stroke="#FFFFFF" stroke-width="11" stroke-linecap="round"/>
+  <rect width="16" height="16" fill="url(#markBg)"/>
+<circle cx="7" cy="6.9" r="4.3" fill="#fff"/>
+<rect x="9.2" y="10.2" width="4.9" height="2.5" rx="1.25" fill="#fff"
+      transform="rotate(45 9.2 10.2)"/>
+<path d="M4.9 6.9 L6.45 8.5 L9.2 5.1" fill="none" stroke="#16A34A"
+      stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
 </svg>
