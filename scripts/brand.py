@@ -1,50 +1,102 @@
 """Brand mark geometry and palette, shared by the icon and store-art generators.
 
-The mark is a lens over a job posting: a white magnifier with a green match
-check. Geometry lives on a 16-unit grid so it renders identically at 16px and
-1400px.
+The mark is a job posting read against a profile: a blue JD card carrying the
+"in" wordmark, a muted profile card behind it, and a magnifier holding a
+sparkle. Geometry lives on a 64-unit grid so it renders identically at 16px and
+1400px. Two colourways: `light` for white tiles, `dark` for blue/near-black.
 """
 
 BLUE = "#0A66C2"          # --accent in src/shared/styles.css
 BLUE_BRIGHT = "#1B7BDC"
 BLUE_DEEP = "#084C93"
 BLUE_NIGHT = "#062B56"
-GREEN = "#16A34A"
-GREEN_BRIGHT = "#22C55E"
+TILE_WHITE = "#FFFFFF"
+TILE_EDGE = "#E3E8EF"
 
-GLYPH = """
-<circle cx="7" cy="6.9" r="4.3" fill="#fff"/>
-<rect x="9.2" y="10.2" width="4.9" height="2.5" rx="1.25" fill="#fff"
-      transform="rotate(45 9.2 10.2)"/>
-<path d="M4.9 6.9 L6.45 8.5 L9.2 5.1" fill="none" stroke="{check}"
-      stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
-"""
+LIGHT = {
+    "back": "#DCE2EA", "avatar": "#94A3B5",
+    "card": BLUE, "ink": "#FFFFFF", "line": "#7FB2E6",
+    "lens": "#FFFFFF", "ring": BLUE, "handle": BLUE_DEEP, "spark": BLUE,
+}
+DARK = {
+    "back": "#B9CDE4", "avatar": "#5E7FA6",
+    "card": "#FFFFFF", "ink": BLUE, "line": "#8FBBE8",
+    "lens": "#FFFFFF", "ring": "#FFFFFF", "handle": "#FFFFFF", "spark": BLUE,
+}
 
 
-def glyph(check=GREEN):
-    return GLYPH.format(check=check)
-
-
-def glyph_svg(size, check=GREEN, cls=""):
-    """The shapes alone, transparent background — for use on a tile or panel."""
+def _wordmark(fill):
+    """The 'in' lettering, drawn on a 0..15 x 0..14 box."""
     return (
-        f'<svg class="{cls}" width="{size}" height="{size}" viewBox="0 0 16 16"'
-        f' xmlns="http://www.w3.org/2000/svg">{glyph(check)}</svg>'
+        f'<g fill="{fill}">'
+        '<circle cx="1.75" cy="1.75" r="1.75"/>'
+        '<rect x="0" y="4.8" width="3.5" height="9.2" rx="0.3"/>'
+        '<rect x="5.1" y="4.8" width="3.3" height="9.2" rx="0.3"/>'
+        '<path d="M8.25 8.4A3.15 3.15 0 0 1 14.55 8.4Z"/>'
+        '<rect x="11.25" y="8.1" width="3.3" height="5.9" rx="0.3"/>'
+        "</g>"
     )
 
 
-def mark_svg(size=None, grad_id="markBg"):
-    """The full-bleed icon: brand gradient square plus the glyph."""
+def _sparkle(cx, cy, r, fill):
+    """Four-point star with concave arms, centred on (cx, cy)."""
+    a, b = 0.10 * r, 0.35 * r
+    return (
+        f'<path d="M{cx} {cy - r}'
+        f"C{cx + a} {cy - b} {cx + b} {cy - a} {cx + r} {cy}"
+        f"C{cx + b} {cy + a} {cx + a} {cy + b} {cx} {cy + r}"
+        f"C{cx - a} {cy + b} {cx - b} {cy + a} {cx - r} {cy}"
+        f"C{cx - b} {cy - a} {cx - a} {cy - b} {cx} {cy - r}"
+        f'Z" fill="{fill}"/>'
+    )
+
+
+def glyph(dark=False, compact=False):
+    """The shapes alone, transparent background — for use on a tile or panel.
+
+    `compact` drops the detail that turns to mush below ~24px.
+    """
+    c = DARK if dark else LIGHT
+    avatar = (
+        f'<circle cx="41.5" cy="21.5" r="4.6" fill="{c["avatar"]}"/>' if compact
+        else f'<g fill="{c["avatar"]}"><circle cx="41.5" cy="21.5" r="4"/>'
+             f'<path d="M35 33.5a6.5 6.5 0 0 1 13 0Z"/></g>'
+    )
+    lines = "" if compact else f"""
+<g fill="{c['line']}">
+  <rect x="12.6" y="26.4" width="15" height="2.6" rx="1.3"/>
+  <rect x="12.6" y="31.4" width="12" height="2.6" rx="1.3"/>
+  <rect x="12.6" y="36.4" width="8.5" height="2.6" rx="1.3"/>
+</g>"""
+    mark = (13.15, 11.2, 0.98) if compact else (12.6, 11.4, 0.82)
+    return f"""
+<rect x="29" y="12" width="25" height="30" rx="4.5" fill="{c['back']}"/>{avatar}
+<rect x="8" y="7" width="25" height="39" rx="4.5" fill="{c['card']}"/>
+<g transform="translate({mark[0]} {mark[1]}) scale({mark[2]})">{_wordmark(c['ink'])}</g>{lines}
+<path d="M39 48L46.4 55.4" fill="none" stroke="{c['handle']}" stroke-width="6"
+      stroke-linecap="round"/>
+<circle cx="30.5" cy="39.5" r="10.1" fill="{c['lens']}" stroke="{c['ring']}"
+        stroke-width="3.8"/>
+{_sparkle(30.5, 39.5, 6.6, c['spark'])}
+"""
+
+
+def glyph_svg(size, dark=False, compact=False, cls=""):
+    return (
+        f'<svg class="{cls}" width="{size}" height="{size}" viewBox="0 0 64 64"'
+        f' xmlns="http://www.w3.org/2000/svg">{glyph(dark, compact)}</svg>'
+    )
+
+
+def mark_svg(size=None, radius=14, edge=False, compact=False):
+    """The full icon: white tile plus the light-colourway glyph."""
     dims = f'width="{size}" height="{size}" ' if size else ""
-    return f"""<svg {dims}viewBox="0 0 16 16" xmlns="http://www.w3.org/2000/svg">
-  <defs>
-    <linearGradient id="{grad_id}" x1="0" y1="0" x2="1" y2="1">
-      <stop offset="0" stop-color="{BLUE_BRIGHT}"/>
-      <stop offset="0.55" stop-color="{BLUE}"/>
-      <stop offset="1" stop-color="{BLUE_DEEP}"/>
-    </linearGradient>
-  </defs>
-  <rect width="16" height="16" fill="url(#{grad_id})"/>{glyph()}</svg>
+    frame = (
+        f'<rect x="0.5" y="0.5" width="63" height="63" rx="{radius - 0.5}"'
+        f' fill="none" stroke="{TILE_EDGE}"/>' if edge else ""
+    )
+    return f"""<svg {dims}viewBox="0 0 64 64" xmlns="http://www.w3.org/2000/svg">
+  <rect width="64" height="64" rx="{radius}" fill="{TILE_WHITE}"/>{frame}{glyph(compact=compact)}</svg>
 """
 
 
