@@ -90,3 +90,19 @@ Certifications: all three can be checked truthfully — not sold to third partie
 unrelated to the extension's single purpose, not used to determine creditworthiness or for lending.
 
 Privacy policy URL: https://github.com/solomonxie/linkedin-jd-intelligence/blob/master/PRIVACY.md
+
+## Listing art
+
+All store-ready images live in `docs/screenshots/store/` — JPEG or 24-bit RGB PNG (no alpha), the
+only formats the dashboard accepts.
+
+| Slot | File | Regenerate |
+|---|---|---|
+| Store icon 128x128 | `store-icon-128.png` | `make icons` |
+| Small promo tile 440x280 | `small-promo-tile-440x280.png` | `make assets` |
+| Marquee promo tile 1400x560 | `marquee-promo-tile-1400x560.png` | `make assets` |
+| Screenshots 1280x800 | `*-store.jpg` | hand-captured |
+
+`make icons` also rewrites `public/icons/*.png` (the extension icons) and the SVG logo sources from
+the single geometry/palette source, `scripts/brand.py`. `make check-assets` verifies size and colour
+type before upload.
