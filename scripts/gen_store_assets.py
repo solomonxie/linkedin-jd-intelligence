@@ -28,8 +28,8 @@ def base_css(width, height):
 body {{ margin: 0; width: {width}px; height: {height}px; overflow: hidden;
   background: {brand.TILE_BG}; color: #fff; font-family: {brand.FONT};
   -webkit-font-smoothing: antialiased; display: flex; }}
-.tile {{ background: rgba(255,255,255,.14); border: 1px solid rgba(255,255,255,.22);
-  display: grid; place-items: center; flex: none; }}
+.tile {{ background: #fff; display: grid; place-items: center; flex: none;
+  box-shadow: 0 18px 40px rgba(3,20,40,.28); }}
 .tile svg {{ display: block; }}
 h1 {{ margin: 0; font-weight: 700; letter-spacing: -.02em; }}
 p {{ margin: 0; color: rgba(255,255,255,.82); }}
