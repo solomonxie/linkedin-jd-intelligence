@@ -1,8 +1,9 @@
 #!/usr/bin/env python3
 """Regenerate the extension icons and the SVG logo sources from scripts/brand.py.
 
-Writes 24-bit RGB PNGs (no alpha) so the 128 can double as the Chrome Web Store
-icon, which rejects RGBA.
+public/icons/*.png keep their alpha, so the mark floats on light and dark
+toolbars alike. docs/store-icon-128.png is the same mark flattened onto a white
+tile, because the Chrome Web Store rejects RGBA.
 """
 import sys
 import tempfile
@@ -19,13 +20,14 @@ DOCS = ROOT / "docs"
 SIZES = (16, 32, 48, 128)
 
 
-def page(size):
+def page(size, tile=None):
     """Toolbar sizes (<=32) get the compact mark; the detail only survives above."""
-    mark = brand.mark_svg(size, compact=size <= 32)
+    mark = brand.mark_svg(size, tile=tile, compact=size <= 32)
+    bg = f"background:{tile};" if tile else ""
     return (
         "<!doctype html><meta charset='utf-8'>"
-        f"<style>html,body{{margin:0;width:{size}px;height:{size}px;overflow:hidden}}"
-        f"svg{{display:block}}</style>{mark}"
+        f"<style>html,body{{margin:0;{bg}width:{size}px;height:{size}px;"
+        f"overflow:hidden}}svg{{display:block}}</style>{mark}"
     )
 
 
@@ -54,11 +56,12 @@ def main():
         for size in SIZES:
             html = Path(tmp) / f"icon-{size}.html"
             html.write_text(page(size))
-            cmd_shoot(html, size, size, ICONS / f"icon-{size}.png")
+            cmd_shoot(html, size, size, ICONS / f"icon-{size}.png", flatten=False)
 
-    store_icon = DOCS / "store-icon-128.png"
-    store_icon.write_bytes((ICONS / "icon-128.png").read_bytes())
-    print(f"{store_icon.relative_to(ROOT)}  128x128  24-bit RGB (copy of icon-128)")
+        # The store rejects alpha, so its 128 gets the white tile baked in.
+        html = Path(tmp) / "store-icon.html"
+        html.write_text(page(128, tile=brand.TILE_WHITE))
+        cmd_shoot(html, 128, 128, DOCS / "store-icon-128.png")
 
 
 if __name__ == "__main__":
