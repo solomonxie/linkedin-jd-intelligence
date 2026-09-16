@@ -4,3 +4,4 @@ release-v*.zip
 .vite/
 *.local
 .DS_Store
+__pycache__/
