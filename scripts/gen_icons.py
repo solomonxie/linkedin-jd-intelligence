@@ -21,25 +21,21 @@ SIZES = (16, 32, 48, 128)
 
 
 def page(size):
+    """Toolbar sizes (<=32) get the compact mark; the detail only survives above."""
+    mark = brand.mark_svg(size, compact=size <= 32)
     return (
         "<!doctype html><meta charset='utf-8'>"
         f"<style>html,body{{margin:0;width:{size}px;height:{size}px;overflow:hidden}}"
-        f"svg{{display:block}}</style>{brand.mark_svg(size)}"
+        f"svg{{display:block}}</style>{mark}"
     )
 
 
 def lockup_svg():
     sub = "Skill match · company brief · interview process"
     return f"""<svg viewBox="0 0 560 120" xmlns="http://www.w3.org/2000/svg">
-  <defs>
-    <linearGradient id="lockupBg" x1="0" y1="0" x2="1" y2="1">
-      <stop offset="0" stop-color="{brand.BLUE_BRIGHT}"/>
-      <stop offset="0.55" stop-color="{brand.BLUE}"/>
-      <stop offset="1" stop-color="{brand.BLUE_DEEP}"/>
-    </linearGradient>
-  </defs>
-  <rect x="0" y="10" width="100" height="100" rx="24" fill="url(#lockupBg)"/>
-  <g transform="translate(10 20) scale(5)">{brand.glyph()}</g>
+  <rect x="0.5" y="10.5" width="99" height="99" rx="21.5" fill="#fff"
+        stroke="{brand.TILE_EDGE}"/>
+  <g transform="translate(0 10) scale(1.5625)">{brand.glyph()}</g>
   <text x="124" y="52" font-family="{brand.FONT}" font-size="34" font-weight="700"
         fill="{brand.BLUE}">LinkedIn JD Intelligence</text>
   <text x="126" y="82" font-family="{brand.FONT}" font-size="17"
