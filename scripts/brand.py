@@ -48,7 +48,9 @@ def mark_svg(size=None, grad_id="markBg"):
 """
 
 
-FONT = ('-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, '
+# Single-quoted family names: this string is also dropped into an SVG
+# font-family attribute, which is itself double-quoted.
+FONT = ("-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, "
         "Arial, sans-serif")
 
 TILE_BG = (
