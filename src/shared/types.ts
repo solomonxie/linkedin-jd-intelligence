@@ -242,11 +242,11 @@ export interface Settings {
   roleBlockKeywords: BlockKeyword[];
 }
 
-/** gpt-5 is slower than this analysis needs: reasoning tokens alone pushed time-to-first-token past
- * the 15s stall abort in openaiClient.ts, on a task that is extraction from text already on the page
- * rather than anything that rewards deep reasoning. mini at low effort answers fast enough to stream
- * well inside that window. Switchable in Settings. */
-export const DEFAULT_OPENAI_MODEL = "gpt-5-mini";
+/** Not a gpt-5: its reasoning tokens pushed time-to-first-token past the 15s stall abort in
+ * openaiClient.ts, which failed every run in practice — on a task that is extraction from text already
+ * on the page, not one that rewards deep reasoning. 4.1-mini emits immediately and is accurate enough
+ * here. Switchable in Settings, including to any model id typed by hand. */
+export const DEFAULT_OPENAI_MODEL = "gpt-4.1-mini";
 
 export const DEFAULT_SETTINGS: Settings = {
   openaiApiKey: null,
