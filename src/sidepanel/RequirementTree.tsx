@@ -33,6 +33,25 @@ export function RequirementTreeSkeleton() {
   );
 }
 
+/** Top-level nodes that came out of the same posting line, kept in tree order. A node with no
+ * sourceText (older record, or a node the model couldn't trace to one line) forms its own
+ * headerless group so it still renders exactly as before. */
+interface SourceGroup {
+  sourceText: string | null;
+  nodes: RequirementNode[];
+}
+
+export function groupBySourceText(nodes: RequirementNode[]): SourceGroup[] {
+  const groups: SourceGroup[] = [];
+  for (const node of nodes) {
+    const sourceText = node.sourceText?.trim() || null;
+    const existing = sourceText === null ? undefined : groups.find((g) => g.sourceText === sourceText);
+    if (existing) existing.nodes.push(node);
+    else groups.push({ sourceText, nodes: [node] });
+  }
+  return groups;
+}
+
 export function RequirementTree({
   nodes,
   prevalenceTooltip,
@@ -50,8 +69,15 @@ export function RequirementTree({
           <section className="requirement-tier-section" key={tier}>
             <h4 className="tier-section-heading">{SECTION_LABELS[tier]}</h4>
             <ul className="requirement-tree">
-              {group.map((node) => (
-                <RequirementRow key={node.requirement} node={node} depth={0} prevalenceTooltip={prevalenceTooltip} />
+              {groupBySourceText(group).map((sourceGroup, index) => (
+                <li className="requirement-source-group" key={sourceGroup.sourceText ?? `${sourceGroup.nodes[0].requirement}-${index}`}>
+                  {sourceGroup.sourceText && <p className="requirement-source">{sourceGroup.sourceText}</p>}
+                  <ul>
+                    {sourceGroup.nodes.map((node) => (
+                      <RequirementRow key={node.requirement} node={node} depth={0} prevalenceTooltip={prevalenceTooltip} />
+                    ))}
+                  </ul>
+                </li>
               ))}
             </ul>
           </section>

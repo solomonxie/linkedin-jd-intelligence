@@ -230,6 +230,35 @@ describe("parseExtractionResponse", () => {
 });
 
 describe("parseRequirementsResponse", () => {
+  it("keeps the posting's own line, trimmed", () => {
+    const result = parseRequirementsResponse(
+      JSON.stringify(
+        validRequirementsJson({
+          requirements: [{ ...validRequirementsJson().requirements[0], sourceText: "  5+ years of Python  " }],
+        }),
+      ),
+    );
+
+    expect(result.ok).toBe(true);
+    if (result.ok) expect(result.result.requirements[0].sourceText).toBe("5+ years of Python");
+  });
+
+  it("defaults a missing or empty sourceText to null", () => {
+    const result = parseRequirementsResponse(
+      JSON.stringify(
+        validRequirementsJson({
+          requirements: [
+            validRequirementsJson().requirements[0],
+            { ...validRequirementsJson().requirements[0], requirement: "Go", sourceText: "   " },
+          ],
+        }),
+      ),
+    );
+
+    expect(result.ok).toBe(true);
+    if (result.ok) expect(result.result.requirements.map((n) => n.sourceText)).toEqual([null, null]);
+  });
+
   it("parses a well-formed ```json fenced block", () => {
     const raw = "```json\n" + JSON.stringify(validRequirementsJson()) + "\n```";
     const result = parseRequirementsResponse(raw);

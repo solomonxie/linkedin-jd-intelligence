@@ -582,3 +582,21 @@ td {
 tbody tr:hover {
   background: var(--surface);
 }
+
+/* The posting's own line, above the skills extracted from it. */
+.requirement-source-group + .requirement-source-group {
+  margin-top: 10px;
+}
+
+.requirement-source {
+  margin: 0 0 3px;
+  padding-left: 8px;
+  border-left: 2px solid var(--border);
+  font-size: 12px;
+  line-height: 1.45;
+  color: var(--muted);
+}
+
+.requirement-source-group > ul {
+  margin-left: 10px;
+}
