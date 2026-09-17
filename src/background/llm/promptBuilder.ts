@@ -49,7 +49,8 @@ SCHEMA
 //   "employeeSize": Fact<string>, "engineeringSize": Fact<string>, "arr": Fact<string>,
 //   "fundingStage": Fact<string>, "ownership": Fact<"public"|"private">, "techStack": Fact<string[]>
 // }
-// InterviewRound = { "label": string, "durationMinutes": number | null, "mode": string | null, "source": "page" }
+// InterviewRound = { "label": string, "durationMinutes": number | null, "mode": string | null,
+//   "source": "page", "sourceText": string | null }
 
 DAY-TO-DAY WORK
 "dayToDay" is your read of what this person actually spends their days doing, past the posting's own
@@ -153,6 +154,9 @@ return "interviewRounds": [] rather than inventing one. For each round found, "l
 (e.g. "Recruiter screen", "Technical interview", "System design", "Onsite", "Hiring manager chat"),
 "durationMinutes" and "mode" (e.g. "virtual", "onsite", "phone") are whatever the posting states, or null
 if not stated. Order rounds as the posting presents them.
+"sourceText" is the posting's own line describing that round, copied word for word — not a paraphrase,
+not cleaned up (minus any leading bullet glyph/number). It's what backs up the short label, so it must
+appear in the posting text verbatim; use null only if you genuinely can't point at one line for it.
 
 INPUTS
 

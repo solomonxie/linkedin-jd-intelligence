@@ -25,6 +25,7 @@ function toRound(draft: typeof EMPTY_DRAFT): InterviewRound | null {
     durationMinutes: durationMinutes !== null && Number.isFinite(durationMinutes) ? durationMinutes : null,
     mode: draft.mode.trim() || null,
     source: "user",
+    sourceText: null,
   };
 }
 
@@ -116,7 +117,10 @@ export function InterviewRounds({ record, onSaved }: { record: JobRecord; onSave
                 </span>
               )}
               <span className="round-label">{index + 1}</span>
-              <span>{formatRound(round, isPlaceholder)}</span>
+              <span className="round-text">
+                {formatRound(round, isPlaceholder)}
+                {round.sourceText && <span className="round-source">{round.sourceText}</span>}
+              </span>
               {round.source === "user" && <span className="source-badge">edited</span>}
               <button type="button" className="edit-icon" onClick={() => startEdit(index)} aria-label={`Edit round ${index + 1}`}>
                 ✎

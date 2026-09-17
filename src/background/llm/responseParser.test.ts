@@ -191,7 +191,13 @@ describe("parseExtractionResponse", () => {
       JSON.stringify(
         validExtractionJson({
           interviewRounds: [
-            { label: "Recruiter screen", durationMinutes: 30, mode: "phone", source: "page" },
+            {
+              label: "Recruiter screen",
+              durationMinutes: 30,
+              mode: "phone",
+              source: "page",
+              sourceText: "  Step 1: a 30-minute phone screen with a recruiter.  ",
+            },
             { label: "Technical interview", durationMinutes: 60, mode: "virtual", source: "page" },
           ],
         }),
@@ -206,7 +212,10 @@ describe("parseExtractionResponse", () => {
         durationMinutes: 30,
         mode: "phone",
         source: "page",
+        sourceText: "Step 1: a 30-minute phone screen with a recruiter.",
       });
+      // Not stated by the model — the short label stands on its own, with no quoted line under it.
+      expect(result.result.interviewRounds[1].sourceText).toBeNull();
     }
   });
 

@@ -256,7 +256,8 @@ The merged shape:
 //                      weight: number, matched: boolean, sourceText: string|null,
 //                      evidence: string|null, resumeSnippet: string|null,
 //                      children: RequirementNode[] }
-// InterviewRound = { label: string, durationMinutes: number|null, mode: string|null, source: "page"|"user" }
+// InterviewRound = { label: string, durationMinutes: number|null, mode: string|null,
+//                     source: "page"|"user", sourceText: string|null }
 ```
 
 `source: "page"` means the model found that fact literally in `rawPageText` (it must not invent or contradict what's actually on the page); `"llm-estimate"` means it filled a gap from general training knowledge, with an explicit instruction to return `value: null` rather than a specific-sounding guess when not reasonably confident — this applies hardest to ARR, funding stage, engineering headcount, senior headcount, and salary-when-not-shown. **`role.applicantCount` is the one field that must never fall back to `"llm-estimate"`** — if the count isn't literally present in the page text, the correct answer is `null`, since there's no reasonable general-knowledge basis for guessing a specific applicant number (unlike ARR or headcount, which have loose public-knowledge anchors).
@@ -276,12 +277,14 @@ interpretation by construction, so no `Fact<T>` wrapper — there is no `"page"`
 the extraction call (no resume needed) and rendered as its own card between the brief and the match tree;
 the side panel renormalizes the percents to sum 100 before drawing the bars.
 
-**Source text** (`RequirementNode.sourceText`): the posting's own line a top-level node was extracted
+**Source text** (`RequirementNode.sourceText`, `InterviewRound.sourceText`): the posting's own line a top-level node was extracted
 from, copied verbatim — never paraphrased or re-punctuated. Every node from the same bullet carries the
 identical string, and the side panel groups on it: the quoted line renders once, with the skills read out
 of it indented underneath. `null` on children, on `"implied"` nodes (the model's own inference, not
 something the posting said), and on records analyzed before the field existed — those render exactly as
-they did before, with no quoted line above them.
+they did before, with no quoted line above them. Interview rounds carry the same field for the same
+reason — the short label ("Recruiter screen") is the useful form, the quoted line under it is the proof —
+and it's `null` on any round added by hand.
 
 **Headquarters** (`companyInfo.headquarters`): the company's HQ city (state/country added only to
 disambiguate), same `Fact<string>` shape and `source` semantics as the rest of `companyInfo`. Shown in the
