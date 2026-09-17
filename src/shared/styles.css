@@ -163,7 +163,51 @@ input:focus {
 }
 
 .field {
-  margin-bottom: 14px;
+  margin-bottom: 18px;
+}
+
+/* Direct child only: the resume list's own <label> wraps a radio and must stay inline. */
+.field > label {
+  display: block;
+  margin-bottom: 6px;
+  font-size: 12px;
+  font-weight: 650;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--muted);
+}
+
+/* The control line under a label — input and its button on one row, with room between them. */
+.field-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.field-row input[type="password"],
+.field-row input[type="text"].grow {
+  flex: 1 1 240px;
+  min-width: 0;
+}
+
+.field-row + .muted {
+  margin-top: 6px;
+}
+
+.field-heading {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 8px;
+}
+
+.field-heading h3 {
+  margin: 0;
+}
+
+.add-button {
+  font-size: 12px;
 }
 
 /* Side panel */
