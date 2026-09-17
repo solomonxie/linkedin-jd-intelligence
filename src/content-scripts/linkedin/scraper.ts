@@ -3,7 +3,10 @@
 // selector); everything else is raw text the LLM extracts itself.
 // See docs/DESIGN.md "LinkedIn scraping".
 
-const MAX_TEXT_LENGTH = 20_000;
+// Generous enough to still include what sits *below* a long description — LinkedIn renders the
+// premium company-insights block (funding, headcount trend) after it, and a tighter cap cut exactly
+// that off. Input tokens are the cheap half of the call.
+const MAX_TEXT_LENGTH = 30_000;
 
 /**
  * Job id from `/jobs/view/{id}`, LinkedIn's SEO-slugged
@@ -55,6 +58,10 @@ const READY_POLL_TIMEOUT_MS = 3000;
 // already-expanded toggle (now reading "...see less") is never re-collapsed,
 // and a from/to word pair like "less" ... "more" close together doesn't false-match.
 const EXPAND_TEXT_PATTERN = /\b(show|see) more\b/i;
+// LinkedIn collapses its premium company insights behind their own toggle, which doesn't say "more" —
+// left unclicked, the funding/headcount facts in there never reach the page text at all. Matched
+// narrowly (not just any "insights") so this can't start clicking unrelated controls.
+const EXPAND_INSIGHTS_PATTERN = /\bpremium insights\b/i;
 const COLLAPSE_TEXT_PATTERN = /\bless\b/i;
 // Deliberately NOT <a> — an in-place "show more" toggle is a <button> (or a
 // non-anchor element wearing role="button"); a real anchor's job is to
@@ -77,7 +84,8 @@ function expandCollapsedSections(scope: Element): void {
   for (const el of Array.from(scope.querySelectorAll<HTMLElement>(EXPANDABLE_SELECTOR))) {
     if (el instanceof HTMLAnchorElement && el.hasAttribute("href")) continue;
     const text = el.textContent?.trim() ?? "";
-    if (EXPAND_TEXT_PATTERN.test(text) && !COLLAPSE_TEXT_PATTERN.test(text)) el.click();
+    const expandable = EXPAND_TEXT_PATTERN.test(text) || EXPAND_INSIGHTS_PATTERN.test(text);
+    if (expandable && !COLLAPSE_TEXT_PATTERN.test(text)) el.click();
   }
 }
 

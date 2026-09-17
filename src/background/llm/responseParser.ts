@@ -96,6 +96,7 @@ const companyInfoSchema = z.object({
   employeeSize: factSchema(z.string()),
   engineeringSize: factSchema(z.string()),
   arr: factSchema(z.string()),
+  financePosition: factSchema(z.string()),
   fundingStage: factSchema(z.string()),
   ownership: factSchema(z.enum(["public", "private"])),
   techStack: factSchema(z.array(z.string())),

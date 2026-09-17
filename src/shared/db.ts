@@ -22,6 +22,11 @@ function normalizeCompanyInfo(info: CompanyInfo): CompanyInfo {
   if (!normalized.headquarters) {
     normalized = { ...normalized, headquarters: { value: null, source: "llm-estimate" } };
   }
+  // Same again for financePosition. A job record keeps whatever it was analyzed with; company records
+  // get re-derived instead, via COMPANY_INFO_SCHEMA_VERSION.
+  if (!normalized.financePosition) {
+    normalized = { ...normalized, financePosition: { value: null, source: "llm-estimate" } };
+  }
   return normalized;
 }
 

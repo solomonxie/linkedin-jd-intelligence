@@ -13,7 +13,7 @@ import { callOpenAI } from "./llm/openaiClient";
 import { parseExtractionResponse, parseRequirementsResponse } from "./llm/responseParser";
 import { acquireKeepalive } from "./keepalive";
 import { beginAnalysis, completeAnalysisError, completeAnalysisOk, completeAnalysisUnparsed } from "./historyStore";
-import { blankCompanyInfo } from "../shared/types";
+import { blankCompanyInfo, COMPANY_INFO_SCHEMA_VERSION } from "../shared/types";
 import type { AnalysisResult, CompanyInfo, CompanyRecord, ReasoningEffort } from "../shared/types";
 
 chrome.sidePanel
@@ -43,7 +43,10 @@ async function handleAnalyzeRequest(request: AnalyzeRequest): Promise<AnalyzeAck
   // company fields then render right away instead of waiting behind the whole LLM round-trip.
   const slugHint = extractCompanySlugHint(request.url);
   const slugKey = slugHint ? normalizeCompanyKey(slugHint) : null;
-  const cached = slugKey ? await getCompanyRecord(slugKey) : undefined;
+  const cachedRecord = slugKey ? await getCompanyRecord(slugKey) : undefined;
+  // A record written against an older CompanyInfo shape is missing whatever field was added since.
+  // Using it would skip company research entirely and leave that field blank forever, so re-derive.
+  const cached = cachedRecord?.schemaVersion === COMPANY_INFO_SCHEMA_VERSION ? cachedRecord : undefined;
 
   try {
     await beginAnalysis({
@@ -133,7 +136,13 @@ async function runAnalysis(
 async function cacheCompanyInfo(companyName: string, companyInfo: CompanyInfo, slugKey: string | null): Promise<void> {
   const nameKey = normalizeCompanyKey(companyName);
   const updatedAt = new Date().toISOString();
-  const record: CompanyRecord = { key: nameKey, name: companyName, companyInfo, updatedAt };
+  const record: CompanyRecord = {
+    key: nameKey,
+    name: companyName,
+    companyInfo,
+    updatedAt,
+    schemaVersion: COMPANY_INFO_SCHEMA_VERSION,
+  };
   await upsertCompanyRecord(record);
   // The URL-slug key can differ from the name-derived key (e.g. "Affirm, Inc." vs "affirm") —
   // store under both so a future slug-based lookup for this company still hits.
