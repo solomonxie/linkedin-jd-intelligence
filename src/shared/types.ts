@@ -33,6 +33,10 @@ export interface CompanyInfo {
   employeeSize: Fact<string>;
   engineeringSize: Fact<string>;
   arr: Fact<string>;
+  /** Where the company stands financially in one line — the latest raise, revenue/valuation,
+   * profitability, whatever the posting or LinkedIn's premium company insights actually state.
+   * e.g. "Raised $50M Series B (2024)", "~$200M revenue, profitable". */
+  financePosition: Fact<string>;
   fundingStage: Fact<string>;
   ownership: Fact<"public" | "private">;
   techStack: Fact<string[]>;
@@ -68,6 +72,7 @@ export function blankCompanyInfo(): CompanyInfo {
     employeeSize: blank,
     engineeringSize: blank,
     arr: blank,
+    financePosition: blank,
     fundingStage: blank,
     ownership: blank,
     techStack: blank,
@@ -188,7 +193,13 @@ export interface CompanyRecord {
   name: string;
   companyInfo: CompanyInfo;
   updatedAt: string;
+  /** Which CompanyInfo shape this was written against. A record from an older version is treated as a
+   * cache miss, so adding a field doesn't leave every already-cached company permanently without it. */
+  schemaVersion?: number;
 }
+
+/** Bump whenever a CompanyInfo field is added, to re-derive cached company records against it. */
+export const COMPANY_INFO_SCHEMA_VERSION = 2;
 
 export interface ResumeProfile {
   id: string;

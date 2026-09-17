@@ -47,6 +47,7 @@ SCHEMA
 // CompanyInfo = {
 //   "industry": Fact<string[]>, "headquarters": Fact<string>, "mainProducts": Fact<string[]>,
 //   "employeeSize": Fact<string>, "engineeringSize": Fact<string>, "arr": Fact<string>,
+//   "financePosition": Fact<string>,   // see FINANCE POSITION below
 //   "fundingStage": Fact<string>, "ownership": Fact<"public"|"private">, "techStack": Fact<string[]>
 // }
 // InterviewRound = { "label": string, "durationMinutes": number | null, "mode": string | null,
@@ -89,6 +90,22 @@ this is intentional, not a gap to fill. (Still set "company" in your response as
     : `
 COMPANY INFO
 Fill in "companyInfo" per the FACT-SOURCING RULES below.
+
+FINANCE POSITION (companyInfo.financePosition)
+One short line on where this company stands financially — the concrete number a candidate would want
+before taking the job. Latest funding round and amount, annual revenue or run-rate, valuation,
+profitability, or public-market standing, whichever the page actually states; combine at most two of
+them, newest first.
+  - "Raised $50M Series B (2024)"
+  - "~$200M annual revenue, profitable"
+  - "Public (NASDAQ), $1.4B FY24 revenue"
+READ THE WHOLE PAGE FOR THIS, not just the job description. LinkedIn's premium "Exclusive Job Seeker
+Insights" / "Company focus areas" block (often labelled "Powered by Bing") frequently states exactly
+this — e.g. "leveraging the recent $50 million financing round to fund this growth" -> "Raised $50M
+(recent round)". The About-the-company section and the description itself are the other places to look.
+A number found anywhere on the page is source: "page". Fall back to general knowledge only when the page
+says nothing, and return null rather than a guess you're not confident in — this is a field where a
+wrong number actively misleads.
 `
 }
 FACT-SOURCING RULES (apply to every Fact<T> field within companyInfo and role)

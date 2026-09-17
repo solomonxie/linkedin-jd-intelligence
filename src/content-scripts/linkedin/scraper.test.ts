@@ -70,9 +70,9 @@ describe("extractRawPageText", () => {
   });
 
   it("caps text length so token cost stays bounded", () => {
-    const longText = "x".repeat(30_000);
+    const longText = "x".repeat(40_000);
     const doc = new DOMParser().parseFromString(`<html><body><main>${longText}</main></body></html>`, "text/html");
-    expect(extractRawPageText(doc).length).toBe(20_000);
+    expect(extractRawPageText(doc).length).toBe(30_000);
   });
 });
 
@@ -105,6 +105,26 @@ describe("extractRawPageTextWhenReady", () => {
 
     expect(moreClicked).toBe(true);
     expect(lessClicked).toBe(false);
+  });
+
+  it("opens LinkedIn's premium insights toggle, which never says 'more'", async () => {
+    const doc = new DOMParser().parseFromString(
+      `<html><body><main>
+        <button id="insights">Show Premium Insights →</button>
+        <button id="unrelated">Show applicant insights chart</button>
+      </main></body></html>`,
+      "text/html",
+    );
+    let insightsClicked = false;
+    let unrelatedClicked = false;
+    doc.querySelector("#insights")!.addEventListener("click", () => (insightsClicked = true));
+    doc.querySelector("#unrelated")!.addEventListener("click", () => (unrelatedClicked = true));
+
+    await extractRawPageTextWhenReady(doc, { pollIntervalMs: 5, timeoutMs: 20 });
+
+    expect(insightsClicked).toBe(true);
+    // "insights" alone isn't enough to click something — the match is on "premium insights".
+    expect(unrelatedClicked).toBe(false);
   });
 
   it("never clicks a real <a href> even if its text matches, so it never navigates the page", async () => {

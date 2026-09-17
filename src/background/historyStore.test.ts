@@ -23,6 +23,7 @@ const sampleResult: AnalysisResult = {
     employeeSize: { value: null, source: "llm-estimate" },
     engineeringSize: { value: null, source: "llm-estimate" },
     arr: { value: null, source: "llm-estimate" },
+    financePosition: { value: null, source: "llm-estimate" },
     fundingStage: { value: null, source: "llm-estimate" },
     ownership: { value: null, source: "llm-estimate" },
     techStack: { value: null, source: "llm-estimate" },

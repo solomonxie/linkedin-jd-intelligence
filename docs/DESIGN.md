@@ -212,7 +212,7 @@ src/
 
 ### LinkedIn scraping (`scraper.ts`)
 
-No per-field selectors beyond two robust, low-risk ones. Job ID comes from a regex on the URL (`/jobs/view/{id}` or the `currentJobId` query param) — a URL pattern is far more stable than any DOM selector. Everything else is one broad text grab: `document.querySelector('main')?.innerText ?? document.body.innerText`, truncated to a bounded length (e.g. ~20,000 characters) to keep token cost predictable on LinkedIn's often-long pages (related-jobs rails, feed suggestions, etc.). This raw text is handed to the LLM wholesale — the LLM does *all* field extraction (title, company, location, description, applicant count if present, salary if present, company-card info if present), not the content script. A `MutationObserver` + URL-change watch re-triggers extraction on LinkedIn's SPA navigation; if the URL doesn't match a job-view pattern at all, the side panel shows "not a job page" without bothering to call the LLM.
+No per-field selectors beyond two robust, low-risk ones. Job ID comes from a regex on the URL (`/jobs/view/{id}` or the `currentJobId` query param) — a URL pattern is far more stable than any DOM selector. Everything else is one broad text grab: `document.querySelector('main')?.innerText ?? document.body.innerText`, truncated to a bounded length (30,000 characters — generous on purpose: LinkedIn renders the premium company-insights block *after* the description, and a tighter cap cut exactly that off) to keep token cost predictable on LinkedIn's often-long pages (related-jobs rails, feed suggestions, etc.). This raw text is handed to the LLM wholesale — the LLM does *all* field extraction (title, company, location, description, applicant count if present, salary if present, company-card info if present), not the content script. A `MutationObserver` + URL-change watch re-triggers extraction on LinkedIn's SPA navigation; if the URL doesn't match a job-view pattern at all, the side panel shows "not a job page" without bothering to call the LLM.
 
 This trades a bit of extraction precision for resilience: the extension only breaks if LinkedIn removes the page's text content entirely, not if it renames a CSS class.
 
@@ -264,6 +264,14 @@ The merged shape:
 ```
 
 `source: "page"` means the model found that fact literally in `rawPageText` (it must not invent or contradict what's actually on the page); `"llm-estimate"` means it filled a gap from general training knowledge, with an explicit instruction to return `value: null` rather than a specific-sounding guess when not reasonably confident — this applies hardest to ARR, funding stage, engineering headcount, senior headcount, and salary-when-not-shown. **`role.applicantCount` is the one field that must never fall back to `"llm-estimate"`** — if the count isn't literally present in the page text, the correct answer is `null`, since there's no reasonable general-knowledge basis for guessing a specific applicant number (unlike ARR or headcount, which have loose public-knowledge anchors).
+
+**Finance position** (`companyInfo.financePosition`): one line on where the company stands financially —
+latest raise, revenue/run-rate, valuation, profitability, public-market standing; at most two, newest
+first ("Raised $50M Series B (2024)", "~$200M annual revenue, profitable"). The prompt points at the
+whole page for it, not just the description: LinkedIn's premium "Exclusive Job Seeker Insights" block
+(Bing-sourced "Company focus areas") routinely states a funding round in prose, and the scraper now
+clicks that section's own toggle — which never says "more", so the generic expand pattern missed it —
+so the text reaches the model at all. Rendered as the "Finance" row of the brief.
 
 **Salary** (`role.salaryRange`, `shared/salary.ts`): one fixed shape, `"$120k-150k CAD"` — plain `$`,
 whole thousands with a `k`, ISO currency code at the end. No `C$`/`US$` prefixes, no thousands
@@ -452,6 +460,10 @@ render each blocked entry as a link back to it even when the title/company came 
 `companyInfo` rarely changes job-to-job for the same company, so it's persisted separately from
 `JobRecord`s and reused instead of re-derived by the LLM every time:
 
+- **Version gate**: `CompanyRecord.schemaVersion` vs `COMPANY_INFO_SCHEMA_VERSION`. A record written
+  before a `CompanyInfo` field existed would otherwise be a permanent cache hit that skips company
+  research entirely, leaving the new field blank for that company forever — an older version is treated
+  as a miss and re-derived. Bump the constant when adding a field.
 - **Key**: `normalizeCompanyKey()` lowercases, strips common corporate suffixes (Inc/LLC/Corp/...), and
   strips remaining punctuation — "Affirm, Inc." and "Affirm" both key to `"affirm"`.
 - **Pre-call lookup (the actual cost saving)**: `company` is otherwise only known *from* the LLM's own
@@ -486,7 +498,7 @@ For each **top-level** requirement row the side panel shows an "ⓘ" with an est
 
 `chrome.storage.local` for the `Settings` singleton — `{ openaiApiKey, openaiModel, openaiReasoningEffort, activeResumeProfileId, resumeProfiles: ResumeProfile[] }`, `ResumeProfile = { id, name, fileName, parsedAt, text }` (multiple named resumes, one active). `openaiReasoningEffort` (`"minimal"|"low"|"medium"|"high"`) is only ever sent to the API for a reasoning-capable model (`supportsReasoningEffort()` in `openaiClient.ts` — `gpt-5*`/`o1`/`o3`/`o4` families) and the Settings field is hidden otherwise. The model dropdown lists the gpt-4.1/gpt-4o families only — the gpt-5 family spent long enough on reasoning tokens to trip `openaiClient.ts`'s stall abort before emitting anything, failing every run — plus a "Custom…" option that reveals a free-text field for any other model id the key can call (which is also the way back to a gpt-5 model). Not encrypted beyond normal browser-profile sandboxing — noted in the Options UI copy.
 
-`IndexedDB` via `idb` for `JobRecord` (keyed by LinkedIn job id — upsert, so re-analysis replaces rather than duplicates), storing the requirement tree, the company/role brief, `roleClassification`, `regionBucket`, `status`, and `resumeProfileId` used, indexed by `analyzedAt`/`resumeProfileId`/`regionBucket` (the last one is what `skillPrevalence.ts` queries against). A separate `companies` store (keyed by `normalizeCompanyKey()`) holds `CompanyRecord { key, name, companyInfo, updatedAt }` — see "Company info cache" above.
+`IndexedDB` via `idb` for `JobRecord` (keyed by LinkedIn job id — upsert, so re-analysis replaces rather than duplicates), storing the requirement tree, the company/role brief, `roleClassification`, `regionBucket`, `status`, and `resumeProfileId` used, indexed by `analyzedAt`/`resumeProfileId`/`regionBucket` (the last one is what `skillPrevalence.ts` queries against). A separate `companies` store (keyed by `normalizeCompanyKey()`) holds `CompanyRecord { key, name, companyInfo, updatedAt, schemaVersion }` — see "Company info cache" above.
 
 **Export**: the Options History panel's "Export all data" button downloads every `JobRecord` and every `CompanyRecord` (not just what's currently filtered in the table) as one JSON file — a full local backup of both IndexedDB stores. `Settings` (including the API key) is deliberately not included.
 

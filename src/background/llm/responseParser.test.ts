@@ -13,6 +13,7 @@ function validExtractionJson(overrides: Record<string, unknown> = {}) {
       employeeSize: { value: "1,001-5,000", source: "page" },
       engineeringSize: { value: null, source: "llm-estimate" },
       arr: { value: null, source: "llm-estimate" },
+      financePosition: { value: null, source: "llm-estimate" },
       fundingStage: { value: "Public (NYSE)", source: "page" },
       ownership: { value: "public", source: "page" },
       techStack: { value: ["Python", "Go"], source: "llm-estimate" },
