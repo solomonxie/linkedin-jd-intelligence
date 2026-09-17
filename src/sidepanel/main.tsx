@@ -1,5 +1,6 @@
 import { StrictMode, useEffect, useState } from "react";
 import { createRoot } from "react-dom/client";
+import { ErrorBoundary } from "../shared/ErrorBoundary";
 import "../shared/styles.css";
 import { App } from "./App";
 import { PrintPage } from "./PrintPage";
@@ -26,6 +27,8 @@ function Root() {
 
 createRoot(document.getElementById("root")!).render(
   <StrictMode>
-    <Root />
+    <ErrorBoundary>
+      <Root />
+    </ErrorBoundary>
   </StrictMode>,
 );
