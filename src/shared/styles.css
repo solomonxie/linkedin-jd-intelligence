@@ -475,10 +475,15 @@ li:hover .edit-icon {
   flex-shrink: 0;
 }
 
-.interview-rounds li.placeholder,
-.skeleton-row {
+.skeleton-row,
+.empty-note {
   color: var(--muted);
   font-style: italic;
+}
+
+.empty-note {
+  margin: 6px 0;
+  font-size: 13px;
 }
 
 .interview-rounds li.dragging {
@@ -489,11 +494,6 @@ li:hover .edit-icon {
   cursor: grab;
   color: var(--muted);
   flex-shrink: 0;
-}
-
-.interview-rounds li.placeholder .round-label {
-  background: var(--surface);
-  color: var(--muted);
 }
 
 .app-footer {

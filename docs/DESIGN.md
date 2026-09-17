@@ -324,8 +324,15 @@ nodes, never one combined node.
 **Interview rounds**: like `applicantCount`, never `"llm-estimate"` — guessing a specific company's actual
 process from general knowledge would be misleading, so a round is only ever extracted when the posting
 explicitly describes its hiring process (a numbered list, an "Our process" section, etc.); otherwise
-`interviewRounds: []`. The side panel lets the user add rounds by hand when the posting doesn't say
-(`source: "user"`) — see "Manual edits" below.
+`interviewRounds: []`, and the section says so outright ("No interview process found in this job
+description") rather than showing greyed-out example rounds, which read as extracted data at a glance.
+The side panel lets the user add rounds by hand when the posting doesn't say (`source: "user"`) — see
+"Manual edits" below. The editor is three dropdowns in the order they're asked about — interview type
+(Recruiter screen, Technical / coding, …), stage (Phone screen, Virtual onsite, …), duration (15 min …
+2 hours, defaulting to 1 hour) — rather than free text, so a hand-added round reads like an extracted
+one. Each dropdown keeps an off-list stored value as an extra option, so editing an extracted round
+can't silently rewrite what the posting actually said, and duration stays blankable for the common
+case of a round with no stated length.
 
 ### Manual edits (`CompanyRoleBrief.tsx`, `InterviewRounds.tsx`)
 
