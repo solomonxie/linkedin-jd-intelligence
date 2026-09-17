@@ -16,6 +16,11 @@ export interface RequirementNode {
   /** Relative importance within its sibling group, 0-100 (raw LLM value; UI renormalizes). */
   weight: number;
   matched: boolean;
+  /** The posting's own wording this node was extracted from, verbatim — shown above the node so the
+   * literal ask is visible next to the skills read out of it. Only set on top-level nodes that trace
+   * to one line of the posting; null for children, for "implied" inferences, and on records analyzed
+   * before this field existed (hence optional, not just nullable). */
+  sourceText?: string | null;
   evidence: string | null;
   resumeSnippet: string | null;
   children: RequirementNode[];

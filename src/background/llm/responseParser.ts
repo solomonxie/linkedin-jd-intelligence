@@ -71,6 +71,9 @@ const requirementNodeSchema: z.ZodType<RequirementNode> = z.lazy(() =>
     tier: z.enum(["must-have", "nice-to-have", "implied"]),
     weight: z.number(),
     matched: looseBooleanSchema,
+    // Absent on anything analyzed before source text was asked for, and legitimately absent on
+    // children/implied nodes — default it to null rather than failing the response.
+    sourceText: z.preprocess((v) => (typeof v === "string" && v.trim() ? v.trim() : null), z.string().nullable()),
     evidence: z.string().nullable(),
     resumeSnippet: z.string().nullable(),
     // A leaf node sometimes comes back as `children: null` instead of `[]` —
