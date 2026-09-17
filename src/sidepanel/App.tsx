@@ -23,7 +23,7 @@ const TIER_LABELS: Record<RequirementTier, string> = {
 };
 
 export function App() {
-  const { tabId, pageInfo, record, loading, contentScriptMissing, loadError, refresh } = useActiveJob();
+  const { tabId, pageInfo, record, loading, contentScriptMissing, pageReady, loadError, refresh } = useActiveJob();
   const settings = useSettings();
   const [analyzing, setAnalyzing] = useState(false);
   const [analyzeError, setAnalyzeError] = useState<string | null>(null);
@@ -72,7 +72,9 @@ export function App() {
     (record?.status === "unparsed" ? `Couldn't parse the response: ${record.errorMessage}` : null);
 
   async function handleAnalyze() {
-    if (!pageInfo?.jobId || !activeProfile) return;
+    // pageReady false means rawPageText is still the empty stub — analyzing that would produce a
+    // confident write-up of nothing.
+    if (!pageInfo?.jobId || !activeProfile || !pageReady) return;
     setAnalyzing(true);
     setAnalyzeError(null);
     const ack = await requestAnalyze({
@@ -93,13 +95,13 @@ export function App() {
   const autoAnalyzedJobId = useRef<string | null>(null);
   useEffect(() => {
     const jobId = pageInfo?.jobId;
-    if (!jobId || !activeProfile || !settings.openaiApiKey) return;
+    if (!jobId || !activeProfile || !settings.openaiApiKey || !pageReady) return;
     if (blockReason) return;
     if (record !== null) return;
     if (autoAnalyzedJobId.current === jobId) return;
     autoAnalyzedJobId.current = jobId;
     void handleAnalyze();
-  }, [pageInfo?.jobId, activeProfile, settings.openaiApiKey, record, blockReason]);
+  }, [pageInfo?.jobId, activeProfile, settings.openaiApiKey, record, blockReason, pageReady]);
 
   // OpenAI's response isn't streamed, so there's no real completion percentage —
   // an elapsed-time counter is the honest "progress info" available. Ticks once
@@ -254,13 +256,25 @@ export function App() {
 
       {/* Its own full-width row: squeezed next to the resume picker it was either cramped or pushed
           onto a half-empty line of its own anyway. */}
-      <button type="button" className="btn-primary analyze-button" onClick={handleAnalyze} disabled={busy}>
-        {busy ? `Analyzing… (${elapsedSeconds}s)` : record?.status === "ok" ? "Re-analyze" : "Analyze"}
+      <button type="button" className="btn-primary analyze-button" onClick={handleAnalyze} disabled={busy || !pageReady}>
+        {busy ? `Analyzing… (${elapsedSeconds}s)` : !pageReady ? "Reading page…" : record?.status === "ok" ? "Re-analyze" : "Analyze"}
       </button>
 
       {/* Whatever's already known (a previous successful analysis, or nothing yet) stays on screen
           through a pending/error/unparsed status instead of being replaced by an error block — the
           error itself only ever shows as the icon above, never blocking the content area. */}
+      {/* No record yet — either this job has never been analyzed, or the page is still being read.
+          Either way the sections show their skeletons rather than an empty panel. */}
+      {!record && (
+        <>
+          <CompanyRoleBriefSkeleton />
+          <div className="card">
+            <h3>Skill / Experience Match</h3>
+            <RequirementTreeSkeleton label={pageReady ? "Analyzing…" : "Reading page…"} />
+          </div>
+        </>
+      )}
+
       {record && (
         <>
           {record.companyInfo ? (

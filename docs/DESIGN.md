@@ -482,6 +482,19 @@ For each **top-level** requirement row the side panel shows an "ⓘ" with an est
 
 **Export**: the Options History panel's "Export all data" button downloads every `JobRecord` and every `CompanyRecord` (not just what's currently filtered in the table) as one JSON file — a full local backup of both IndexedDB stores. `Settings` (including the API key) is deliberately not included.
 
+### Switching jobs (`useActiveJob.ts`)
+
+LinkedIn's SPA changes the job under the panel without a page load. The scrape that follows has to wait
+for the DOM to settle (up to ~3s, see "LinkedIn scraping"), and the panel used to hold the previous
+job's analysis on screen for that whole window — indistinguishable from the new job's, only wrong.
+
+The tab's own URL already names the new job and is available immediately, so the panel switches on that
+alone: it swaps in a provisional `pageInfo` (correct `jobId`/`url`, empty `rawPageText`) and the new
+job's cached record if there is one, then fills in the real scrape when it lands. `pageReady` is false
+in between — Analyze is disabled ("Reading page…") and auto-analysis holds off, since analyzing the
+empty stub would produce a confident write-up of nothing. A job with no record yet shows the brief and
+match skeletons rather than an empty panel.
+
 ### Blank-panel guards (`shared/ErrorBoundary.tsx`, both `index.html`s)
 
 Two failures used to present identically as an empty document with nothing to act on: a throw during
