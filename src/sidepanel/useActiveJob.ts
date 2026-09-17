@@ -7,6 +7,7 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { getJobRecord } from "../shared/db";
 import { onJobRecordUpdated, onPageChanged, requestPageInfo, type PageInfoResponse } from "../shared/messaging";
+import { extractJobId } from "../content-scripts/linkedin/scraper";
 import type { JobRecord } from "../shared/types";
 
 // Mirrors manifest.config.ts's content_scripts match pattern — the content script is only ever
@@ -51,6 +52,12 @@ export interface ActiveJobState {
    * wrong page.
    */
   contentScriptMissing: boolean;
+  /**
+   * False between spotting a new job in the tab's URL and the content script's scrape coming back.
+   * `pageInfo` is a provisional stub in that window — its `rawPageText` is empty, so analysis must
+   * wait; everything else (which job this is, its cached record) is already correct.
+   */
+  pageReady: boolean;
   /** Any other failure, surfaced verbatim rather than mislabelled as a missing content script. */
   loadError: string | null;
   refresh: () => void;
@@ -62,6 +69,7 @@ export function useActiveJob(): ActiveJobState {
   const [record, setRecord] = useState<JobRecord | null>(null);
   const [loading, setLoading] = useState(true);
   const [contentScriptMissing, setContentScriptMissing] = useState(false);
+  const [pageReady, setPageReady] = useState(false);
   const [loadError, setLoadError] = useState<string | null>(null);
   const [refreshToken, setRefreshToken] = useState(0);
 
@@ -120,6 +128,7 @@ export function useActiveJob(): ActiveJobState {
       setPageInfo(null);
       setRecord(null);
       setContentScriptMissing(false);
+      setPageReady(false);
       setLoading(false);
       return;
     }
@@ -145,10 +154,24 @@ export function useActiveJob(): ActiveJobState {
           return;
         }
 
+        // The tab's own URL already says which job this is, and it's available now — the content
+        // script's scrape has to wait for LinkedIn's SPA to settle (seconds). Swap to the new job
+        // immediately on the URL alone, so the panel can't sit showing the previous job's analysis as
+        // if it were this one. rawPageText stays empty until the real scrape lands, which is what
+        // pageReady gates.
+        const urlJobId = extractJobId(tab.url);
+        if (urlJobId !== pageInfoRef.current?.jobId) {
+          setPageReady(false);
+          setPageInfo({ jobId: urlJobId, url: tab.url, rawPageText: "", jobTitle: null, company: null });
+          setRecord(urlJobId ? ((await getJobRecord(urlJobId)) ?? null) : null);
+          if (cancelled) return;
+        }
+
         const info = await requestPageInfoWithRetry(tabId);
         if (cancelled) return;
         setPageInfo(info);
         setRecord(info.jobId ? ((await getJobRecord(info.jobId)) ?? null) : null);
+        setPageReady(true);
       } catch (error) {
         // Only a genuinely absent listener means "reload the tab". Everything else (a scrape that
         // threw, an IndexedDB failure) used to land here too and get reported as a missing content
@@ -156,6 +179,7 @@ export function useActiveJob(): ActiveJobState {
         if (!cancelled) {
           setPageInfo(null);
           setRecord(null);
+          setPageReady(false);
           if (isNoReceiverError(error)) setContentScriptMissing(true);
           else setLoadError(error instanceof Error ? error.message : String(error));
         }
@@ -169,5 +193,5 @@ export function useActiveJob(): ActiveJobState {
     };
   }, [tabId, refreshToken]);
 
-  return { tabId, pageInfo, record, loading, contentScriptMissing, loadError, refresh };
+  return { tabId, pageInfo, record, loading, contentScriptMissing, pageReady, loadError, refresh };
 }

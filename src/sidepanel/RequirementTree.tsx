@@ -11,12 +11,13 @@ const TIER_SHORT_LABELS: Record<RequirementTier, string> = {
 // matchFacts.ts) — only these two tiers ever appear at the top level.
 const TOP_LEVEL_TIERS: RequirementTier[] = ["must-have", "nice-to-have"];
 
-/** Shown in place of RequirementTree while a first-time analysis is still running, so the panel's
- * shape is visible immediately instead of an empty gap. */
-export function RequirementTreeSkeleton() {
+/** Shown in place of RequirementTree before there's a tree to show, so the panel's shape is visible
+ * immediately instead of an empty gap. `label` says which wait it is — reading the page, or the
+ * analysis itself. */
+export function RequirementTreeSkeleton({ label = "Analyzing…" }: { label?: string }) {
   return (
     <ul className="requirement-tree">
-      <li className="skeleton-row">Analyzing…</li>
+      <li className="skeleton-row">{label}</li>
     </ul>
   );
 }
