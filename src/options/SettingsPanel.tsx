@@ -43,6 +43,10 @@ export function SettingsPanel() {
   // (see shared/storage.ts getSettings) — so this reference check fires
   // exactly once, syncing the field's initial value without clobbering
   // whatever the user is actively typing on every later settings change.
+  // The native file input is hidden behind "+ Add resume" — a bare "Choose File / No file chosen"
+  // control stranded below the list read as a leftover, not as the way to add one.
+  const fileInputRef = useRef<HTMLInputElement>(null);
+
   const loadedOnce = useRef(false);
   useEffect(() => {
     if (!loadedOnce.current && settings !== DEFAULT_SETTINGS) {
@@ -130,17 +134,19 @@ export function SettingsPanel() {
 
       <div className="field">
         <label htmlFor="api-key">OpenAI API key</label>
-        <input
-          id="api-key"
-          type="password"
-          value={apiKeyInput}
-          onChange={(e) => setApiKeyInput(e.target.value)}
-          placeholder="sk-..."
-        />
-        <button type="button" onClick={handleSaveApiKey} disabled={verifying}>
-          {verifying ? "Verifying…" : "Save"}
-        </button>
-        {savedNotice && <span className="muted"> Verified and saved.</span>}
+        <div className="field-row">
+          <input
+            id="api-key"
+            type="password"
+            value={apiKeyInput}
+            onChange={(e) => setApiKeyInput(e.target.value)}
+            placeholder="sk-..."
+          />
+          <button type="button" onClick={handleSaveApiKey} disabled={verifying}>
+            {verifying ? "Verifying…" : "Save"}
+          </button>
+          {savedNotice && <span className="muted">Verified and saved.</span>}
+        </div>
         {verifyError && <p className="error">{verifyError}</p>}
         <p className="muted">
           Stored locally in this browser profile only — not encrypted beyond normal browser sandboxing.
@@ -149,6 +155,7 @@ export function SettingsPanel() {
 
       <div className="field">
         <label htmlFor="model">Model</label>
+        <div className="field-row">
         <select
           id="model"
           value={customModelSelected ? CUSTOM_MODEL : settings.openaiModel}
@@ -171,6 +178,7 @@ export function SettingsPanel() {
           <>
             <input
               type="text"
+              className="grow"
               value={customModelInput}
               onChange={(e) => setCustomModelInput(e.target.value)}
               onKeyDown={(e) => {
@@ -182,16 +190,18 @@ export function SettingsPanel() {
             <button type="button" onClick={applyCustomModel} disabled={!customModelInput.trim()}>
               Use
             </button>
-            <p className="muted">
-              Any model id your API key can call. Currently using: {settings.openaiModel}
-            </p>
           </>
+        )}
+        </div>
+        {customModelSelected && (
+          <p className="muted">Any model id your API key can call. Currently using: {settings.openaiModel}</p>
         )}
       </div>
 
       {supportsReasoningEffort(settings.openaiModel) && (
         <div className="field">
           <label htmlFor="reasoning-effort">Reasoning effort</label>
+          <div className="field-row">
           <select
             id="reasoning-effort"
             value={settings.openaiReasoningEffort}
@@ -203,12 +213,18 @@ export function SettingsPanel() {
               </option>
             ))}
           </select>
+          </div>
           <p className="muted">Higher effort thinks longer before answering — slower, but more accurate on harder postings.</p>
         </div>
       )}
 
       <div className="field">
-        <h3>Resume profiles</h3>
+        <div className="field-heading">
+          <h3>Resume profiles</h3>
+          <button type="button" className="add-button" onClick={() => fileInputRef.current?.click()} disabled={uploading}>
+            {uploading ? "Parsing…" : "+ Add resume"}
+          </button>
+        </div>
         <ul className="resume-profile-list">
           {settings.resumeProfiles.map((profile) => (
             <li key={profile.id}>
@@ -232,8 +248,7 @@ export function SettingsPanel() {
           ))}
           {settings.resumeProfiles.length === 0 && <li className="muted">No resume profiles yet.</li>}
         </ul>
-        <input type="file" accept=".pdf,.docx" onChange={handleUpload} disabled={uploading} />
-        {uploading && <p className="muted">Parsing…</p>}
+        <input ref={fileInputRef} type="file" accept=".pdf,.docx" onChange={handleUpload} hidden />
         {uploadWarning && <p className="warning">{uploadWarning}</p>}
         {uploadError && <p className="error">{uploadError}</p>}
       </div>
