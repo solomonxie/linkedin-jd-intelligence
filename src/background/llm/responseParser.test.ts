@@ -185,6 +185,21 @@ describe("parseExtractionResponse", () => {
     }
   });
 
+  it("normalizes salaryRange to the one fixed shape", () => {
+    const raw =
+      "```json\n" +
+      JSON.stringify(
+        validExtractionJson({
+          role: { ...validExtractionJson().role, salaryRange: { value: "C$120,000 - C$150,000 per year", source: "page" } },
+        }),
+      ) +
+      "\n```";
+    const result = parseExtractionResponse(raw);
+
+    expect(result.ok).toBe(true);
+    if (result.ok) expect(result.result.role.salaryRange).toEqual({ value: "$120k-150k CAD", source: "page" });
+  });
+
   it("parses explicit interview rounds", () => {
     const raw =
       "```json\n" +
