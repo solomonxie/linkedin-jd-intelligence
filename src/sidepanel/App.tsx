@@ -245,16 +245,18 @@ export function App() {
           </select>
         </label>
 
-        <button type="button" className="btn-primary" onClick={handleAnalyze} disabled={busy}>
-          {busy ? `Analyzing… (${elapsedSeconds}s)` : record?.status === "ok" ? "Re-analyze" : "Analyze"}
-        </button>
-
         {errorMessage && (
           <span className="error-icon" role="img" aria-label="Analysis error" title={errorMessage}>
             ⚠
           </span>
         )}
       </div>
+
+      {/* Its own full-width row: squeezed next to the resume picker it was either cramped or pushed
+          onto a half-empty line of its own anyway. */}
+      <button type="button" className="btn-primary analyze-button" onClick={handleAnalyze} disabled={busy}>
+        {busy ? `Analyzing… (${elapsedSeconds}s)` : record?.status === "ok" ? "Re-analyze" : "Analyze"}
+      </button>
 
       {/* Whatever's already known (a previous successful analysis, or nothing yet) stays on screen
           through a pending/error/unparsed status instead of being replaced by an error block — the
