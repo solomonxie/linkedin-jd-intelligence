@@ -3,16 +3,44 @@ import { upsertJobRecord } from "../shared/db";
 import { broadcastJobRecordUpdated } from "../shared/messaging";
 import type { InterviewRound, JobRecord } from "../shared/types";
 
-const EMPTY_DRAFT = { label: "", durationMinutes: "", mode: "" };
+const DEFAULT_DURATION_MINUTES = "60";
+const EMPTY_DRAFT = { label: "", mode: "", durationMinutes: DEFAULT_DURATION_MINUTES };
 
-// Shown (not persisted) when nothing's been extracted or added yet, so the
-// section isn't just a blank "not mentioned" line — editing one commits it
-// as the first real round.
-const DEFAULT_LABELS = ["Recruiter screen", "Coding interview", "System design interview", "Hiring manager interview", "Final round"];
+// Fixed vocabularies, so a hand-added round reads the same as an extracted one instead of depending on
+// how the user happened to phrase it. Both lists accept an off-list value too (see selectOptions) —
+// what the posting actually said always wins over what's offered here.
+const INTERVIEW_TYPES = [
+  "Recruiter screen",
+  "Hiring manager interview",
+  "Technical / coding interview",
+  "System design interview",
+  "Take-home assignment",
+  "Behavioral interview",
+  "Team / culture fit",
+  "Final round",
+];
+const INTERVIEW_STAGES = ["Phone screen", "Video call", "Virtual onsite", "Onsite", "Take-home", "Async / recorded"];
+const DURATION_OPTIONS: { value: string; label: string }[] = [
+  { value: "15", label: "15 min" },
+  { value: "30", label: "30 min" },
+  { value: "45", label: "45 min" },
+  { value: "60", label: "1 hour" },
+  { value: "90", label: "1.5 hours" },
+  { value: "120", label: "2 hours" },
+];
 
-function formatRound(round: InterviewRound, isPlaceholder: boolean): string {
-  if (isPlaceholder) return `${round.label}: Unknown`;
-  const details = [round.durationMinutes ? `${round.durationMinutes} min` : null, round.mode].filter(Boolean);
+/** The fixed list, plus whatever's already stored when that isn't on it — an extracted round shouldn't
+ * silently change value just because the dropdown doesn't offer its exact wording. */
+function selectOptions(options: string[], current: string): string[] {
+  return current && !options.includes(current) ? [current, ...options] : options;
+}
+
+function formatDuration(minutes: number): string {
+  return DURATION_OPTIONS.find((o) => Number(o.value) === minutes)?.label ?? `${minutes} min`;
+}
+
+function formatRound(round: InterviewRound): string {
+  const details = [round.durationMinutes ? formatDuration(round.durationMinutes) : null, round.mode].filter(Boolean);
   return details.length > 0 ? `${round.label} (${details.join(", ")})` : round.label;
 }
 
@@ -36,10 +64,6 @@ export function InterviewRounds({ record, onSaved }: { record: JobRecord; onSave
   const [dragIndex, setDragIndex] = useState<number | null>(null);
 
   const rounds = record.interviewRounds;
-  const isPlaceholder = rounds.length === 0;
-  const displayRounds: InterviewRound[] = isPlaceholder
-    ? DEFAULT_LABELS.map((label) => ({ label, durationMinutes: null, mode: null, source: "page" }))
-    : rounds;
 
   async function persist(next: InterviewRound[]) {
     await upsertJobRecord({ ...record, interviewRounds: next });
@@ -56,7 +80,7 @@ export function InterviewRounds({ record, onSaved }: { record: JobRecord; onSave
   }
 
   function startEdit(index: number) {
-    const round = displayRounds[index];
+    const round = rounds[index];
     setDraft({
       label: round.label,
       durationMinutes: round.durationMinutes !== null ? String(round.durationMinutes) : "",
@@ -67,13 +91,7 @@ export function InterviewRounds({ record, onSaved }: { record: JobRecord; onSave
 
   async function commitEdit(index: number) {
     const round = toRound(draft);
-    if (round) {
-      // Editing a placeholder starts a real list with just this one round —
-      // the other example rows aren't confirmed data, so they're dropped
-      // rather than silently saved alongside it.
-      const next = isPlaceholder ? [round] : rounds.map((r, i) => (i === index ? round : r));
-      await persist(next);
-    }
+    if (round) await persist(rounds.map((r, i) => (i === index ? round : r)));
     setEditingIndex(null);
   }
 
@@ -91,8 +109,12 @@ export function InterviewRounds({ record, onSaved }: { record: JobRecord; onSave
   return (
     <div className="interview-rounds-section card">
       <h3>Interview Process</h3>
+      {rounds.length === 0 && !adding && (
+        <p className="empty-note">No interview process found in this job description. Add the rounds yourself as you learn them.</p>
+      )}
+
       <ol className="interview-rounds">
-        {displayRounds.map((round, index) =>
+        {rounds.map((round, index) =>
           editingIndex === index ? (
             <li key={index}>
               <RoundEditor draft={draft} onChange={setDraft} onSave={() => commitEdit(index)} onCancel={() => setEditingIndex(null)} />
@@ -100,8 +122,8 @@ export function InterviewRounds({ record, onSaved }: { record: JobRecord; onSave
           ) : (
             <li
               key={index}
-              className={[isPlaceholder ? "placeholder" : "", dragIndex === index ? "dragging" : ""].filter(Boolean).join(" ") || undefined}
-              draggable={!isPlaceholder}
+              className={dragIndex === index ? "dragging" : undefined}
+              draggable
               onDragStart={() => setDragIndex(index)}
               onDragOver={(e) => e.preventDefault()}
               onDrop={(e) => {
@@ -111,25 +133,21 @@ export function InterviewRounds({ record, onSaved }: { record: JobRecord; onSave
               }}
               onDragEnd={() => setDragIndex(null)}
             >
-              {!isPlaceholder && (
-                <span className="drag-handle" aria-hidden="true">
-                  ⠿
-                </span>
-              )}
+              <span className="drag-handle" aria-hidden="true">
+                ⠿
+              </span>
               <span className="round-label">{index + 1}</span>
               <span className="round-text">
-                {formatRound(round, isPlaceholder)}
+                {formatRound(round)}
                 {round.sourceText && <span className="round-source">{round.sourceText}</span>}
               </span>
               {round.source === "user" && <span className="source-badge">edited</span>}
               <button type="button" className="edit-icon" onClick={() => startEdit(index)} aria-label={`Edit round ${index + 1}`}>
                 ✎
               </button>
-              {!isPlaceholder && (
-                <button type="button" className="edit-icon" onClick={() => void removeRound(index)} aria-label={`Remove round ${index + 1}`}>
-                  ✕
-                </button>
-              )}
+              <button type="button" className="edit-icon" onClick={() => void removeRound(index)} aria-label={`Remove round ${index + 1}`}>
+                ✕
+              </button>
             </li>
           ),
         )}
@@ -167,26 +185,45 @@ function RoundEditor({
 }) {
   return (
     <span className="field-editor">
-      <input
-        type="text"
-        placeholder="e.g. Technical interview"
+      <select
         value={draft.label}
         onChange={(e) => onChange({ ...draft, label: e.target.value })}
+        aria-label="Interview type"
         autoFocus
-      />
-      <input
-        type="number"
-        placeholder="min"
+      >
+        <option value="">Interview type…</option>
+        {selectOptions(INTERVIEW_TYPES, draft.label).map((type) => (
+          <option key={type} value={type}>
+            {type}
+          </option>
+        ))}
+      </select>
+      <select value={draft.mode} onChange={(e) => onChange({ ...draft, mode: e.target.value })} aria-label="Stage">
+        <option value="">Stage…</option>
+        {selectOptions(INTERVIEW_STAGES, draft.mode).map((stage) => (
+          <option key={stage} value={stage}>
+            {stage}
+          </option>
+        ))}
+      </select>
+      <select
         value={draft.durationMinutes}
         onChange={(e) => onChange({ ...draft, durationMinutes: e.target.value })}
-      />
-      <input
-        type="text"
-        placeholder="e.g. virtual"
-        value={draft.mode}
-        onChange={(e) => onChange({ ...draft, mode: e.target.value })}
-      />
-      <button type="button" onClick={onSave}>
+        aria-label="Duration"
+      >
+        {/* An extracted round often states no duration — that has to stay expressible, or editing one
+            would silently stamp a made-up length on it. */}
+        <option value="">Duration…</option>
+        {selectOptions(
+          DURATION_OPTIONS.map((o) => o.value),
+          draft.durationMinutes,
+        ).map((value) => (
+          <option key={value} value={value}>
+            {formatDuration(Number(value))}
+          </option>
+        ))}
+      </select>
+      <button type="button" onClick={onSave} disabled={!draft.label}>
         Save
       </button>
       <button type="button" onClick={onCancel}>
