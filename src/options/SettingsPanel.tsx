@@ -17,8 +17,13 @@ import { parseResumeFile } from "../shared/resumeParser";
 import { DEFAULT_SETTINGS, type ReasoningEffort } from "../shared/types";
 import { supportsReasoningEffort, verifyOpenAiApiKey } from "../background/llm/openaiClient";
 
-// Highest-capability first, since that's the pick a user reaches for by default.
-const MODEL_OPTIONS = ["gpt-5", "gpt-5-mini", "gpt-5-nano", "gpt-4.1", "gpt-4.1-mini", "gpt-4o", "gpt-4o-mini"];
+// Highest-capability first, since that's the pick a user reaches for by default. The gpt-5 family is
+// deliberately absent: its reasoning tokens pushed time-to-first-token past the client's stall abort
+// on real postings, so it failed every run. Still reachable through the custom field below for anyone
+// who wants it back.
+const MODEL_OPTIONS = ["gpt-4.1", "gpt-4.1-mini", "gpt-4o", "gpt-4o-mini"];
+/** Sentinel <option> value — never a real model id. */
+const CUSTOM_MODEL = "__custom__";
 const REASONING_EFFORT_OPTIONS: ReasoningEffort[] = ["minimal", "low", "medium", "high"];
 
 export function SettingsPanel() {
@@ -30,6 +35,8 @@ export function SettingsPanel() {
   const [uploading, setUploading] = useState(false);
   const [uploadWarning, setUploadWarning] = useState<string | null>(null);
   const [uploadError, setUploadError] = useState<string | null>(null);
+  const [customModelInput, setCustomModelInput] = useState("");
+  const [customModelSelected, setCustomModelSelected] = useState(false);
 
   // useSettings() starts at the DEFAULT_SETTINGS singleton and only ever
   // replaces it with a freshly-spread object once the real value has loaded
@@ -40,9 +47,20 @@ export function SettingsPanel() {
   useEffect(() => {
     if (!loadedOnce.current && settings !== DEFAULT_SETTINGS) {
       setApiKeyInput(settings.openaiApiKey ?? "");
+      // A stored model that isn't one of the presets can only have come from the custom field —
+      // reopen it that way rather than silently showing the first preset as if it were selected.
+      if (!MODEL_OPTIONS.includes(settings.openaiModel)) {
+        setCustomModelInput(settings.openaiModel);
+        setCustomModelSelected(true);
+      }
       loadedOnce.current = true;
     }
   }, [settings]);
+
+  function applyCustomModel() {
+    const trimmed = customModelInput.trim();
+    if (trimmed) void updateSettings({ openaiModel: trimmed });
+  }
 
   async function handleSaveApiKey() {
     const trimmed = apiKeyInput.trim();
@@ -133,15 +151,42 @@ export function SettingsPanel() {
         <label htmlFor="model">Model</label>
         <select
           id="model"
-          value={settings.openaiModel}
-          onChange={(e) => void updateSettings({ openaiModel: e.target.value })}
+          value={customModelSelected ? CUSTOM_MODEL : settings.openaiModel}
+          onChange={(e) => {
+            const value = e.target.value;
+            // Picking "Custom" only opens the field — the model isn't switched until something is
+            // actually typed and applied, so an empty input can't leave analysis with no model.
+            setCustomModelSelected(value === CUSTOM_MODEL);
+            if (value !== CUSTOM_MODEL) void updateSettings({ openaiModel: value });
+          }}
         >
           {MODEL_OPTIONS.map((model) => (
             <option key={model} value={model}>
               {model}
             </option>
           ))}
+          <option value={CUSTOM_MODEL}>Custom…</option>
         </select>
+        {customModelSelected && (
+          <>
+            <input
+              type="text"
+              value={customModelInput}
+              onChange={(e) => setCustomModelInput(e.target.value)}
+              onKeyDown={(e) => {
+                if (e.key === "Enter") applyCustomModel();
+              }}
+              placeholder="e.g. gpt-4.1-2025-04-14"
+              aria-label="Custom model name"
+            />
+            <button type="button" onClick={applyCustomModel} disabled={!customModelInput.trim()}>
+              Use
+            </button>
+            <p className="muted">
+              Any model id your API key can call. Currently using: {settings.openaiModel}
+            </p>
+          </>
+        )}
       </div>
 
       {supportsReasoningEffort(settings.openaiModel) && (
