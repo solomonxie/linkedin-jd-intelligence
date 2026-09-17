@@ -289,6 +289,14 @@ interpretation by construction, so no `Fact<T>` wrapper — there is no `"page"`
 the extraction call (no resume needed) and rendered as its own card between the brief and the match tree;
 the side panel renormalizes the percents to sum 100 before drawing the bars.
 
+**Alternatives, and unmatched options**: a bullet offering a choice ("such as X, Y, or Z", "one or more
+of…") becomes one parent node named for the category with every option as a same-tier child — one node
+per option is wrong, since it would read as needing all of them, and the parent counts as matched when
+any one child does. Every option the posting names stays in the tree with its own verdict, including the
+ones the resume can't match: in practice the model kept dropping those, which quietly turned the tree
+into a list of the candidate's strengths instead of a comparison. The unmatched ones are the gap, which
+is the whole point.
+
 **Source text** (`RequirementNode.sourceText`, `InterviewRound.sourceText`): the posting's own line a top-level node was extracted
 from, copied verbatim — never paraphrased or re-punctuated. Every node from the same bullet carries the
 identical string, and the side panel groups on it: the quoted line renders once, with the skills read out
