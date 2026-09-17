@@ -11,6 +11,7 @@ import { broadcastJobRecordUpdated, isAnalyzeRequest } from "../shared/messaging
 import { buildExtractionPrompt, buildRequirementsPrompt } from "./llm/promptBuilder";
 import { callOpenAI } from "./llm/openaiClient";
 import { parseExtractionResponse, parseRequirementsResponse } from "./llm/responseParser";
+import { acquireKeepalive } from "./keepalive";
 import { beginAnalysis, completeAnalysisError, completeAnalysisOk, completeAnalysisUnparsed } from "./historyStore";
 import { blankCompanyInfo } from "../shared/types";
 import type { AnalysisResult, CompanyInfo, CompanyRecord, ReasoningEffort } from "../shared/types";
@@ -77,6 +78,7 @@ async function runAnalysis(
   cached: CompanyRecord | undefined,
   slugKey: string | null,
 ): Promise<void> {
+  const releaseKeepalive = acquireKeepalive();
   try {
     const extractionPrompt = buildExtractionPrompt({
       rawPageText: request.rawPageText,
@@ -123,6 +125,7 @@ async function runAnalysis(
   } catch (error) {
     await completeAnalysisError(request.jobId, (error as Error).message);
   } finally {
+    releaseKeepalive();
     broadcastJobRecordUpdated(request.jobId);
   }
 }
