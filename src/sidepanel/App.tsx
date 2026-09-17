@@ -352,8 +352,11 @@ export function TierSummary({ requirements }: { requirements: JobRecord["require
   return (
     <ul className="tier-summary">
       {(Object.keys(TIER_LABELS) as RequirementTier[]).map((tier) => (
-        <li key={tier} data-tier={tier}>
-          {TIER_LABELS[tier]}: {counts[tier].matched}/{counts[tier].total}
+        <li key={tier}>
+          <span className="tier-summary-label">{TIER_LABELS[tier]}</span>
+          <span className="tier-summary-count">
+            {counts[tier].matched}/{counts[tier].total}
+          </span>
         </li>
       ))}
     </ul>
