@@ -110,6 +110,13 @@ Side panel:
 │                                   │
 │         [ Re-analyze ]           │
 │                                   │
+│ ▾ Day-to-day work                 │
+│  Full-stack on an internal admin  │
+│  app, but mostly backend — CRUD   │
+│  services and the API behind them.│
+│  Backend   ▓▓▓▓▓▓▓▓░░  80%       │
+│  Frontend  ▓▓░░░░░░░░  20%       │
+│                                   │
 │ Required   9/10   ▓▓▓▓▓▓▓▓▓░     │
 │ Preferred  2/3    ▓▓▓▓▓▓░░░░     │
 │ Implied    4/6    ▓▓▓▓▓▓░░░░     │
@@ -238,6 +245,7 @@ The merged shape:
            seniorHeadcount: Fact<number>, applicantCount: Fact<number>,
            applicantCountInsight: string|null },
   roleClassification: { normalizedRole: string, rationale: string },
+  dayToDay: { brief: string, split: { area: string, percent: number }[] } | null,
   requirements: RequirementNode[],
   interviewRounds: InterviewRound[],
   summary: string
@@ -259,6 +267,14 @@ mission stated in under 5 words (e.g. "Owns the checkout pipeline") rather than 
 team or clearly states its charter, `"llm-estimate"` when inferred from the role's own responsibilities
 (same spirit as role classification below), `null` for either when the posting gives too little to even
 reasonably guess.
+
+**Day-to-day work** (`dayToDay`): what the role actually does once the posting's framing is stripped
+off — "a lot of words, but it's really ETL ingestion", "full-stack in name, 80% backend". `brief` is two
+or three plain sentences (not a walk through the responsibilities bullets); `split` is 2-4 named areas
+with rough percents, `[]` for a single-focus role where a split would be invented precision. An
+interpretation by construction, so no `Fact<T>` wrapper — there is no `"page"` source for it. Built by
+the extraction call (no resume needed) and rendered as its own card between the brief and the match tree;
+the side panel renormalizes the percents to sum 100 before drawing the bars.
 
 **Source text** (`RequirementNode.sourceText`): the posting's own line a top-level node was extracted
 from, copied verbatim — never paraphrased or re-punctuated. Every node from the same bullet carries the

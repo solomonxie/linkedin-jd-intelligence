@@ -12,6 +12,7 @@ import { extractCompanySlugHint, extractTitleSlugHint, humanizeSlug } from "../s
 import { blockReasonText, checkBlocked } from "../shared/blockList";
 import { RequirementTree, RequirementTreeSkeleton } from "./RequirementTree";
 import { CompanyRoleBrief, CompanyRoleBriefSkeleton } from "./CompanyRoleBrief";
+import { DayToDay, DayToDaySkeleton } from "./DayToDay";
 import { InterviewRounds } from "./InterviewRounds";
 import { blankRoleInfo, type JobRecord, type RequirementTier } from "../shared/types";
 
@@ -268,6 +269,7 @@ export function App() {
           ) : (
             <CompanyRoleBriefSkeleton />
           )}
+          {record.dayToDay ? <DayToDay work={record.dayToDay} /> : record.status === "pending" && <DayToDaySkeleton />}
           <div className="card">
             <h3>Skill / Experience Match</h3>
             {record.requirements.length > 0 ? (

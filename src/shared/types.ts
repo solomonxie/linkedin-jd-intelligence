@@ -88,6 +88,23 @@ export function blankRoleInfo(): RoleInfo {
   };
 }
 
+/** What the role actually does day to day, read past the posting's own framing — "a lot of words, but
+ * really it's ETL ingestion". An interpretation by construction, never quoted off the page, so no
+ * Fact<T> wrapper: there is no "page" source for it. */
+export interface DayToDayWork {
+  /** Two or three plain sentences. Never a restatement of the responsibilities bullets. */
+  brief: string;
+  /** Rough share of the week per area (e.g. Backend 80 / Frontend 20), LLM-estimated. Empty for a
+   * single-focus role, where a split would be invented precision. */
+  split: WorkSplit[];
+}
+
+export interface WorkSplit {
+  area: string;
+  /** 0-100; the UI renormalizes, so these only have to be roughly comparable. */
+  percent: number;
+}
+
 export interface RoleClassification {
   normalizedRole: string;
   rationale: string;
@@ -118,6 +135,7 @@ export interface AnalysisResult {
   companyInfo: CompanyInfo;
   role: RoleInfo;
   roleClassification: RoleClassification;
+  dayToDay: DayToDayWork | null;
   requirements: RequirementNode[];
   interviewRounds: InterviewRound[];
   summary: string;
@@ -144,6 +162,8 @@ export interface JobRecord {
   companyInfo: CompanyInfo | null;
   role: RoleInfo | null;
   roleClassification: RoleClassification | null;
+  /** Absent on records analyzed before this field existed. */
+  dayToDay?: DayToDayWork | null;
   requirements: RequirementNode[];
   interviewRounds: InterviewRound[];
   summary: string | null;
