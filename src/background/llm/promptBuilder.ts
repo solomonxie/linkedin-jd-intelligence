@@ -233,14 +233,29 @@ independently weighted and matched.
   - "Experience with TypeScript and Golang" -> two sibling nodes: "TypeScript", "Golang"
 
 When one bullet offers a choice of ALTERNATIVES instead — any one of them satisfies it ("X, Y, Z, or
-similar", "X, Y, or Z") — do NOT create separate top-level nodes for each option; that overstates the
-bullet as needing all of them. Instead create ONE parent node named for the bullet's own category (or
-its first option if there's no natural category name), at the bullet's own tier, with each alternative
-as a child at THE SAME TIER as the parent — not "implied", since the posting named all of them itself.
+similar", "X, Y, or Z", "such as X, Y, or Z", "e.g. X, Y, Z", "one or more of X, Y, Z") — do NOT create
+separate top-level nodes for each option; that overstates the bullet as needing all of them. Instead
+create ONE parent node named for the bullet's own category (or its first option if there's no natural
+category name), at the bullet's own tier, with each alternative as a child at THE SAME TIER as the
+parent — not "implied", since the posting named all of them itself.
   - "Strong proficiency in Python, Go, Java, C++, or similar" -> one must-have parent "Programming
     language" with must-have children "Python", "Go", "Java", "C++"
   - "Cloud platform expertise (AWS, GCP, or Azure)" -> one must-have parent "Cloud platform" with
     must-have children "AWS", "GCP", "Azure"
+
+LIST EVERY OPTION THE POSTING NAMES — INCLUDING THE ONES THE RESUME DOESN'T HAVE
+Never drop an alternative because the resume shows nothing for it. An unmatched option is the single
+most useful thing in this whole tree: it's the gap. Emit every option named, each with its own
+"matched" verdict, and let false speak for itself.
+  - "Have experience with one or more modern programming languages such as TypeScript, Python, Go,
+    Java, C#, Rust, or Ruby." -> parent "Programming language" with SEVEN must-have children:
+    TypeScript, Python, Go, Java, C#, Rust, Ruby — not just the three the resume happens to cover.
+  - "...cloud platforms such as AWS, Azure, or GCP." -> parent "Cloud platform" with THREE must-have
+    children: AWS, Azure, GCP — listing only AWS because that's what the resume has is wrong.
+A bullet naming several separate requirements gets one node per requirement, by the same rule:
+  - "Have experience with relational databases, API design, and cloud platforms such as AWS, Azure, or
+    GCP." -> "Relational databases", "API design", and a "Cloud platform" parent with its three
+    children — every part of the bullet represented, matched or not.
 
 SOURCE TEXT — THE POSTING'S OWN WORDING, VERBATIM
 Every top-level node carries "sourceText": the posting's own line that this node was extracted from,
@@ -300,9 +315,15 @@ COVERAGE
 Every explicitly stated requirement and preferred/bonus qualification bullet must map to at least one
 node, including years-of-experience requirements (per the SKILLS AND QUALIFICATIONS scope above) —
 except education/degree and soft-skill bullets, which are excluded by that same scope. Do not silently
-drop any other bullets from either the required or the preferred/nice-to-have section.
+drop any other bullets from either the required or the preferred/nice-to-have section, and do not drop
+any named option, tool or skill WITHIN a bullet — least of all the ones the resume can't match (see
+LIST EVERY OPTION above). The tree has to show what was asked for, not what the candidate happens to
+have.
 
 MATCHING
+An ALTERNATIVES parent (see above) is "matched": true when ANY ONE of its children matches — that's what
+"any one of them satisfies it" means. Its unmatched children still stay in the tree, showing false.
+
 For every node (every depth), set "matched": true if the resume shows explicit OR implied evidence for
 it — e.g. a "Python" requirement is matched, with evidence noting the inference, if the resume only
 lists "Django". Put a short quote or paraphrase in "evidence" and, if applicable, the relevant resume

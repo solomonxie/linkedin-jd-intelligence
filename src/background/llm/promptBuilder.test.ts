@@ -39,6 +39,12 @@ describe("buildRequirementsPrompt", () => {
     expect(prompt).toContain("REQUIREMENT TREE");
   });
 
+  it("tells the model to keep every named option, including unmatched ones", () => {
+    const prompt = buildRequirementsPrompt({ resumeText: "x", rawPageText: "x" });
+    expect(prompt).toContain("LIST EVERY OPTION THE POSTING NAMES");
+    expect(prompt).toContain("Never drop an alternative because the resume shows nothing for it");
+  });
+
   it("doesn't include the company/role extraction instructions", () => {
     const prompt = buildRequirementsPrompt({ resumeText: "x", rawPageText: "x" });
     expect(prompt).not.toContain("COMPANY INFO");
