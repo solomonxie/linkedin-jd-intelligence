@@ -22,7 +22,7 @@ const TIER_LABELS: Record<RequirementTier, string> = {
 };
 
 export function App() {
-  const { tabId, pageInfo, record, loading, contentScriptMissing, refresh } = useActiveJob();
+  const { tabId, pageInfo, record, loading, contentScriptMissing, loadError, refresh } = useActiveJob();
   const settings = useSettings();
   const [analyzing, setAnalyzing] = useState(false);
   const [analyzeError, setAnalyzeError] = useState<string | null>(null);
@@ -108,6 +108,18 @@ export function App() {
   const elapsedSeconds = isPendingFresh && record ? Math.max(0, Math.floor((Date.now() - new Date(record.startedAt).getTime()) / 1000)) : 0;
 
   if (loading) return <Shell><p className="empty-state">Loading…</p></Shell>;
+  if (loadError) {
+    return (
+      <Shell>
+        <div className="empty-state">
+          <p>Couldn't read this page: {loadError}</p>
+          <button type="button" className="btn-primary" onClick={refresh}>
+            Try again
+          </button>
+        </div>
+      </Shell>
+    );
+  }
   if (contentScriptMissing) {
     return (
       <Shell>
