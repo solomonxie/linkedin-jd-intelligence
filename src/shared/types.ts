@@ -217,12 +217,16 @@ export interface Settings {
   roleBlockKeywords: BlockKeyword[];
 }
 
-export const DEFAULT_OPENAI_MODEL = "gpt-5";
+/** gpt-5 is slower than this analysis needs: reasoning tokens alone pushed time-to-first-token past
+ * the 15s stall abort in openaiClient.ts, on a task that is extraction from text already on the page
+ * rather than anything that rewards deep reasoning. mini at low effort answers fast enough to stream
+ * well inside that window. Switchable in Settings. */
+export const DEFAULT_OPENAI_MODEL = "gpt-5-mini";
 
 export const DEFAULT_SETTINGS: Settings = {
   openaiApiKey: null,
   openaiModel: DEFAULT_OPENAI_MODEL,
-  openaiReasoningEffort: "medium",
+  openaiReasoningEffort: "low",
   activeResumeProfileId: null,
   resumeProfiles: [],
   blockedJobs: [],
