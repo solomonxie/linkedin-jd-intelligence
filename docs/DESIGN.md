@@ -115,13 +115,17 @@ Side panel:
 │ Implied    4/6    ▓▓▓▓▓▓░░░░     │
 │ (rows below sorted by weight ↓)  │
 │                                   │
-│ ▸ Python (42%) ⓘ         ✔ req.  │
-│ ▾ Container system (18%) ✔ req.  │
-│    ├ Kubernetes (11%) ⓘ  ✘ req.  │
-│    ├ Docker (5%)          ✔ impl.│
-│    └ Microservices (2%)   ✔ impl.│
-│ ▸ Columnar DB (9%) ⓘ      ✔ impl.│
-│ ▸ Git (3%)                ✔ nice │
+│ "5+ years of Python in prod"     │
+│   ▸ Python (42%) ⓘ       ✔ req.  │
+│ "Containerization and orchest-   │
+│  ration experience"              │
+│   ▾ Container system (18%)✔ req. │
+│     ├ Kubernetes (11%) ⓘ ✘ req.  │
+│     ├ Docker (5%)         ✔ impl.│
+│     └ Microservices (2%)  ✔ impl.│
+│ (quoted line = the posting's own │
+│  wording, verbatim; skills below │
+│  it are what was read out of it) │
 │  ⓘ hover → "~1,240 candidates in │
 │    San Francisco, CA likely have │
 │    this skill (est. from 8       │
@@ -241,8 +245,9 @@ The merged shape:
 // Fact<T> = { value: T | null, source: "page" | "llm-estimate" | "user" }  ("user" only ever set by a
 //   manual edit in the side panel — see "Manual edits" below, never written by the LLM)
 // RequirementNode = { requirement: string, tier: "must-have"|"nice-to-have"|"implied",
-//                      weight: number, matched: boolean, evidence: string|null,
-//                      resumeSnippet: string|null, children: RequirementNode[] }
+//                      weight: number, matched: boolean, sourceText: string|null,
+//                      evidence: string|null, resumeSnippet: string|null,
+//                      children: RequirementNode[] }
 // InterviewRound = { label: string, durationMinutes: number|null, mode: string|null, source: "page"|"user" }
 ```
 
@@ -254,6 +259,13 @@ mission stated in under 5 words (e.g. "Owns the checkout pipeline") rather than 
 team or clearly states its charter, `"llm-estimate"` when inferred from the role's own responsibilities
 (same spirit as role classification below), `null` for either when the posting gives too little to even
 reasonably guess.
+
+**Source text** (`RequirementNode.sourceText`): the posting's own line a top-level node was extracted
+from, copied verbatim — never paraphrased or re-punctuated. Every node from the same bullet carries the
+identical string, and the side panel groups on it: the quoted line renders once, with the skills read out
+of it indented underneath. `null` on children, on `"implied"` nodes (the model's own inference, not
+something the posting said), and on records analyzed before the field existed — those render exactly as
+they did before, with no quoted line above them.
 
 **Headquarters** (`companyInfo.headquarters`): the company's HQ city (state/country added only to
 disambiguate), same `Fact<string>` shape and `source` semantics as the rest of `companyInfo`. Shown in the

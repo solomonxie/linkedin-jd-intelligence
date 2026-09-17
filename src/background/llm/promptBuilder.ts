@@ -165,7 +165,8 @@ SCHEMA
 // RequirementNode = {
 //   "requirement": string, "tier": "must-have" | "nice-to-have" | "implied",
 //   "weight": number,          // 0-100, importance relative to sibling nodes
-//   "matched": boolean, "evidence": string | null, "resumeSnippet": string | null,
+//   "matched": boolean, "sourceText": string | null,   // see SOURCE TEXT below
+//   "evidence": string | null, "resumeSnippet": string | null,
 //   "children": RequirementNode[]   // [] if none
 // }
 
@@ -214,6 +215,16 @@ as a child at THE SAME TIER as the parent — not "implied", since the posting n
     language" with must-have children "Python", "Go", "Java", "C++"
   - "Cloud platform expertise (AWS, GCP, or Azure)" -> one must-have parent "Cloud platform" with
     must-have children "AWS", "GCP", "Azure"
+
+SOURCE TEXT — THE POSTING'S OWN WORDING, VERBATIM
+Every top-level node carries "sourceText": the posting's own line that this node was extracted from,
+copied word for word. Not a paraphrase, not cleaned up, not re-punctuated — the bullet or sentence
+exactly as written (minus any leading bullet glyph/number). When several nodes come out of one bullet,
+give them all that same identical string, so they group under it.
+  - "Strong proficiency in Python, Go, Java, C++, or similar" -> the parent node's sourceText is that
+    whole sentence, verbatim
+Set "sourceText": null on children, and on any "implied" node — those are your own inference, not
+something the posting said. Never invent or reconstruct a line that isn't in the posting text.
 
 REQUIREMENT TREE — WEIGHTED AND HIERARCHICAL, NOT A FLAT LIST
 Group related sub-skills under a main skill/category as "children" instead of listing everything flat —
