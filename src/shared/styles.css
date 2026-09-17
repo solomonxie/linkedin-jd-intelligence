@@ -208,6 +208,21 @@ input:focus {
   gap: 6px;
   font-size: 13px;
   color: var(--muted);
+  /* A long resume name used to widen the select until Analyze wrapped onto its own row.
+     Let the select shrink (min-width: 0 — flex items won't shrink past their content
+     without it) and truncate instead. */
+  flex: 1 1 auto;
+  min-width: 0;
+}
+
+.toolbar label select {
+  flex: 1 1 auto;
+  min-width: 0;
+  text-overflow: ellipsis;
+}
+
+.toolbar .btn-primary {
+  flex: 0 0 auto;
 }
 
 .tier-summary {

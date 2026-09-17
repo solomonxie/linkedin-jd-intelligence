@@ -147,7 +147,7 @@ Options page (Settings only — History is a separate page, opened via the side 
 ```
 ┌──────────────────────────────────────────┐
 │ OpenAI API key   [ ********************* ]  │
-│ Model            [ gpt-5-mini         ▾ ]   │
+│ Model            [ gpt-4.1-mini       ▾ ]   │
 │ Reasoning effort [ low                ▾ ]   │ (only shown for a reasoning-capable model)
 │                                              │
 │ Resume profiles                             │
@@ -452,7 +452,7 @@ For each **top-level** requirement row the side panel shows an "ⓘ" with an est
 
 ### Storage
 
-`chrome.storage.local` for the `Settings` singleton — `{ openaiApiKey, openaiModel, openaiReasoningEffort, activeResumeProfileId, resumeProfiles: ResumeProfile[] }`, `ResumeProfile = { id, name, fileName, parsedAt, text }` (multiple named resumes, one active). `openaiReasoningEffort` (`"minimal"|"low"|"medium"|"high"`) is only ever sent to the API for a reasoning-capable model (`supportsReasoningEffort()` in `openaiClient.ts` — `gpt-5*`/`o1`/`o3`/`o4` families) and the Settings field is hidden otherwise. Not encrypted beyond normal browser-profile sandboxing — noted in the Options UI copy.
+`chrome.storage.local` for the `Settings` singleton — `{ openaiApiKey, openaiModel, openaiReasoningEffort, activeResumeProfileId, resumeProfiles: ResumeProfile[] }`, `ResumeProfile = { id, name, fileName, parsedAt, text }` (multiple named resumes, one active). `openaiReasoningEffort` (`"minimal"|"low"|"medium"|"high"`) is only ever sent to the API for a reasoning-capable model (`supportsReasoningEffort()` in `openaiClient.ts` — `gpt-5*`/`o1`/`o3`/`o4` families) and the Settings field is hidden otherwise. The model dropdown lists the gpt-4.1/gpt-4o families only — the gpt-5 family spent long enough on reasoning tokens to trip `openaiClient.ts`'s stall abort before emitting anything, failing every run — plus a "Custom…" option that reveals a free-text field for any other model id the key can call (which is also the way back to a gpt-5 model). Not encrypted beyond normal browser-profile sandboxing — noted in the Options UI copy.
 
 `IndexedDB` via `idb` for `JobRecord` (keyed by LinkedIn job id — upsert, so re-analysis replaces rather than duplicates), storing the requirement tree, the company/role brief, `roleClassification`, `regionBucket`, `status`, and `resumeProfileId` used, indexed by `analyzedAt`/`resumeProfileId`/`regionBucket` (the last one is what `skillPrevalence.ts` queries against). A separate `companies` store (keyed by `normalizeCompanyKey()`) holds `CompanyRecord { key, name, companyInfo, updatedAt }` — see "Company info cache" above.
 
