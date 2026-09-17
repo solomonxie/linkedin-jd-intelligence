@@ -33,7 +33,7 @@ SCHEMA
   "role": {
     "team": Fact<string>,          // see TEAM below
     "teamMission": Fact<string>,   // see TEAM below
-    "salaryRange": Fact<string>,
+    "salaryRange": Fact<string>,   // see SALARY FORMAT below
     "applicantCount": Fact<number>,
     "seniorHeadcount": Fact<number>,
     "applicantCountInsight": string | null   // not a Fact — see APPLICANT COUNT INSIGHT below
@@ -51,6 +51,14 @@ SCHEMA
 // }
 // InterviewRound = { "label": string, "durationMinutes": number | null, "mode": string | null,
 //   "source": "page", "sourceText": string | null }
+
+SALARY FORMAT
+"salaryRange" must come back in exactly this shape: "$120k-150k USD" — a plain "$", amounts in whole
+thousands with a "k", a hyphen for a range, and a three-letter currency code at the end. Never a symbol
+prefix like "C$" or "US$", never thousands separators or cents, never trailing words ("per year", "plus
+bonus", "DOE"). One figure instead of a range is "$145k CAD". Hourly pay is "$50-70/hr USD".
+Always state the currency code — a Canadian posting showing "$145,000" is "$145k CAD", not USD.
+Return null (not a guess) when the posting shows no pay at all.
 
 DAY-TO-DAY WORK
 "dayToDay" is your read of what this person actually spends their days doing, past the posting's own
