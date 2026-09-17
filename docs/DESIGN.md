@@ -473,6 +473,15 @@ For each **top-level** requirement row the side panel shows an "ⓘ" with an est
 
 **Export**: the Options History panel's "Export all data" button downloads every `JobRecord` and every `CompanyRecord` (not just what's currently filtered in the table) as one JSON file — a full local backup of both IndexedDB stores. `Settings` (including the API key) is deliberately not included.
 
+### Blank-panel guards (`shared/ErrorBoundary.tsx`, both `index.html`s)
+
+Two failures used to present identically as an empty document with nothing to act on: a throw during
+render (React unmounts the whole tree) and the panel's scripts never running at all (a stale asset URL
+after an extension reload — filenames are content-hashed, so a rebuild invalidates whatever the open
+panel was pointed at). Both now show something: an error boundary renders the message plus a reload
+button, and `#root` ships with static "Starting…" markup that React replaces on mount — so a panel still
+reading "Starting…" means the bundle never executed, not that the app is busy.
+
 ### Robustness
 
 Analyze button disables while a request is in flight. If PDF/DOCX parsing yields little/no text (e.g. scanned/image-only PDF), the upload flow warns instead of silently saving an empty profile. A missing/invalid API key or a network failure surfaces a visible, specific error in the side panel. If `rawPageText` extraction yields implausibly little text (page not fully loaded, or an unrecognized layout), the side panel shows "couldn't read this page yet" with a manual retry rather than sending a near-empty prompt.
