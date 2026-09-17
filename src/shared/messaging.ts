@@ -61,11 +61,35 @@ export async function requestAnalyze(request: Omit<AnalyzeRequest, "type">): Pro
   return chrome.runtime.sendMessage({ type: "ANALYZE", ...request } satisfies AnalyzeRequest);
 }
 
+/**
+ * False once the extension has been reloaded, updated or disabled out from under an
+ * already-injected content script. Chrome keeps that script running but cuts its context loose:
+ * chrome.runtime.getURL() starts returning the literal "chrome-extension://invalid/" and every
+ * chrome.* call throws. Callers that outlive a reload (content scripts) must check this.
+ */
+export function isExtensionContextValid(): boolean {
+  return Boolean(chrome.runtime?.id);
+}
+
+/**
+ * Fire-and-forget send that can't throw at the caller. An orphaned context throws *synchronously*
+ * ("Extension context invalidated"), so .catch() alone never sees it — and in a content script that
+ * throw escapes into whatever host-page code is on the stack (LinkedIn's own router, via our
+ * history patch). No open listener rejects instead, which is fine and equally ignorable.
+ */
+function sendMessageQuietly(message: unknown): void {
+  try {
+    void chrome.runtime.sendMessage(message).catch(() => {});
+  } catch {
+    // Context is gone — there is nothing left to deliver to.
+  }
+}
+
 export function broadcastJobRecordUpdated(jobId: string): void {
   const message: JobRecordUpdatedMessage = { type: "JOB_RECORD_UPDATED", jobId };
   // No open listener (e.g. side panel closed) rejects this — fine, IndexedDB
   // is the source of truth and the panel re-reads it on next open anyway.
-  chrome.runtime.sendMessage(message).catch(() => {});
+  sendMessageQuietly(message);
 }
 
 export function onJobRecordUpdated(callback: (jobId: string) => void): () => void {
@@ -78,7 +102,7 @@ export function onJobRecordUpdated(callback: (jobId: string) => void): () => voi
 
 export function broadcastPageChanged(): void {
   const message: PageChangedMessage = { type: "PAGE_CHANGED" };
-  chrome.runtime.sendMessage(message).catch(() => {});
+  sendMessageQuietly(message);
 }
 
 export function onPageChanged(callback: () => void): () => void {
