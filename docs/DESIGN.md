@@ -136,8 +136,8 @@ Options page (Settings only — History is a separate page, opened via the side 
 ```
 ┌──────────────────────────────────────────┐
 │ OpenAI API key   [ ********************* ]  │
-│ Model            [ gpt-5              ▾ ]   │
-│ Reasoning effort [ medium             ▾ ]   │ (only shown for a reasoning-capable model)
+│ Model            [ gpt-5-mini         ▾ ]   │
+│ Reasoning effort [ low                ▾ ]   │ (only shown for a reasoning-capable model)
 │                                              │
 │ Resume profiles                             │
 │   • Backend  (active)   [rename] [delete]   │
