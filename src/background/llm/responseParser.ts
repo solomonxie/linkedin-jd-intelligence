@@ -121,6 +121,9 @@ const interviewRoundSchema = z.object({
   // The model should only ever write "page" — catch(...) just means a stray
   // "llm-estimate" (never asked for here) doesn't fail the whole response.
   source: z.enum(["page", "user"]).catch("page"),
+  // Same treatment as RequirementNode.sourceText — absent on older records and on rounds the model
+  // couldn't trace to one line, so default it to null rather than failing the response.
+  sourceText: z.preprocess((v) => (typeof v === "string" && v.trim() ? v.trim() : null), z.string().nullable()),
 });
 
 // The model occasionally returns an array of bullet points, or omits/nulls

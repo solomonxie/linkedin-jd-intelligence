@@ -446,9 +446,27 @@ li:hover .edit-icon {
 .interview-rounds li {
   display: flex;
   gap: 8px;
-  align-items: center;
+  /* Not centered: a round carrying the posting's own line is two or three lines tall, and centering
+     would float the number badge and buttons into the middle of it. */
+  align-items: flex-start;
   padding: 4px;
   border-radius: var(--radius-sm);
+}
+
+.round-text {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  flex: 1 1 auto;
+  min-width: 0;
+}
+
+.round-source {
+  padding-left: 8px;
+  border-left: 2px solid var(--border);
+  font-size: 11px;
+  line-height: 1.45;
+  color: var(--muted);
 }
 
 .interview-rounds li:hover {

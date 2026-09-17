@@ -124,6 +124,10 @@ export interface InterviewRound {
   durationMinutes: number | null;
   mode: string | null;
   source: "page" | "user";
+  /** The posting's own wording this round was read from, verbatim — same idea as
+   * RequirementNode.sourceText: the short label is the useful form, the original line is the proof.
+   * Null on a hand-added round, and absent on records analyzed before this field existed. */
+  sourceText?: string | null;
 }
 
 /** The parsed, validated shape of one LLM analysis response. */
