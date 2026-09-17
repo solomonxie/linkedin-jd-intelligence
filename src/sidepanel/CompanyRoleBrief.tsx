@@ -22,6 +22,7 @@ const FIELDS: FieldDef[] = [
   { key: "employeeSize", group: "companyInfo", label: "Size", kind: "text" },
   { key: "engineeringSize", group: "companyInfo", label: "Eng. size", kind: "text" },
   { key: "arr", group: "companyInfo", label: "ARR", kind: "text" },
+  { key: "financePosition", group: "companyInfo", label: "Finance", kind: "text" },
   // "ownership" is rendered specially below, combined with fundingStage — see formatOwnership().
   { key: "ownership", group: "companyInfo", label: "Ownership", kind: "enum", enumOptions: ["public", "private"] },
   { key: "techStack", group: "companyInfo", label: "Tech stack", kind: "array" },
