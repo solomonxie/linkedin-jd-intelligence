@@ -39,6 +39,7 @@ SCHEMA
     "applicantCountInsight": string | null   // not a Fact — see APPLICANT COUNT INSIGHT below
   },
   "roleClassification": { "normalizedRole": string, "rationale": string },
+  "dayToDay": { "brief": string, "split": { "area": string, "percent": number }[] },
   "interviewRounds": InterviewRound[],
   "summary": string
 }
@@ -49,6 +50,19 @@ SCHEMA
 //   "fundingStage": Fact<string>, "ownership": Fact<"public"|"private">, "techStack": Fact<string[]>
 // }
 // InterviewRound = { "label": string, "durationMinutes": number | null, "mode": string | null, "source": "page" }
+
+DAY-TO-DAY WORK
+"dayToDay" is your read of what this person actually spends their days doing, past the posting's own
+framing and marketing language — what someone who'd held the job would tell a friend over coffee.
+"brief" is two or three plain sentences, concrete, naming the real shape of the work:
+  - "Full-stack on an internal admin app, but mostly backend — CRUD services and the API behind them,
+    with the occasional React screen."
+  - "Data engineering: building and babysitting ETL ingestion pipelines, plus the warehouse models on top."
+  - "Infrastructure work that's closer to sysadmin — provisioning, on-call, keeping the fleet patched."
+Do not walk through the responsibilities bullets one by one, and do not just restate the job title.
+"split" is where the time roughly goes: 2-4 named areas whose "percent" values sum to 100 (e.g.
+[{"area": "Backend", "percent": 80}, {"area": "Frontend", "percent": 20}]), weighted by how much of the
+posting is about each. Return [] for a single-focus role — an invented split is worse than none.
 
 WORKPLACE TYPE
 "workplaceType" is "remote" | "hybrid" | "onsite" — read it from an explicit workplace badge/label on the

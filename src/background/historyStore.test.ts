@@ -35,6 +35,7 @@ const sampleResult: AnalysisResult = {
     seniorHeadcount: { value: null, source: "page" },
     applicantCountInsight: null,
   },
+  dayToDay: { brief: "Mostly backend service work.", split: [{ area: "Backend", percent: 80 }, { area: "Frontend", percent: 20 }] },
   roleClassification: { normalizedRole: "Data Engineer", rationale: "Pipelines, not just APIs." },
   requirements: [],
   interviewRounds: [],

@@ -600,3 +600,50 @@ tbody tr:hover {
 .requirement-source-group > ul {
   margin-left: 10px;
 }
+
+/* Day-to-day work */
+
+.day-to-day-brief {
+  margin: 6px 0 0;
+  font-size: 13px;
+  line-height: 1.5;
+}
+
+.work-split {
+  list-style: none;
+  padding: 0;
+  margin: 10px 0 0;
+  display: grid;
+  gap: 5px;
+}
+
+.work-split li {
+  display: grid;
+  grid-template-columns: minmax(70px, auto) 1fr 34px;
+  align-items: center;
+  gap: 8px;
+  font-size: 12px;
+}
+
+.work-split-area {
+  color: var(--muted);
+}
+
+.work-split-bar {
+  height: 6px;
+  border-radius: 3px;
+  background: var(--border);
+  overflow: hidden;
+}
+
+.work-split-fill {
+  display: block;
+  height: 100%;
+  background: var(--accent);
+}
+
+.work-split-percent {
+  text-align: right;
+  color: var(--muted);
+  font-variant-numeric: tabular-nums;
+}
