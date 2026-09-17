@@ -55,6 +55,11 @@ export function App() {
     return `~${estimate.toLocaleString()} candidates in ${region} likely have this skill (estimated from ${prevalence.qualifyingJobCount} postings you've analyzed here; rough heuristic, not verified).`;
   }
 
+  // An analyze error belongs to the job it happened on. LinkedIn's SPA navigates between jobs
+  // without ever unmounting this panel, so without this the previous job's warning icon hangs
+  // over the next one — which reads as "this analysis failed" on a job that analyzed fine.
+  useEffect(() => setAnalyzeError(null), [pageInfo?.jobId]);
+
   const isPendingFresh = record?.status === "pending" && !isStalePending(record);
   const isPendingStale = record?.status === "pending" && isStalePending(record);
   const busy = analyzing || isPendingFresh;
