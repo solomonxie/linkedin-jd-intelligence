@@ -134,8 +134,6 @@ export function CompanyRoleBriefSkeleton() {
 export function CompanyRoleBrief({ record, onSaved }: { record: JobRecord; onSaved?: () => void }) {
   const [editingKey, setEditingKey] = useState<string | null>(null);
   const [draft, setDraft] = useState("");
-  const [addingKey, setAddingKey] = useState("");
-  const [addDraft, setAddDraft] = useState("");
 
   if (!record.companyInfo || !record.role) return null;
   const companyInfo: CompanyInfo = record.companyInfo;
@@ -162,12 +160,6 @@ export function CompanyRoleBrief({ record, onSaved }: { record: JobRecord; onSav
     setEditingKey(null);
   }
 
-  async function commitAdd(def: FieldDef) {
-    await save(def, addDraft);
-    setAddingKey("");
-    setAddDraft("");
-  }
-
   async function saveOwnership(ownership: "public" | "private" | null, fundingStage: string | null) {
     const updated: JobRecord = {
       ...record,
@@ -182,10 +174,6 @@ export function CompanyRoleBrief({ record, onSaved }: { record: JobRecord; onSav
     onSaved?.();
   }
 
-  const blankFields = FIELDS.filter((def) =>
-    def.key === "ownership" ? ownershipBlank(companyInfo) : isBlank(factOf(def, companyInfo, role).value),
-  );
-
   return (
     <div className="brief card">
       <h3>Company & Role Brief</h3>
@@ -194,8 +182,8 @@ export function CompanyRoleBrief({ record, onSaved }: { record: JobRecord; onSav
           const editing = editingKey === def.key;
 
           if (def.key === "ownership") {
-            if (ownershipBlank(companyInfo) && !editing) return null;
-            const badge = ownershipBadge(companyInfo);
+            const blank = ownershipBlank(companyInfo);
+            const badge = blank ? null : ownershipBadge(companyInfo);
             return (
               <li key={def.key}>
                 <span className="brief-label">{def.label}</span>
@@ -211,7 +199,11 @@ export function CompanyRoleBrief({ record, onSaved }: { record: JobRecord; onSav
                   />
                 ) : (
                   <>
-                    <span>{formatOwnership(companyInfo.ownership.value, companyInfo.fundingStage.value)}</span>
+                    {blank ? (
+                      <span className="brief-empty">—</span>
+                    ) : (
+                      <span>{formatOwnership(companyInfo.ownership.value, companyInfo.fundingStage.value)}</span>
+                    )}
                     {badge && <span className="source-badge">{badge}</span>}
                     <button type="button" className="edit-icon" onClick={() => setEditingKey(def.key)} aria-label="Edit Ownership">
                       ✎
@@ -223,7 +215,9 @@ export function CompanyRoleBrief({ record, onSaved }: { record: JobRecord; onSav
           }
 
           const fact = factOf(def, companyInfo, role);
-          if (isBlank(fact.value) && !editing) return null;
+          // Every field stays on screen, blank or not — a hidden row is one you can't fill in, and
+          // "nothing found for this" is itself worth seeing.
+          const blank = isBlank(fact.value);
 
           return (
             <li key={def.key}>
@@ -232,9 +226,10 @@ export function CompanyRoleBrief({ record, onSaved }: { record: JobRecord; onSav
                 <FieldEditor def={def} value={draft} onChange={setDraft} onSave={() => commitEdit(def)} onCancel={() => setEditingKey(null)} />
               ) : (
                 <>
-                  <span>{displayValue(def, fact.value)}</span>
-                  {fact.source === "llm-estimate" && <span className="source-badge">est</span>}
-                  {fact.source === "user" && <span className="source-badge">edited</span>}
+                  {blank ? <span className="brief-empty">—</span> : <span>{displayValue(def, fact.value)}</span>}
+                  {/* A source badge on an empty value would be labelling nothing. */}
+                  {!blank && fact.source === "llm-estimate" && <span className="source-badge">est</span>}
+                  {!blank && fact.source === "user" && <span className="source-badge">edited</span>}
                   <button type="button" className="edit-icon" onClick={() => startEdit(def)} aria-label={`Edit ${def.label}`}>
                     ✎
                   </button>
@@ -246,48 +241,6 @@ export function CompanyRoleBrief({ record, onSaved }: { record: JobRecord; onSav
       </ul>
 
       {role.applicantCountInsight && <p className="applicant-insight">💡 {role.applicantCountInsight}</p>}
-
-      {blankFields.length > 0 && (
-        <div className="brief-add-field">
-          <select
-            value={addingKey}
-            onChange={(e) => {
-              setAddingKey(e.target.value);
-              setAddDraft("");
-            }}
-          >
-            <option value="">+ Add field…</option>
-            {blankFields.map((def) => (
-              <option key={def.key} value={def.key}>
-                {def.label}
-              </option>
-            ))}
-          </select>
-          {addingKey === "ownership" && (
-            <OwnershipEditor
-              ownership={companyInfo.ownership.value}
-              fundingStage={companyInfo.fundingStage.value}
-              onSave={(ownership, fundingStage) => {
-                void saveOwnership(ownership, fundingStage);
-                setAddingKey("");
-              }}
-              onCancel={() => setAddingKey("")}
-            />
-          )}
-          {addingKey && addingKey !== "ownership" && (
-            <FieldEditor
-              def={FIELDS.find((f) => f.key === addingKey)!}
-              value={addDraft}
-              onChange={setAddDraft}
-              onSave={() => commitAdd(FIELDS.find((f) => f.key === addingKey)!)}
-              onCancel={() => {
-                setAddingKey("");
-                setAddDraft("");
-              }}
-            />
-          )}
-        </div>
-      )}
 
       <p className="muted">est = LLM's general knowledge, not verified — may be stale. edited = you changed this.</p>
     </div>

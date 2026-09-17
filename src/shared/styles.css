@@ -418,6 +418,11 @@ input:focus {
   flex-shrink: 0;
 }
 
+/* Placeholder for a field nothing was found for — dim enough to scan past, present enough to click. */
+.brief-empty {
+  color: var(--border);
+}
+
 .edit-icon {
   background: none;
   border: none;
@@ -458,15 +463,6 @@ li:hover .edit-icon {
   color: var(--muted);
 }
 
-.brief-add-field {
-  margin-top: 8px;
-  padding-top: 8px;
-  border-top: 1px dashed var(--border);
-  display: flex;
-  align-items: center;
-  gap: 6px;
-  flex-wrap: wrap;
-}
 
 .interview-rounds-section {
   margin-top: 12px;
