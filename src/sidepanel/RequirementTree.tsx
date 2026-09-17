@@ -10,34 +10,24 @@ const TIER_SHORT_LABELS: Record<RequirementTier, string> = {
 // Implied nodes are exclusively nested children by construction (see
 // matchFacts.ts) — only these two tiers ever appear at the top level.
 const TOP_LEVEL_TIERS: RequirementTier[] = ["must-have", "nice-to-have"];
-const SECTION_LABELS: Record<RequirementTier, string> = {
-  "must-have": "Required",
-  "nice-to-have": "Preferred",
-  implied: "Implied skills",
-};
 
 /** Shown in place of RequirementTree while a first-time analysis is still running, so the panel's
- * shape (both tier sections) is visible immediately instead of an empty gap. */
+ * shape is visible immediately instead of an empty gap. */
 export function RequirementTreeSkeleton() {
   return (
-    <>
-      {TOP_LEVEL_TIERS.map((tier) => (
-        <section className="requirement-tier-section" key={tier}>
-          <h4 className="tier-section-heading">{SECTION_LABELS[tier]}</h4>
-          <ul className="requirement-tree">
-            <li className="skeleton-row">Analyzing…</li>
-          </ul>
-        </section>
-      ))}
-    </>
+    <ul className="requirement-tree">
+      <li className="skeleton-row">Analyzing…</li>
+    </ul>
   );
 }
 
 /** Top-level nodes that came out of the same posting line, kept in tree order. A node with no
  * sourceText (older record, or a node the model couldn't trace to one line) forms its own
- * headerless group so it still renders exactly as before. */
+ * headerless group, and carries its tier badge on the node row instead. */
 interface SourceGroup {
   sourceText: string | null;
+  /** Shared by every node in the group — grouping only ever happens within one tier. */
+  tier: RequirementTier;
   nodes: RequirementNode[];
 }
 
@@ -47,7 +37,7 @@ export function groupBySourceText(nodes: RequirementNode[]): SourceGroup[] {
     const sourceText = node.sourceText?.trim() || null;
     const existing = sourceText === null ? undefined : groups.find((g) => g.sourceText === sourceText);
     if (existing) existing.nodes.push(node);
-    else groups.push({ sourceText, nodes: [node] });
+    else groups.push({ sourceText, tier: node.tier, nodes: [node] });
   }
   return groups;
 }
@@ -60,40 +50,53 @@ export function RequirementTree({
   /** Tooltip text for a top-level skill's "ⓘ" icon, or null to omit it. */
   prevalenceTooltip: (skill: string) => string | null;
 }) {
+  // One list, no per-tier headings — each group's badge already says which tier it is. Weights are
+  // still normalized per tier (so they sum to 100 within required and within preferred), and required
+  // groups still come first; only the section split is gone.
+  const groups = TOP_LEVEL_TIERS.flatMap((tier) => groupBySourceText(normalizeWeights(nodes.filter((n) => n.tier === tier))));
+  if (groups.length === 0) return null;
+
   return (
-    <>
-      {TOP_LEVEL_TIERS.map((tier) => {
-        const group = normalizeWeights(nodes.filter((n) => n.tier === tier));
-        if (group.length === 0) return null;
-        return (
-          <section className="requirement-tier-section" key={tier}>
-            <h4 className="tier-section-heading">{SECTION_LABELS[tier]}</h4>
-            <ul className="requirement-tree">
-              {groupBySourceText(group).map((sourceGroup, index) => (
-                <li className="requirement-source-group" key={sourceGroup.sourceText ?? `${sourceGroup.nodes[0].requirement}-${index}`}>
-                  {sourceGroup.sourceText && <p className="requirement-source">{sourceGroup.sourceText}</p>}
-                  <ul>
-                    {sourceGroup.nodes.map((node) => (
-                      <RequirementRow key={node.requirement} node={node} depth={0} prevalenceTooltip={prevalenceTooltip} />
-                    ))}
-                  </ul>
-                </li>
-              ))}
-            </ul>
-          </section>
-        );
-      })}
-    </>
+    <ul className="requirement-tree">
+      {groups.map((group, index) => (
+        <li className="requirement-source-group" key={group.sourceText ?? `${group.nodes[0].requirement}-${index}`}>
+          {group.sourceText && (
+            <p className="requirement-source">
+              <span>{group.sourceText}</span>
+              <span className="tier-badge" data-tier={group.tier}>
+                {TIER_SHORT_LABELS[group.tier]}
+              </span>
+            </p>
+          )}
+          <ul>
+            {group.nodes.map((node) => (
+              <RequirementRow
+                key={node.requirement}
+                node={node}
+                depth={0}
+                groupTier={group.sourceText ? group.tier : null}
+                prevalenceTooltip={prevalenceTooltip}
+              />
+            ))}
+          </ul>
+        </li>
+      ))}
+    </ul>
   );
 }
 
 function RequirementRow({
   node,
   depth,
+  groupTier,
   prevalenceTooltip,
 }: {
   node: RequirementNode;
   depth: number;
+  /** The tier already shown on the group's quoted line, or null when there's no quoted line to carry
+   * it. A row only repeats the badge when it differs — i.e. an "implied" child, which is the one case
+   * where the tier is genuinely new information rather than the same word on every row. */
+  groupTier: RequirementTier | null;
   prevalenceTooltip: (skill: string) => string | null;
 }) {
   const hasChildren = node.children.length > 0;
@@ -114,14 +117,22 @@ function RequirementRow({
             ⓘ
           </span>
         )}
-        <span className="tier-badge" data-tier={node.tier}>
-          {TIER_SHORT_LABELS[node.tier]}
-        </span>
+        {node.tier !== groupTier && (
+          <span className="tier-badge" data-tier={node.tier}>
+            {TIER_SHORT_LABELS[node.tier]}
+          </span>
+        )}
       </span>
       {hasChildren && (
         <ul>
           {node.children.map((child) => (
-            <RequirementRow key={child.requirement} node={child} depth={depth + 1} prevalenceTooltip={prevalenceTooltip} />
+            <RequirementRow
+              key={child.requirement}
+              node={child}
+              depth={depth + 1}
+              groupTier={groupTier}
+              prevalenceTooltip={prevalenceTooltip}
+            />
           ))}
         </ul>
       )}

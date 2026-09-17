@@ -32,6 +32,12 @@ describe("groupBySourceText", () => {
     expect(groups[0].nodes.map((n) => n.requirement)).toEqual(["Python", "Go"]);
   });
 
+  it("carries the group's tier, which every node in it shares", () => {
+    const groups = groupBySourceText([node("Python", "line A"), node("Go", "line A")]);
+
+    expect(groups[0].tier).toBe("must-have");
+  });
+
   it("gives every untraceable node its own headerless group", () => {
     // Two nodes with no source line are two separate requirements, not one shared bullet —
     // merging them on a null key would render them as if the posting said them together.

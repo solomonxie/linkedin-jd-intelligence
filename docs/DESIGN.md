@@ -122,17 +122,20 @@ Side panel:
 │ Implied    4/6    ▓▓▓▓▓▓░░░░     │
 │ (rows below sorted by weight ↓)  │
 │                                   │
-│ "5+ years of Python in prod"     │
-│   ▸ Python (42%) ⓘ       ✔ req.  │
+│ "5+ years of Python in prod" req.│
+│   ▸ Python (42%) ⓘ         ✔     │
 │ "Containerization and orchest-   │
-│  ration experience"              │
-│   ▾ Container system (18%)✔ req. │
-│     ├ Kubernetes (11%) ⓘ ✘ req.  │
-│     ├ Docker (5%)         ✔ impl.│
-│     └ Microservices (2%)  ✔ impl.│
+│  ration experience"          req.│
+│   ▾ Container system (18%)  ✔    │
+│     ├ Kubernetes (11%) ⓘ   ✘     │
+│     ├ Docker (5%)          ✔ impl│
+│     └ Microservices (2%)   ✔ impl│
 │ (quoted line = the posting's own │
-│  wording, verbatim; skills below │
-│  it are what was read out of it) │
+│  wording, verbatim, and it — not │
+│  each skill — carries the tier   │
+│  badge; "impl" still shows on an │
+│  inferred child, where the tier  │
+│  is actually new information)    │
 │  ⓘ hover → "~1,240 candidates in │
 │    San Francisco, CA likely have │
 │    this skill (est. from 8       │
@@ -280,7 +283,9 @@ the side panel renormalizes the percents to sum 100 before drawing the bars.
 **Source text** (`RequirementNode.sourceText`, `InterviewRound.sourceText`): the posting's own line a top-level node was extracted
 from, copied verbatim — never paraphrased or re-punctuated. Every node from the same bullet carries the
 identical string, and the side panel groups on it: the quoted line renders once, with the skills read out
-of it indented underneath. `null` on children, on `"implied"` nodes (the model's own inference, not
+of it indented underneath, and it carries the tier badge — there are no per-tier sections, since
+repeating "required" on every extracted skill said nothing the quoted line above them didn't. Required
+groups still come first and weights still normalize within a tier. `null` on children, on `"implied"` nodes (the model's own inference, not
 something the posting said), and on records analyzed before the field existed — those render exactly as
 they did before, with no quoted line above them. Interview rounds carry the same field for the same
 reason — the short label ("Recruiter screen") is the useful form, the quoted line under it is the proof —
