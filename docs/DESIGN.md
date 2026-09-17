@@ -265,6 +265,15 @@ The merged shape:
 
 `source: "page"` means the model found that fact literally in `rawPageText` (it must not invent or contradict what's actually on the page); `"llm-estimate"` means it filled a gap from general training knowledge, with an explicit instruction to return `value: null` rather than a specific-sounding guess when not reasonably confident — this applies hardest to ARR, funding stage, engineering headcount, senior headcount, and salary-when-not-shown. **`role.applicantCount` is the one field that must never fall back to `"llm-estimate"`** — if the count isn't literally present in the page text, the correct answer is `null`, since there's no reasonable general-knowledge basis for guessing a specific applicant number (unlike ARR or headcount, which have loose public-knowledge anchors).
 
+**Salary** (`role.salaryRange`, `shared/salary.ts`): one fixed shape, `"$120k-150k CAD"` — plain `$`,
+whole thousands with a `k`, ISO currency code at the end. No `C$`/`US$` prefixes, no thousands
+separators or cents, no trailing words. Single figure: `"$145k CAD"`. Hourly: `"$50-70/hr USD"`. The
+prompt asks for exactly this, and `normalizeSalaryRange()` re-derives it from whatever comes back
+anyway, since the model reverts to the posting's own wording often enough that the panel would
+otherwise show two shapes side by side. Pay wording with no parseable figure ("Competitive", "DOE") is
+left as written rather than blanked, and a bare `$` with no other evidence is read as USD. Hand edits
+are not normalized — a typed value is taken literally.
+
 **Team** (`role.team`, `role.teamMission`): a short team name (e.g. "Data Platform", "DevOps", "BI") and a
 mission stated in under 5 words (e.g. "Owns the checkout pipeline") rather than a sentence, same
 `Fact<string>` shape and same `source` semantics as everything else — `"page"` when the posting names the

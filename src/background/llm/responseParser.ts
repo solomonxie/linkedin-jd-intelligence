@@ -6,6 +6,7 @@
 // background/index.ts for how the caller merges them into one AnalysisResult.
 
 import { z } from "zod";
+import { normalizeSalaryRange } from "../../shared/salary";
 import type { CompanyInfo, DayToDayWork, InterviewRound, RequirementNode, RoleClassification, RoleInfo, WorkplaceType } from "../../shared/types";
 
 /**
@@ -103,7 +104,9 @@ const companyInfoSchema = z.object({
 const roleInfoSchema = z.object({
   team: factSchema(z.string()),
   teamMission: factSchema(z.string()),
-  salaryRange: factSchema(z.string()),
+  // Normalized rather than trusted: the prompt asks for "$120k-150k CAD", but the model still returns
+  // "C$120,000 - C$150,000 per year" often enough that the panel would show two shapes side by side.
+  salaryRange: factSchema(z.string()).transform((fact) => ({ ...fact, value: normalizeSalaryRange(fact.value) })),
   applicantCount: factSchema(z.number()),
   seniorHeadcount: factSchema(z.number()),
   // Not a Fact (see shared/types.ts) — same array/non-string recovery as `summary` below, but nullable
