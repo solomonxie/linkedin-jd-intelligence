@@ -362,8 +362,11 @@ case of a round with no stated length.
 ### Manual edits (`CompanyRoleBrief.tsx`, `InterviewRounds.tsx`)
 
 Any `companyInfo`/`role` fact, and interview rounds, can be edited or added by hand in the side panel when
-the LLM left them blank or got them wrong — click the ✎ next to a row, or "+ Add field"/"+ Add round" for
-one that's currently empty. A hand-entered/edited value is tagged `source: "user"` (a badge reads
+the LLM left them blank or got them wrong — click the ✎ next to a row, or "+ Add round" for an interview
+step. Every brief row renders whether or not it has a value: a blank one shows a dim "—" and the same ✎,
+which replaced an "+ Add field…" dropdown — hiding empty rows meant the fields most worth filling in by
+hand were the ones you couldn't see, and "nothing found for this" is itself worth knowing. A blank row
+carries no `est`/`edited` badge, since there's no value for it to describe. A hand-entered/edited value is tagged `source: "user"` (a badge reads
 "edited") and written straight to the `JobRecord` via `upsertJobRecord`, no LLM call involved.
 
 **Survives re-analysis**: clicking "Re-analyze" re-derives everything from a fresh LLM call, which would
