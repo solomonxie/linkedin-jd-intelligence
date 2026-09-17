@@ -72,6 +72,11 @@ export function useActiveJob(): ActiveJobState {
   // the id from first render forever.
   const tabIdRef = useRef<number | null>(null);
   tabIdRef.current = tabId;
+  const pageInfoRef = useRef<PageInfoResponse | null>(null);
+  pageInfoRef.current = pageInfo;
+  // Identifies the newest fetch. Only it is allowed to clear the spinner, so a run superseded
+  // mid-flight (PAGE_CHANGED can arrive faster than the retry loop finishes) can't strand it.
+  const fetchRunRef = useRef(0);
   const refreshOnTab = useCallback(
     (updatedTabId: number) => {
       if (updatedTabId === tabIdRef.current) refresh();
@@ -90,7 +95,10 @@ export function useActiveJob(): ActiveJobState {
     // Ask again explicitly once the new document is up.
     const onTabUpdated = (updatedTabId: number, info: chrome.tabs.OnUpdatedInfo) => {
       void updateActiveTab();
-      if (info.status === "complete" || info.url) refreshOnTab(updatedTabId);
+      // Only a finished document load. Deliberately NOT info.url: LinkedIn's SPA rewrites the URL
+      // constantly, and each one restarting the retry loop below means it never gets to finish.
+      // In-page navigation is already covered by the content script's PAGE_CHANGED push.
+      if (info.status === "complete") refreshOnTab(updatedTabId);
     };
     updateActiveTab();
     chrome.tabs.onActivated.addListener(updateActiveTab);
@@ -117,7 +125,10 @@ export function useActiveJob(): ActiveJobState {
     }
 
     let cancelled = false;
-    setLoading(true);
+    const runId = ++fetchRunRef.current;
+    // Only the first fetch for a tab shows the spinner — a re-ask keeps the current view up rather
+    // than flashing "Loading…" over it, so a stuck re-ask can never present as a stuck panel.
+    setLoading((current) => current || pageInfoRef.current === null);
     setContentScriptMissing(false);
     setLoadError(null);
 
@@ -149,7 +160,7 @@ export function useActiveJob(): ActiveJobState {
           else setLoadError(error instanceof Error ? error.message : String(error));
         }
       } finally {
-        if (!cancelled) setLoading(false);
+        if (runId === fetchRunRef.current) setLoading(false);
       }
     })();
 
