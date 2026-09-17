@@ -4,6 +4,7 @@
 
 import { useEffect } from "react";
 import { CompanyRoleBrief } from "./CompanyRoleBrief";
+import { DayToDay } from "./DayToDay";
 import { InterviewRounds } from "./InterviewRounds";
 import { RequirementTree } from "./RequirementTree";
 import { TierSummary } from "./App";
@@ -29,6 +30,8 @@ export function PrintPage({ record }: { record: JobRecord }) {
       </header>
 
       {record.companyInfo && record.role && <CompanyRoleBrief record={record} />}
+
+      {record.dayToDay && <DayToDay work={record.dayToDay} />}
 
       <div className="card">
         <h3>Skill / Experience Match</h3>

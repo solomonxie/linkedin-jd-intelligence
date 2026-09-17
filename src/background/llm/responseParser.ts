@@ -6,7 +6,7 @@
 // background/index.ts for how the caller merges them into one AnalysisResult.
 
 import { z } from "zod";
-import type { CompanyInfo, InterviewRound, RequirementNode, RoleClassification, RoleInfo, WorkplaceType } from "../../shared/types";
+import type { CompanyInfo, DayToDayWork, InterviewRound, RequirementNode, RoleClassification, RoleInfo, WorkplaceType } from "../../shared/types";
 
 /**
  * The extraction call's raw response shape — companyInfo may legitimately be
@@ -23,6 +23,7 @@ export interface ExtractionResponse {
   companyInfo: CompanyInfo | null;
   role: RoleInfo;
   roleClassification: RoleClassification;
+  dayToDay: DayToDayWork | null;
   interviewRounds: InterviewRound[];
   summary: string;
 }
@@ -130,6 +131,16 @@ const summarySchema = z.preprocess(
   z.string(),
 );
 
+const dayToDaySchema = z.object({
+  brief: summarySchema,
+  // Omitted/nulled for a single-focus role, which is expected — and the occasional percent comes back
+  // as a string ("80"), so coerce rather than fail the whole response over it.
+  split: z.preprocess(
+    (v) => (Array.isArray(v) ? v : []),
+    z.array(z.object({ area: z.string(), percent: z.coerce.number() })),
+  ),
+});
+
 const extractionResponseSchema = z.object({
   jobTitle: z.string(),
   company: z.string(),
@@ -145,6 +156,8 @@ const extractionResponseSchema = z.object({
     normalizedRole: z.string(),
     rationale: z.string(),
   }),
+  // A model that skips the field entirely leaves the section unrendered rather than failing the run.
+  dayToDay: z.preprocess((v) => (v && typeof v === "object" ? v : null), dayToDaySchema.nullable()),
   // Defaults to [] if the model omits it or sends null — nothing found is the common case.
   interviewRounds: z.preprocess((v) => v ?? [], z.array(interviewRoundSchema)),
   summary: summarySchema,
