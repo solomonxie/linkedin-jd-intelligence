@@ -89,9 +89,8 @@ async function runAnalysis(
     });
     const requirementsPrompt = buildRequirementsPrompt({ resumeText, rawPageText: request.rawPageText });
 
-    // Two independent calls run concurrently instead of one prompt that pays for both instruction sets
-    // serially — extraction doesn't need the requirement tree's rules/skill-reference bulk (or the resume
-    // at all), and requirements doesn't need the company/role instructions. See promptBuilder.ts.
+    // Two calls, each with only the instructions it needs (see promptBuilder.ts). Extraction runs first so
+    // a page that isn't a job posting never pays for the resume comparison.
     const extractionRaw = await callOpenAI({ prompt: extractionPrompt, apiKey, model, reasoningEffort });
     const extractionParsed = parseExtractionResponse(extractionRaw);
 
