@@ -45,6 +45,12 @@ describe("buildRequirementsPrompt", () => {
     expect(prompt).toContain("Never drop an alternative because the resume shows nothing for it");
   });
 
+  it("asks for the hiring manager's rejection note", () => {
+    const prompt = buildRequirementsPrompt({ resumeText: "x", rawPageText: "x" });
+    expect(prompt).toContain('"rejectionNote": string[]');
+    expect(prompt).toContain("WHY SAY NO");
+  });
+
   it("doesn't include the company/role extraction instructions", () => {
     const prompt = buildRequirementsPrompt({ resumeText: "x", rawPageText: "x" });
     expect(prompt).not.toContain("COMPANY INFO");

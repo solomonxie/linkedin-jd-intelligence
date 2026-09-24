@@ -209,7 +209,7 @@ weighted requirement tree described below and respond with EXACTLY ONE fenced JS
 (\`\`\`json ... \`\`\`) matching the schema. Do not include any text outside that one code block.
 
 SCHEMA
-{ "requirements": RequirementNode[] }
+{ "requirements": RequirementNode[], "rejectionNote": string[] }
 // RequirementNode = {
 //   "requirement": string, "tier": "must-have" | "nice-to-have" | "implied",
 //   "weight": number,          // 0-100, importance relative to sibling nodes
@@ -350,6 +350,18 @@ For every node (every depth), set "matched": true if the resume shows explicit O
 it — e.g. a "Python" requirement is matched, with evidence noting the inference, if the resume only
 lists "Django". Put a short quote or paraphrase in "evidence" and, if applicable, the relevant resume
 fragment in "resumeSnippet". Leave both null if nothing in the resume supports it.
+
+WHY SAY NO — THE HIRING MANAGER'S REJECTION NOTE
+"rejectionNote" is 3-5 strings: you are the hiring manager of this team, writing the internal debrief
+note after deciding to pass on this candidate. Each string is one short, decisive sentence stating one
+concrete reason — a missing must-have, too few years, wrong domain, no evidence of the scale/ownership/
+seniority the role needs, a trajectory that doesn't fit. Blunt and specific, the way a real rejection
+note reads; no hedging, no praise, no advice to the candidate. Ground every point in the resume and the
+posting; never invent a gap the resume doesn't show. Strong fit still gets a note: name the weakest
+points a skeptical hiring manager would raise. Most decisive reason first.
+  - "No production Kubernetes; we need someone running clusters from day one."
+  - "4 years against our 7+, and none of it owning a service end to end."
+  - "All B2C; our customers are enterprise buyers and they haven't worked with one."
 
 INPUTS
 

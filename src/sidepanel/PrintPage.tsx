@@ -7,6 +7,7 @@ import { CompanyRoleBrief } from "./CompanyRoleBrief";
 import { DayToDay } from "./DayToDay";
 import { InterviewRounds } from "./InterviewRounds";
 import { RequirementTree } from "./RequirementTree";
+import { WhySayNo } from "./WhySayNo";
 import { TierSummary } from "./App";
 import type { JobRecord } from "../shared/types";
 
@@ -40,6 +41,8 @@ export function PrintPage({ record }: { record: JobRecord }) {
       {record.companyInfo && record.role && <CompanyRoleBrief record={record} />}
 
       <InterviewRounds record={record} />
+
+      {record.rejectionNote && record.rejectionNote.length > 0 && <WhySayNo record={record} />}
 
       <button type="button" onClick={() => window.print()}>
         Print / Save as PDF

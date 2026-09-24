@@ -255,6 +255,22 @@ describe("parseExtractionResponse", () => {
 });
 
 describe("parseRequirementsResponse", () => {
+  it("keeps the rejection note, dropping blank and non-string entries", () => {
+    const result = parseRequirementsResponse(
+      JSON.stringify(validRequirementsJson({ rejectionNote: ["  No Kubernetes.  ", "", 3, "Too junior."] })),
+    );
+
+    expect(result.ok).toBe(true);
+    if (result.ok) expect(result.result.rejectionNote).toEqual(["No Kubernetes.", "Too junior."]);
+  });
+
+  it("defaults a missing rejection note to []", () => {
+    const result = parseRequirementsResponse(JSON.stringify(validRequirementsJson()));
+
+    expect(result.ok).toBe(true);
+    if (result.ok) expect(result.result.rejectionNote).toEqual([]);
+  });
+
   it("keeps the posting's own line, trimmed", () => {
     const result = parseRequirementsResponse(
       JSON.stringify(
