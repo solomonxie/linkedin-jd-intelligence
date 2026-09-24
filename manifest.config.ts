@@ -13,7 +13,7 @@ export default defineManifest({
     128: "icons/icon-128.png",
   },
   permissions: ["storage", "unlimitedStorage", "sidePanel"],
-  host_permissions: ["https://www.linkedin.com/*", "https://api.openai.com/*"],
+  host_permissions: ["http://*/*", "https://*/*", "https://api.openai.com/*"],
   background: {
     service_worker: "src/background/index.ts",
     type: "module",
@@ -27,7 +27,7 @@ export default defineManifest({
   },
   content_scripts: [
     {
-      matches: ["https://www.linkedin.com/jobs/*"],
+      matches: ["http://*/*", "https://*/*"],
       js: ["src/content-scripts/linkedin/main.ts"],
       run_at: "document_idle",
     },

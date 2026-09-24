@@ -17,6 +17,7 @@ import type { CompanyInfo, DayToDayWork, InterviewRound, RequirementNode, RoleCl
  * persisted.
  */
 export interface ExtractionResponse {
+  isJobPosting: boolean;
   jobTitle: string;
   company: string;
   location: string;
@@ -149,6 +150,7 @@ const dayToDaySchema = z.object({
 });
 
 const extractionResponseSchema = z.object({
+  isJobPosting: z.preprocess((v) => v !== false, z.boolean()),
   jobTitle: z.string(),
   company: z.string(),
   location: z.string(),

@@ -10,9 +10,7 @@ import { onJobRecordUpdated, onPageChanged, requestPageInfo, type PageInfoRespon
 import { extractJobId } from "../content-scripts/linkedin/scraper";
 import type { JobRecord } from "../shared/types";
 
-// Mirrors manifest.config.ts's content_scripts match pattern — the content script is only ever
-// injected here, so anywhere else a missing response means "not an eligible page," not "reload me."
-const LINKEDIN_JOBS_URL_PATTERN = /^https:\/\/www\.linkedin\.com\/jobs\//;
+const WEB_URL_PATTERN = /^https?:\/\//i;
 
 // The content script runs at document_idle, which on a page as heavy as LinkedIn's lands well
 // after the side panel's first ask — so the first attempt losing the race is normal, not a
@@ -144,11 +142,9 @@ export function useActiveJob(): ActiveJobState {
     (async () => {
       try {
         const tab = await chrome.tabs.get(tabId);
-        if (!tab.url || !LINKEDIN_JOBS_URL_PATTERN.test(tab.url)) {
-          // No content script was ever going to answer here — this is just an ordinary
-          // "wrong page" state, not a recoverable content-script-missing one.
+        if (!tab.url || !WEB_URL_PATTERN.test(tab.url)) {
           if (!cancelled) {
-            setPageInfo({ jobId: null, url: tab.url ?? "", rawPageText: "", jobTitle: null, company: null });
+            setPageInfo({ jobId: null, url: tab.url ?? "", rawPageText: "", isLikelyJobPage: false, jobTitle: null, company: null });
             setRecord(null);
           }
           return;
@@ -162,7 +158,7 @@ export function useActiveJob(): ActiveJobState {
         const urlJobId = extractJobId(tab.url);
         if (urlJobId !== pageInfoRef.current?.jobId) {
           setPageReady(false);
-          setPageInfo({ jobId: urlJobId, url: tab.url, rawPageText: "", jobTitle: null, company: null });
+          setPageInfo({ jobId: urlJobId, url: tab.url, rawPageText: "", isLikelyJobPage: false, jobTitle: null, company: null });
           setRecord(urlJobId ? ((await getJobRecord(urlJobId)) ?? null) : null);
           if (cancelled) return;
         }

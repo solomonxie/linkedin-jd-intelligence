@@ -9,8 +9,8 @@ LinkedIn JD Intelligence
 
 ## Short description (≤132 characters, shown in search results)
 
-Analyzes LinkedIn job postings against your resume — skill match, company/role facts, interview
-process. Your data stays local.
+Analyzes job postings on LinkedIn and company career sites against your resume — skill match,
+company/role facts, interview process. Your data stays local.
 
 ## Detailed description
 
@@ -22,8 +22,10 @@ nothing sold or shared. Full details: see this extension's Privacy Policy link o
 
 ---
 
-LinkedIn JD Intelligence reads the job posting you're viewing on LinkedIn and compares it against your
-resume, using your own OpenAI API key, to show you:
+LinkedIn JD Intelligence reads visible text from the active HTTP(S) page when you open its side panel.
+It analyzes a job posting on LinkedIn or another job site against your resume, using your own OpenAI
+API key, to show you. You start analysis by clicking Analyze; the model can reject a page that does not
+contain a specific job posting. Page text is not sent to OpenAI just by browsing.
 
 - A weighted skill/requirement match — what the posting asks for, what's required vs. preferred vs.
   implied, and whether your resume shows evidence for each one
@@ -33,8 +35,8 @@ resume, using your own OpenAI API key, to show you:
 - A per-region estimate of how common a skill is among postings you've analyzed, to help gauge
   competition
 
-Bring your own OpenAI API key (Settings page) and one or more resumes (PDF/DOCX), then open any
-LinkedIn job posting and click Analyze.
+Bring your own OpenAI API key (Settings page) and one or more resumes (PDF/DOCX), then open a job
+posting on LinkedIn or a company careers site and click Analyze.
 
 Not affiliated with, endorsed by, or sponsored by LinkedIn Corporation.
 
@@ -48,8 +50,9 @@ English (United States)
 
 ## Single purpose description (Privacy practices tab)
 
-Analyzes the LinkedIn job posting you're currently viewing against your resume — skill match, a
-company/role brief, and interview process — entirely within a Chrome side panel.
+Analyzes the job posting you're currently viewing against your resume — skill match, a company/role
+brief, and interview process — entirely within a Chrome side panel. Reads visible text on HTTP(S)
+pages in the active tab; sends page and resume text to OpenAI only after the user clicks Analyze.
 
 ## Permission justifications (Privacy practices tab)
 
@@ -57,11 +60,12 @@ company/role brief, and interview process — entirely within a Chrome side pane
   browser profile.
 - **unlimitedStorage**: analysis history (IndexedDB) can grow past the default quota over many
   analyzed postings.
-- **sidePanel**: the extension's UI is a Chrome side panel, shown alongside the LinkedIn tab you're
+- **sidePanel**: the extension's UI is a Chrome side panel, shown alongside the active tab you're
   viewing.
-- **Host permission** (`https://www.linkedin.com/*`, `https://api.openai.com/*`): `linkedin.com` is
-  read-only access to the currently open job posting's text (job description, company/role details)
-  so it can be analyzed — no other LinkedIn data is accessed. `api.openai.com` is used to send that
+- **Host permission** (`http://*/*`, `https://*/*`, `https://api.openai.com/*`): broad read-only access
+  to visible text on HTTP(S) pages in the active tab, so job postings on LinkedIn and other job sites
+  can be analyzed. Page text is not sent externally just by browsing; the user starts analysis from
+  the side panel. `api.openai.com` is used to send that
   job posting text and your resume text to OpenAI's API, authenticated with your own API key, to
   generate the analysis. No other host is ever contacted.
 - **Remote code**: This item does not use remote code. Every script it runs ships inside the packaged
@@ -78,7 +82,7 @@ Data categories to check:
 - **Personally identifiable information** — resume content may contain PII (name, contact info, work
   history).
 - **Authentication information** — the OpenAI API key the user enters is a credential.
-- **Website content** — the LinkedIn job posting text (and, less centrally, the resume file's text) is
+- **Website content** — visible text from the active HTTP(S) page and the resume file's text are
   read and processed.
 
 Leave every other category (health, financial/payment, personal communications, location, web history,

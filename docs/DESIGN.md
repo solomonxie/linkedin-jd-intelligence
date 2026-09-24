@@ -4,7 +4,7 @@
 
 ## Overview
 
-A Chrome extension (Manifest V3) that, on a LinkedIn job posting, scans the page and uses an LLM (OpenAI API) to:
+A Chrome extension (Manifest V3) that reads the active HTTP(S) page and uses an LLM (OpenAI API) to analyze a job posting found there, including LinkedIn and company career sites:
 
 - extract job requirements as a **weighted, expandable hierarchy** (main skills with nested sub-skills, ordered by importance), including skills a requirement *implies* and not just literal keywords
 - compare those requirements against the user's resume and show what's matched vs. missing
@@ -14,12 +14,31 @@ A Chrome extension (Manifest V3) that, on a LinkedIn job posting, scans the page
 
 Everything — API key, resumes, job cache — lives entirely on-device. There is no backend server. LLM access is an OpenAI API key only for v1 (tab-automation modes that would drive an open ChatGPT/Gemini tab were considered and dropped as too unstable for now — see Backlog).
 
+## Supported pages and privacy
+
+The extension supports job postings on LinkedIn and other HTTP(S) sites, including company career
+portals. Its content script is allowed on HTTP(S) pages so the side panel can read the active page's
+visible text using `main` when present and `body` otherwise. That text is read when the side panel
+requests page information. Analysis is user-triggered; browsing a page alone does not submit its text
+to OpenAI. The extraction prompt first asks whether the page contains a specific job posting. A
+negative decision is shown as an analysis error, and the resume matching call is skipped.
+
+Before enabling Analyze, a local precheck accepts a job-like URL path/query key or finds one of a
+small set of posting phrases (such as "job description," "responsibilities," or "qualifications") in
+the page text. The text used for both recognition and analysis removes header, footer, navigation,
+and sidebar regions, so a site-wide careers link cannot qualify an otherwise unrelated page. A page
+that fails this check shows "Open a job posting to analyze it" and is not sent to OpenAI.
+
+This broad page access requires host permissions for `http://*/*` and `https://*/*`. The extension
+does not read pages on browser-internal or extension URLs. External requests remain limited to
+`api.openai.com`, and only occur for an analysis the user starts.
+
 ## Architecture
 
 ```mermaid
 flowchart LR
-    subgraph linkedinTab["LinkedIn job tab"]
-        CS["content script\nscraper.ts"]
+    subgraph jobTab["Active HTTP(S) tab"]
+        CS["content script\npage text + LinkedIn job hints"]
     end
     subgraph panel["Side panel (React)"]
         SP["Side panel UI"]
@@ -41,7 +60,7 @@ flowchart LR
     SP -- "cache lookup by jobId" --> DB
 ```
 
-No `scripting`/`tabs` permissions and no `chatgpt.com`/`gemini.google.com` host access — the extension only ever talks to `linkedin.com` (content script) and `api.openai.com` (background).
+No `scripting` permission or tab injection is used. Host access covers HTTP(S) pages for page-text extraction and `api.openai.com` for analysis; there is no `chatgpt.com`/`gemini.google.com` access.
 
 ## Analyze flow (manual trigger, per-job caching)
 
@@ -49,14 +68,14 @@ No `scripting`/`tabs` permissions and no `chatgpt.com`/`gemini.google.com` host 
 sequenceDiagram
     actor U as User
     participant SP as Side panel
-    participant CS as Content script (LinkedIn tab)
+    participant CS as Content script (active HTTP(S) tab)
     participant BG as Background
     participant DB as IndexedDB
     participant API as OpenAI API
 
-    U->>SP: focuses/switches to a LinkedIn job tab
+    U->>SP: opens side panel on an HTTP(S) tab
     SP->>CS: request current page info
-    CS-->>SP: jobId (URL regex), rawPageText (broad text scope, length-capped)
+    CS-->>SP: jobId (LinkedIn ID or page URL), rawPageText (main/body, length-capped)
     SP->>DB: lookup JobRecord by jobId
     alt cached result exists
         DB-->>SP: cached JobRecord
@@ -67,7 +86,13 @@ sequenceDiagram
     end
     U->>SP: click Analyze / Re-analyze
     SP->>BG: analyze(jobId, rawPageText, activeResumeText)
-    BG->>API: one prompt: extract title/company/location/brief/role-classification\nfrom rawPageText, mark page-derived facts vs estimates,\nbuild weighted requirement tree vs resume
+    BG->>API: classify page and extract job details
+    alt not a specific job posting
+        API-->>BG: isJobPosting=false
+        BG-->>SP: show not-a-job-posting message
+    else job posting
+        BG->>API: build weighted requirement tree vs resume
+    end
     API-->>BG: raw response
     BG->>BG: extract fenced JSON, validate with zod, normalize weights locally
     BG->>DB: put JobRecord (upsert by jobId — re-analysis replaces, never duplicates)
@@ -75,7 +100,7 @@ sequenceDiagram
     SP-->>U: render brief + role classification + weighted/expandable requirement tree
 ```
 
-Analysis is **manual-trigger only** — never fired automatically by page load, so browsing listings never silently spends an API call. The side panel is per-window (Chrome's default), not auto-bound to one tab — it listens for `chrome.tabs.onActivated`/`onUpdated` and re-runs the lookup above every time the focused tab changes, so switching between LinkedIn job tabs shows that tab's cached result instead of stale data from the previous one.
+Analysis is **manual-trigger only** — never fired automatically by page load, so browsing listings never silently spends an API call. The side panel is per-window (Chrome's default), not auto-bound to one tab — it listens for `chrome.tabs.onActivated`/`onUpdated` and re-runs the lookup above every time the focused tab changes, so switching between job tabs shows that tab's cached result instead of stale data from the previous one.
 
 ### Task durability
 
@@ -171,11 +196,11 @@ Options page (Settings only — History is a separate page, opened via the side 
 ```jsonc
 {
   "permissions": ["storage", "unlimitedStorage", "sidePanel"],
-  "host_permissions": ["https://www.linkedin.com/*", "https://api.openai.com/*"],
+  "host_permissions": ["http://*/*", "https://*/*", "https://api.openai.com/*"],
   "background": { "service_worker": "src/background/index.ts", "type": "module" },
   "side_panel": { "default_path": "src/sidepanel/index.html" },
   "options_ui": { "page": "src/options/index.html", "open_in_tab": true },
-  "content_scripts": [{ "matches": ["https://www.linkedin.com/jobs/*"], "js": ["src/content-scripts/linkedin/main.ts"], "run_at": "document_idle" }]
+  "content_scripts": [{ "matches": ["http://*/*", "https://*/*"], "js": ["src/content-scripts/linkedin/main.ts"], "run_at": "document_idle" }]
 }
 ```
 
@@ -210,16 +235,17 @@ src/
 
 ## Key mechanics
 
-### LinkedIn scraping (`scraper.ts`)
+### Page text extraction (`scraper.ts`)
 
-No per-field selectors beyond two robust, low-risk ones. Job ID comes from a regex on the URL (`/jobs/view/{id}` or the `currentJobId` query param) — a URL pattern is far more stable than any DOM selector. Everything else is one broad text grab: `document.querySelector('main')?.innerText ?? document.body.innerText`, truncated to a bounded length (30,000 characters — generous on purpose: LinkedIn renders the premium company-insights block *after* the description, and a tighter cap cut exactly that off) to keep token cost predictable on LinkedIn's often-long pages (related-jobs rails, feed suggestions, etc.). This raw text is handed to the LLM wholesale — the LLM does *all* field extraction (title, company, location, description, applicant count if present, salary if present, company-card info if present), not the content script. A `MutationObserver` + URL-change watch re-triggers extraction on LinkedIn's SPA navigation; if the URL doesn't match a job-view pattern at all, the side panel shows "not a job page" without bothering to call the LLM.
+The content script reads broad visible text from `main`, falling back to `body`, on any active HTTP(S) page. It caps the text at 30,000 characters. LinkedIn job IDs come from the `/jobs/view/{id}` path or `currentJobId`; other pages use their URL as the local cache identity. Text goes to the LLM only when the user clicks Analyze. The extraction response classifies whether the page contains a specific job posting; on a rejection, no resume matching call runs.
 
 This trades a bit of extraction precision for resilience: the extension only breaks if LinkedIn removes the page's text content entirely, not if it renames a CSS class.
 
 ### Prompt/response contract
 
-Two prompts, run concurrently (`Promise.all` in `runAnalysis`), each producing its own fenced JSON block,
-merged into one `AnalysisResult` by the caller:
+Two prompts produce fenced JSON blocks that are merged into one `AnalysisResult` by the caller. The
+extraction prompt runs first and includes the job-posting check; the requirements prompt runs only if
+that check passes:
 
 - **Extraction** (`buildExtractionPrompt`, from `rawPageText` alone — no resume): `jobTitle`, `company`,
   `location`, `workplaceType`, `companyInfo`, `role`, `roleClassification`, `interviewRounds`, `summary`.

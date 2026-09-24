@@ -17,6 +17,8 @@ export interface PageInfoResponse {
   jobId: string | null;
   url: string;
   rawPageText: string;
+  /** Deterministic page gate from job-like URL paths or posting-specific text. */
+  isLikelyJobPage: boolean;
   /** Best-effort, LLM-free title/company read straight from the job's own row in a currently-
    * rendered LinkedIn list (see content-scripts/linkedin/listFilter.ts findCurrentJobCardInfo) —
    * null when that row isn't on the page right now, e.g. a bare /jobs/view/{id} page. Lets the side
