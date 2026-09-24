@@ -147,6 +147,7 @@ export interface AnalysisResult {
   dayToDay: DayToDayWork | null;
   requirements: RequirementNode[];
   interviewRounds: InterviewRound[];
+  rejectionNote: string[];
   summary: string;
 }
 
@@ -175,6 +176,8 @@ export interface JobRecord {
   dayToDay?: DayToDayWork | null;
   requirements: RequirementNode[];
   interviewRounds: InterviewRound[];
+  /** The hiring manager's internal pass-on-this-candidate note. Absent on records analyzed before this field existed. */
+  rejectionNote?: string[];
   summary: string | null;
 
   /** Kept when status is "unparsed", for a manual "view raw response" fallback. */

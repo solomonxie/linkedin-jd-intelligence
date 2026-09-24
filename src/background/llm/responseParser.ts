@@ -32,6 +32,7 @@ export interface ExtractionResponse {
 
 export interface RequirementsResponse {
   requirements: RequirementNode[];
+  rejectionNote: string[];
 }
 
 function factSchema<T extends z.ZodTypeAny>(valueSchema: T) {
@@ -174,6 +175,10 @@ const extractionResponseSchema = z.object({
 
 const requirementsResponseSchema = z.object({
   requirements: z.array(requirementNodeSchema),
+  rejectionNote: z.preprocess(
+    (v) => (Array.isArray(v) ? v.filter((s) => typeof s === "string" && s.trim()).map((s: string) => s.trim()) : []),
+    z.array(z.string()),
+  ),
 }) satisfies z.ZodType<RequirementsResponse>;
 
 export type ParseResult<T> = { ok: true; result: T } | { ok: false; rawText: string; reason: string };
