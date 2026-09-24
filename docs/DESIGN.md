@@ -110,80 +110,15 @@ The actual OpenAI call happens in the background service worker, not in the side
 
 ## Wireframes (ASCII)
 
-Side panel:
-```
-┌─────────────────────────────────┐
-│ LinkedIn JD Intelligence    ⚙   │
-├─────────────────────────────────┤
-│ Senior Backend Engineer          │
-│  → classified as: Data Engineer  │
-│ Acme Corp · San Francisco, CA    │
-│ Resume: [Backend ▾]              │
-│                                   │
-│ ▾ Company & Role Brief            │
-│  Domain        acme.com     est  │
-│  Size          1,001-5,000  page │
-│  Eng. size     ~300         est  │
-│  ARR           ~$200M       est  │
-│  Stage         Public (NYSE) page│
-│  Tech stack    Python,Go,K8s est │
-│  Salary        $150K-$190K  page │
-│  Applicants    87 applicants page│
-│  Sr. headcount ~40 sr. eng.  est │
-│  (est = LLM's general knowledge, │
-│   not verified — may be stale)   │
-│                                   │
-│         [ Re-analyze ]           │
-│                                   │
-│ ▾ Day-to-day work                 │
-│  Full-stack on an internal admin  │
-│  app, but mostly backend — CRUD   │
-│  services and the API behind them.│
-│  Backend   ▓▓▓▓▓▓▓▓░░  80%       │
-│  Frontend  ▓▓░░░░░░░░  20%       │
-│                                   │
-│ Required   9/10   ▓▓▓▓▓▓▓▓▓░     │
-│ Preferred  2/3    ▓▓▓▓▓▓░░░░     │
-│ Implied    4/6    ▓▓▓▓▓▓░░░░     │
-│ (rows below sorted by weight ↓)  │
-│                                   │
-│ "5+ years of Python in prod" req.│
-│   ▸ Python (42%) ⓘ         ✔     │
-│ "Containerization and orchest-   │
-│  ration experience"          req.│
-│   ▾ Container system (18%)  ✔    │
-│     ├ Kubernetes (11%) ⓘ   ✘     │
-│     ├ Docker (5%)          ✔ impl│
-│     └ Microservices (2%)   ✔ impl│
-│ (quoted line = the posting's own │
-│  wording, verbatim, and it — not │
-│  each skill — carries the tier   │
-│  badge; "impl" still shows on an │
-│  inferred child, where the tier  │
-│  is actually new information)    │
-│  ⓘ hover → "~1,240 candidates in │
-│    San Francisco, CA likely have │
-│    this skill (est. from 8       │
-│    postings you've analyzed here;│
-│    rough heuristic, not verified)"│
-│                                   │
-│ [ View job history ]             │
-└─────────────────────────────────┘
-```
+**Every surface is drawn in `uiux/` — one file per subset, kept current with
+the code.** Where a description here and a drawing there disagree, the drawing
+is current.
 
-Options page (Settings only — History is a separate page, opened via the side panel's footer link, not an in-page tab):
-```
-┌──────────────────────────────────────────┐
-│ OpenAI API key   [ ********************* ]  │
-│ Model            [ gpt-4.1-mini       ▾ ]   │
-│ Reasoning effort [ low                ▾ ]   │ (only shown for a reasoning-capable model)
-│                                              │
-│ Resume profiles                             │
-│   • Backend  (active)   [rename] [delete]   │
-│   • Data                [rename] [delete]   │
-│   [ + Upload resume (PDF/DOCX) ]            │
-└──────────────────────────────────────────┘
-```
+| File | Covers |
+|---|---|
+| `uiux/panel.md` | the side panel: every state, every section |
+| `uiux/settings.md` | options page — keys, model, resumes, block lists |
+| `uiux/history.md` | history table and the print page |
 
 ## Toolchain
 
