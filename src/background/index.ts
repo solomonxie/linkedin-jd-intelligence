@@ -92,11 +92,15 @@ async function runAnalysis(
     // Two independent calls run concurrently instead of one prompt that pays for both instruction sets
     // serially — extraction doesn't need the requirement tree's rules/skill-reference bulk (or the resume
     // at all), and requirements doesn't need the company/role instructions. See promptBuilder.ts.
-    const [extractionRaw, requirementsRaw] = await Promise.all([
-      callOpenAI({ prompt: extractionPrompt, apiKey, model, reasoningEffort }),
-      callOpenAI({ prompt: requirementsPrompt, apiKey, model, reasoningEffort }),
-    ]);
+    const extractionRaw = await callOpenAI({ prompt: extractionPrompt, apiKey, model, reasoningEffort });
     const extractionParsed = parseExtractionResponse(extractionRaw);
+
+    if (extractionParsed.ok && !extractionParsed.result.isJobPosting) {
+      await completeAnalysisError(request.jobId, "This page doesn't appear to contain a specific job posting.");
+      return;
+    }
+
+    const requirementsRaw = await callOpenAI({ prompt: requirementsPrompt, apiKey, model, reasoningEffort });
     const requirementsParsed = parseRequirementsResponse(requirementsRaw);
 
     if (!extractionParsed.ok || !requirementsParsed.ok) {
@@ -116,8 +120,9 @@ async function runAnalysis(
       return;
     }
 
-    const companyInfo = extractionParsed.result.companyInfo ?? cached?.companyInfo ?? blankCompanyInfo();
-    const result: AnalysisResult = { ...extractionParsed.result, companyInfo, requirements: requirementsParsed.result.requirements };
+    const { isJobPosting: _isJobPosting, ...extractionResult } = extractionParsed.result;
+    const companyInfo = extractionResult.companyInfo ?? cached?.companyInfo ?? blankCompanyInfo();
+    const result: AnalysisResult = { ...extractionResult, companyInfo, requirements: requirementsParsed.result.requirements };
     await completeAnalysisOk(request.jobId, result);
 
     // Only persist when freshly derived — a cache hit already reflects

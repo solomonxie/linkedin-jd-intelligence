@@ -1,6 +1,6 @@
 {
   "name": "linkedin-jd-intelligence",
-  "version": "0.3.4",
+  "version": "0.4.0",
   "description": "Chrome browser extension: Smart LinkedIn JD intelligence",
   "private": true,
   "type": "module",
