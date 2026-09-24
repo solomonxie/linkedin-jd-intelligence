@@ -9,24 +9,40 @@ import {
   isGetPageInfoRequest,
   type PageInfoResponse,
 } from "../../shared/messaging";
-import { extractJobId, extractRawPageTextWhenReady } from "./scraper";
+import { extractJobId, extractRawPageTextWhenReady, isLikelyJobPage } from "./scraper";
 import { findCurrentJobCardInfo, initListFilter, scheduleListFilterPass } from "./listFilter";
 
+function pageIdentity(url: string): string {
+  const linkedinJobId = extractJobId(url);
+  if (linkedinJobId) return linkedinJobId;
+  try {
+    const parsed = new URL(url);
+    parsed.hash = "";
+    return `page:${parsed.href}`;
+  } catch {
+    return `page:${url}`;
+  }
+}
+
 async function buildPageInfo(): Promise<PageInfoResponse> {
-  const jobId = extractJobId(location.href);
+  const jobId = pageIdentity(location.href);
   // Best-effort, LLM-free — never lets a failure here stop the response, since rawPageText below is
   // the one thing Analyze actually depends on.
   let jobTitle: string | null = null;
   let company: string | null = null;
   try {
-    if (jobId) ({ jobTitle, company } = findCurrentJobCardInfo(jobId));
+    if (location.hostname === "www.linkedin.com" && extractJobId(location.href)) {
+      ({ jobTitle, company } = findCurrentJobCardInfo(extractJobId(location.href)!));
+    }
   } catch {
     // See listFilter.ts's own module comment.
   }
+  const rawPageText = await extractRawPageTextWhenReady(document);
   return {
     jobId,
     url: location.href,
-    rawPageText: await extractRawPageTextWhenReady(document),
+    rawPageText,
+    isLikelyJobPage: isLikelyJobPage(location.href, rawPageText),
     jobTitle,
     company,
   };
@@ -41,7 +57,7 @@ chrome.runtime.onMessage.addListener((message, _sender, sendResponse) => {
 // Registered after the message listener above so a failure here can never stop this tab from
 // answering GET_PAGE_INFO — block-list list-dimming is a bonus, not core functionality.
 try {
-  initListFilter();
+  if (location.hostname === "www.linkedin.com") initListFilter();
 } catch {
   // See listFilter.ts's own module comment — this shouldn't throw, but never let it take the rest
   // of this content script down if it somehow does.
@@ -88,7 +104,7 @@ const observer = new MutationObserver(() => {
   mutationDebounce = setTimeout(() => {
     notifyIfUrlChanged();
     try {
-      scheduleListFilterPass();
+      if (location.hostname === "www.linkedin.com") scheduleListFilterPass();
     } catch {
       // Same defensive stance as the initListFilter() call above.
     }

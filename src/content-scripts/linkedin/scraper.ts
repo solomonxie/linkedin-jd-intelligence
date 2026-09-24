@@ -7,6 +7,26 @@
 // premium company-insights block (funding, headcount trend) after it, and a tighter cap cut exactly
 // that off. Input tokens are the cheap half of the call.
 const MAX_TEXT_LENGTH = 30_000;
+const JOB_URL_PATTERN = /(?:^|[\/.?&=_-])(?:career|careers|job|jobs|position|positions|opening|openings|vacancy|vacancies|apply|requisition)(?:[\/.?&=_-]|$)/i;
+const JOB_TEXT_PATTERNS = [
+  /\bjob description\b/i,
+  /\bresponsibilities\b/i,
+  /\bwhat you(?:'ll| will) do\b/i,
+  /\bwhat you bring\b/i,
+  /\bminimum qualifications\b/i,
+  /\bpreferred qualifications\b/i,
+  /\bqualifications\b/i,
+  /\brequirements\b/i,
+  /\babout the role\b/i,
+  /\bposition summary\b/i,
+  /\bemployment type\b/i,
+  /\bsalary range\b/i,
+];
+const EXCLUDED_PAGE_CONTENT_SELECTOR = [
+  "header", "footer", "nav", "aside", "script", "style", "noscript", "template",
+  "[hidden]", "[aria-hidden='true']", "[role='banner']", "[role='contentinfo']",
+  "[role='navigation']", "[role='complementary']",
+].join(",");
 
 /**
  * Job id from `/jobs/view/{id}`, LinkedIn's SEO-slugged
@@ -31,6 +51,19 @@ export function isJobPage(url: string): boolean {
   return extractJobId(url) !== null;
 }
 
+export function isLikelyJobPage(url: string, text: string): boolean {
+  try {
+    const parsed = new URL(url);
+    if (JOB_URL_PATTERN.test(parsed.pathname)) return true;
+    if ([...parsed.searchParams.keys()].some((key) => /^(job|jobid|job_id|gh_jid|position|requisition|req)$/i.test(key))) {
+      return true;
+    }
+  } catch {
+    // Invalid URLs can still be checked from page text.
+  }
+  return JOB_TEXT_PATTERNS.some((pattern) => pattern.test(text));
+}
+
 /**
  * Broad text grab: `main` landmark, falling back to the whole body, capped to
  * keep token cost predictable on LinkedIn's often-long pages. Prefers
@@ -39,7 +72,10 @@ export function isJobPage(url: string): boolean {
  */
 export function extractRawPageText(doc: Document = document): string {
   const scope = doc.querySelector("main") ?? doc.body;
-  const text = getVisibleText(scope).trim();
+  if (!scope) return "";
+  const content = scope.cloneNode(true) as Element;
+  content.querySelectorAll(EXCLUDED_PAGE_CONTENT_SELECTOR).forEach((element) => element.remove());
+  const text = (content.textContent ?? "").replace(/\s+/g, " ").trim();
   return text.length > MAX_TEXT_LENGTH ? text.slice(0, MAX_TEXT_LENGTH) : text;
 }
 
@@ -112,6 +148,6 @@ export async function extractRawPageTextWhenReady(
   }
   expandCollapsedSections(scope());
   await delay(pollIntervalMs);
-  const text = getVisibleText(scope()).trim();
+  const text = extractRawPageText(doc);
   return text.length > MAX_TEXT_LENGTH ? text.slice(0, MAX_TEXT_LENGTH) : text;
 }

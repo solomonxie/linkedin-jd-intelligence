@@ -2,7 +2,7 @@
 
 > 🤖 This repo is built with AI-assisted coding (Claude Code).
 
-Chrome browser extension: Smart LinkedIn JD intelligence.
+Chrome browser extension: job posting intelligence for LinkedIn and company career sites.
 
 **[Install from the Chrome Web Store](https://chromewebstore.google.com/detail/linkedin-jd-intelligence/cbigdbaklnmnjoehphidondmogiaehne)**
 
@@ -20,14 +20,18 @@ on "Analyze" actually flows end to end — see [`src/README.md`](src/README.md).
 
 ## Privacy
 
-Everything this extension touches — your OpenAI API key, resume text, and every job analysis — is
-stored **only in your own browser profile** (`chrome.storage.local` / IndexedDB). Nothing is ever
+Your OpenAI API key, resume text, and every job analysis are stored **only in your own browser
+profile** (`chrome.storage.local` / IndexedDB). Nothing is ever
 sent to, or readable by, any server this extension's developer runs — there is no backend.
 
 The **only** network call it ever makes is a direct request from your browser to OpenAI's API, using
 the key you provide, to generate the analysis you explicitly ask for by clicking Analyze. Since
 every call is authenticated with your own key, every one of them is traceable in your own OpenAI
 account's usage dashboard — nothing routes through, or is logged by, anyone else.
+
+The extension can read visible text from the active HTTP(S) page when the side panel is open. It sends
+that page text to OpenAI only after you click Analyze; the model checks whether the page contains a
+specific job posting before running resume matching.
 
 ```
  Your browser

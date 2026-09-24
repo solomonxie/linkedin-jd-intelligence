@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState, type ReactNode } from "react";
+import { useEffect, useState, type ReactNode } from "react";
 import { useActiveJob } from "./useActiveJob";
 import { useSettings } from "../shared/useSettings";
 import { useSkillPrevalence } from "./useSkillPrevalence";
@@ -74,7 +74,7 @@ export function App() {
   async function handleAnalyze() {
     // pageReady false means rawPageText is still the empty stub — analyzing that would produce a
     // confident write-up of nothing.
-    if (!pageInfo?.jobId || !activeProfile || !pageReady) return;
+    if (!pageInfo?.jobId || !pageInfo.isLikelyJobPage || !activeProfile || !pageReady) return;
     setAnalyzing(true);
     setAnalyzeError(null);
     const ack = await requestAnalyze({
@@ -86,22 +86,6 @@ export function App() {
     setAnalyzing(false);
     if (!ack.ok) setAnalyzeError(ack.error ?? "Analysis failed to start.");
   }
-
-  // Auto-analyze the first time we see a given job: only while it's a valid,
-  // never-before-seen JD page (record === null) with everything needed already
-  // configured. Guarded per jobId so it fires once, not on every render — once
-  // analysis starts, beginAnalysis() writes a "pending" record which flips
-  // `record` away from null and stops this from re-firing.
-  const autoAnalyzedJobId = useRef<string | null>(null);
-  useEffect(() => {
-    const jobId = pageInfo?.jobId;
-    if (!jobId || !activeProfile || !settings.openaiApiKey || !pageReady) return;
-    if (blockReason) return;
-    if (record !== null) return;
-    if (autoAnalyzedJobId.current === jobId) return;
-    autoAnalyzedJobId.current = jobId;
-    void handleAnalyze();
-  }, [pageInfo?.jobId, activeProfile, settings.openaiApiKey, record, blockReason, pageReady]);
 
   // OpenAI's response isn't streamed, so there's no real completion percentage —
   // an elapsed-time counter is the honest "progress info" available. Ticks once
@@ -159,7 +143,14 @@ export function App() {
   if (!pageInfo?.jobId) {
     return (
       <Shell>
-        <p className="empty-state">Open a LinkedIn job posting to analyze it.</p>
+        <p className="empty-state">Open a job posting on any website to analyze it.</p>
+      </Shell>
+    );
+  }
+  if (pageReady && !pageInfo.isLikelyJobPage) {
+    return (
+      <Shell>
+        <p className="empty-state">Open a job posting to analyze it.</p>
       </Shell>
     );
   }
@@ -259,6 +250,7 @@ export function App() {
       <button type="button" className="btn-primary analyze-button" onClick={handleAnalyze} disabled={busy || !pageReady}>
         {busy ? `Analyzing… (${elapsedSeconds}s)` : !pageReady ? "Reading page…" : record?.status === "ok" ? "Re-analyze" : "Analyze"}
       </button>
+      {record?.status === "error" && errorMessage && <p className="error">{errorMessage}</p>}
 
       {/* Whatever's already known (a previous successful analysis, or nothing yet) stays on screen
           through a pending/error/unparsed status instead of being replaced by an error block — the

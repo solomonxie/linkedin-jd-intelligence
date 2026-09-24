@@ -18,13 +18,18 @@ export interface BuildExtractionPromptParams {
 }
 
 export function buildExtractionPrompt({ rawPageText, cachedCompanyInfo }: BuildExtractionPromptParams): string {
-  return `You are helping a job seeker evaluate a LinkedIn job posting.
-You will be given the raw visible text of the job posting page. Extract structured information and
+  return `You are helping a job seeker evaluate a job posting from any website, including LinkedIn and
+company career pages. You will be given raw visible text from the current page. First decide whether
+the page contains a specific job posting. A careers landing page, search results page, company page,
+or unrelated content is not a job posting. When it is not a job posting, set "isJobPosting": false and
+all other fields to empty, null, or [] as appropriate. Do not infer a posting from a careers link alone.
+When it is a job posting, set "isJobPosting": true and extract structured information and
 respond with EXACTLY ONE fenced JSON code block (\`\`\`json ... \`\`\`) matching the schema below. Do not
 include any text outside that one code block.
 
 SCHEMA
 {
+  "isJobPosting": boolean,
   "jobTitle": string,
   "company": string,
   "location": string,
@@ -198,7 +203,7 @@ export interface BuildRequirementsPromptParams {
 }
 
 export function buildRequirementsPrompt({ resumeText, rawPageText }: BuildRequirementsPromptParams): string {
-  return `You are helping a job seeker evaluate a LinkedIn job posting against their resume.
+  return `You are helping a job seeker evaluate a job posting from any website against their resume.
 You will be given the raw visible text of the job posting page and the candidate's resume text. Build the
 weighted requirement tree described below and respond with EXACTLY ONE fenced JSON code block
 (\`\`\`json ... \`\`\`) matching the schema. Do not include any text outside that one code block.
