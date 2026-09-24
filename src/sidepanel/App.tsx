@@ -259,24 +259,16 @@ export function App() {
           Either way the sections show their skeletons rather than an empty panel. */}
       {!record && (
         <>
-          <CompanyRoleBriefSkeleton />
           <div className="card">
             <h3>Skill / Experience Match</h3>
             <RequirementTreeSkeleton label={pageReady ? "Analyzing…" : "Reading page…"} />
           </div>
+          <CompanyRoleBriefSkeleton />
         </>
       )}
 
       {record && (
         <>
-          {record.companyInfo ? (
-            // A cache hit (see background/index.ts) can seed companyInfo before analysis of *this*
-            // job has run at all — role is still genuinely unknown then, so it's stubbed blank rather
-            // than waiting on it too; CompanyRoleBrief already hides any all-blank row.
-            <CompanyRoleBrief record={{ ...record, role: record.role ?? blankRoleInfo() }} onSaved={refresh} />
-          ) : (
-            <CompanyRoleBriefSkeleton />
-          )}
           {record.dayToDay ? <DayToDay work={record.dayToDay} /> : record.status === "pending" && <DayToDaySkeleton />}
           <div className="card">
             <h3>Skill / Experience Match</h3>
@@ -289,6 +281,14 @@ export function App() {
               <RequirementTreeSkeleton />
             )}
           </div>
+          {record.companyInfo ? (
+            // A cache hit (see background/index.ts) can seed companyInfo before analysis of *this*
+            // job has run at all — role is still genuinely unknown then, so it's stubbed blank rather
+            // than waiting on it too; CompanyRoleBrief already hides any all-blank row.
+            <CompanyRoleBrief record={{ ...record, role: record.role ?? blankRoleInfo() }} onSaved={refresh} />
+          ) : (
+            <CompanyRoleBriefSkeleton />
+          )}
           <InterviewRounds record={record} onSaved={refresh} />
         </>
       )}
