@@ -14,6 +14,7 @@ import { RequirementTree, RequirementTreeSkeleton } from "./RequirementTree";
 import { CompanyRoleBrief, CompanyRoleBriefSkeleton } from "./CompanyRoleBrief";
 import { DayToDay, DayToDaySkeleton } from "./DayToDay";
 import { InterviewRounds } from "./InterviewRounds";
+import { WhySayNo } from "./WhySayNo";
 import { blankRoleInfo, type JobRecord, type RequirementTier } from "../shared/types";
 
 const TIER_LABELS: Record<RequirementTier, string> = {
@@ -290,6 +291,7 @@ export function App() {
             <CompanyRoleBriefSkeleton />
           )}
           <InterviewRounds record={record} onSaved={refresh} />
+          <WhySayNo record={record} />
         </>
       )}
 

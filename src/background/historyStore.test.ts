@@ -40,6 +40,7 @@ const sampleResult: AnalysisResult = {
   roleClassification: { normalizedRole: "Data Engineer", rationale: "Pipelines, not just APIs." },
   requirements: [],
   interviewRounds: [],
+  rejectionNote: [],
   summary: "Looks like a data engineering role.",
 };
 

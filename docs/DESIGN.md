@@ -320,6 +320,11 @@ one. Each dropdown keeps an off-list stored value as an extra option, so editing
 can't silently rewrite what the posting actually said, and duration stays blankable for the common
 case of a round with no stated length.
 
+**Why Say No** (`rejectionNote: string[]`): 3-5 blunt sentences, written as this team's hiring manager
+debriefing a pass on the candidate — most decisive gap first. Produced by the requirements call, since
+it needs the resume. Grounded in resume vs posting; a strong fit still gets its weakest points. Read-only,
+re-derived on re-analysis. Records from before the field show a "Re-analyze" prompt instead.
+
 ### Manual edits (`CompanyRoleBrief.tsx`, `InterviewRounds.tsx`)
 
 Any `companyInfo`/`role` fact, and interview rounds, can be edited or added by hand in the side panel when

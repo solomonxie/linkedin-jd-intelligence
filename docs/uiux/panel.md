@@ -51,6 +51,10 @@
 │        "30-minute call…"            │ ← the posting's own line, quoted
 │   ⠿ 2  System design    edited ✎ ✕  │ ← "edited" = yours, not the model's
 │        [ + Add a round ]            │
+│ ▾ Why Say No                        │ ← as this team's hiring manager,
+│   • No production Kubernetes; we    │   passing on you: 3-5 blunt reasons,
+│     need clusters from day one.     │   most decisive first
+│   • 4 years against our 7+.         │
 ├─────────────────────────────────────┤
 │ Settings  History  Export as PDF·   │ ← Export as PDF disabled until an
 │ Export entire DB                    │   analysis has succeeded
@@ -94,6 +98,8 @@
                   analysis; role is stubbed blank rather than waited on
  no rounds found  No interview process found in this job description.
                   Add the rounds yourself as you learn them.
+ no rejection note  Re-analyze to see the hiring manager's rejection note.
+                  (a record analyzed before Why Say No existed)
 ```
 
 The error only ever shows as the ⚠ icon in the toolbar. Whatever was already

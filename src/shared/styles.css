@@ -719,3 +719,12 @@ tbody tr:hover {
   color: var(--muted);
   font-variant-numeric: tabular-nums;
 }
+
+.why-say-no ul {
+  margin: 6px 0;
+  padding-left: 18px;
+}
+
+.why-say-no li {
+  margin: 4px 0;
+}

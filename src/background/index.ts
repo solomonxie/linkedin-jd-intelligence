@@ -122,7 +122,7 @@ async function runAnalysis(
 
     const { isJobPosting: _isJobPosting, ...extractionResult } = extractionParsed.result;
     const companyInfo = extractionResult.companyInfo ?? cached?.companyInfo ?? blankCompanyInfo();
-    const result: AnalysisResult = { ...extractionResult, companyInfo, requirements: requirementsParsed.result.requirements };
+    const result: AnalysisResult = { ...extractionResult, companyInfo, ...requirementsParsed.result };
     await completeAnalysisOk(request.jobId, result);
 
     // Only persist when freshly derived — a cache hit already reflects
