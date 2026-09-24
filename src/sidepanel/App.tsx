@@ -271,6 +271,7 @@ export function App() {
       {record && (
         <>
           {record.dayToDay ? <DayToDay work={record.dayToDay} /> : record.status === "pending" && <DayToDaySkeleton />}
+          <WhySayNo record={record} />
           <div className="card">
             <h3>Skill / Experience Match</h3>
             {record.requirements.length > 0 ? (
@@ -291,7 +292,6 @@ export function App() {
             <CompanyRoleBriefSkeleton />
           )}
           <InterviewRounds record={record} onSaved={refresh} />
-          <WhySayNo record={record} />
         </>
       )}
 
