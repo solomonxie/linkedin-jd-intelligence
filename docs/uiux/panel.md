@@ -12,23 +12,6 @@
 │ ┌─────────────────────────────────┐ │   for the message. The error never
 │ │        Re-analyze               │ │   replaces content already on screen
 │ └─────────────────────────────────┘ │ ← its own full-width row
-│ ▾ Company & Role Brief              │
-│   Industry      Fintech        est  │
-│   Headquarters  San Francisco  page │
-│   Products      Payments API   est  │
-│   Size          1,001-5,000    page │
-│   Eng. size     ~300           est  │
-│   ARR           ~$200M         est  │
-│   Finance       Profitable     est  │
-│   Ownership     Private, Series C   │ ← ownership folds funding stage in:
-│   Tech stack    Python, Go, K8s est │   "Public" makes stage moot
-│   Team          Payments Core  page │
-│   Team mission  …              page │
-│   Salary        $150000-$190000 page│ ← thousands commas stripped, so the
-│   Applicants    87 applied     page │   range reads as one number
-│   Senior level  40 applied     page │
-│   est = the model's general knowledge, not verified — may be stale
-│   ✎ every row edits in place; an all-blank row hides itself
 │ ▾ Day-to-day work                   │
 │   Full-stack on an internal admin   │
 │   app, but mostly backend…          │
@@ -46,6 +29,23 @@
 │       ├ Kubernetes (11%) ⓘ      ✘  │
 │       ├ Docker (5%)         ✔ impl │ ← "impl" only on an inferred child,
 │       └ Microservices (2%)  ✔ impl │   where the tier is new information
+│ ▾ Company & Role Brief              │
+│   Industry      Fintech        est  │
+│   Headquarters  San Francisco  page │
+│   Products      Payments API   est  │
+│   Size          1,001-5,000    page │
+│   Eng. size     ~300           est  │
+│   ARR           ~$200M         est  │
+│   Finance       Profitable     est  │
+│   Ownership     Private, Series C   │ ← ownership folds funding stage in:
+│   Tech stack    Python, Go, K8s est │   "Public" makes stage moot
+│   Team          Payments Core  page │
+│   Team mission  …              page │
+│   Salary        $150000-$190000 page│ ← thousands commas stripped, so the
+│   Applicants    87 applied     page │   range reads as one number
+│   Senior level  40 applied     page │
+│   est = the model's general knowledge, not verified — may be stale
+│   ✎ every row edits in place; an all-blank row hides itself
 │ ▾ Interview Process                 │
 │   ⠿ 1  Recruiter screen        ✎ ✕  │ ← drag to reorder
 │        "30-minute call…"            │ ← the posting's own line, quoted
