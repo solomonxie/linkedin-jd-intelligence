@@ -100,7 +100,7 @@ sequenceDiagram
     SP-->>U: render brief + role classification + weighted/expandable requirement tree
 ```
 
-Analysis is **manual-trigger only** — never fired automatically by page load, so browsing listings never silently spends an API call. The side panel is per-window (Chrome's default), not auto-bound to one tab — it listens for `chrome.tabs.onActivated`/`onUpdated` and re-runs the lookup above every time the focused tab changes, so switching between job tabs shows that tab's cached result instead of stale data from the previous one.
+A never-analyzed **LinkedIn** job auto-analyzes once when the panel shows it (not blocked, key + resume set). Every other site is **manual-trigger only** — its job-page check is a heuristic, so auto-firing could spend an API call on any page. The side panel is per-window (Chrome's default), not auto-bound to one tab — it listens for `chrome.tabs.onActivated`/`onUpdated` and re-runs the lookup above every time the focused tab changes, so switching between job tabs shows that tab's cached result instead of stale data from the previous one.
 
 ### Task durability
 

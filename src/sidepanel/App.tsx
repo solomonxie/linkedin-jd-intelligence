@@ -1,4 +1,4 @@
-import { useEffect, useState, type ReactNode } from "react";
+import { useEffect, useRef, useState, type ReactNode } from "react";
 import { useActiveJob } from "./useActiveJob";
 import { useSettings } from "../shared/useSettings";
 import { useSkillPrevalence } from "./useSkillPrevalence";
@@ -87,6 +87,19 @@ export function App() {
     setAnalyzing(false);
     if (!ack.ok) setAnalyzeError(ack.error ?? "Analysis failed to start.");
   }
+
+  // Auto-analyze a never-before-seen LinkedIn job once (record === null). Other sites stay manual:
+  // their job-page check is a heuristic, so auto-firing there could spend a call on any page.
+  // Guarded per jobId; beginAnalysis() writes a "pending" record, which also stops re-firing.
+  const autoAnalyzedJobId = useRef<string | null>(null);
+  useEffect(() => {
+    const jobId = pageInfo?.jobId;
+    if (!jobId || jobId.startsWith("page:") || !pageInfo.isLikelyJobPage) return;
+    if (!activeProfile || !settings.openaiApiKey || !pageReady || blockReason) return;
+    if (record !== null || autoAnalyzedJobId.current === jobId) return;
+    autoAnalyzedJobId.current = jobId;
+    void handleAnalyze();
+  }, [pageInfo?.jobId, pageInfo?.isLikelyJobPage, activeProfile, settings.openaiApiKey, record, blockReason, pageReady]);
 
   // OpenAI's response isn't streamed, so there's no real completion percentage —
   // an elapsed-time counter is the honest "progress info" available. Ticks once
