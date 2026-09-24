@@ -17,6 +17,10 @@
 │   app, but mostly backend…          │
 │   Backend   ▓▓▓▓▓▓▓▓░░  80%        │
 │   Frontend  ▓▓░░░░░░░░  20%        │
+│ ▾ Why Say No                        │ ← as this team's hiring manager,
+│   • No production Kubernetes; we    │   passing on you: 3-5 blunt reasons,
+│     need clusters from day one.     │   most decisive first
+│   • 4 years against our 7+.         │
 │ ▾ Skill / Experience Match          │
 │   Required   9/10                   │
 │   Preferred  2/3                    │
@@ -51,10 +55,6 @@
 │        "30-minute call…"            │ ← the posting's own line, quoted
 │   ⠿ 2  System design    edited ✎ ✕  │ ← "edited" = yours, not the model's
 │        [ + Add a round ]            │
-│ ▾ Why Say No                        │ ← as this team's hiring manager,
-│   • No production Kubernetes; we    │   passing on you: 3-5 blunt reasons,
-│     need clusters from day one.     │   most decisive first
-│   • 4 years against our 7+.         │
 ├─────────────────────────────────────┤
 │ Settings  History  Export as PDF·   │ ← Export as PDF disabled until an
 │ Export entire DB                    │   analysis has succeeded

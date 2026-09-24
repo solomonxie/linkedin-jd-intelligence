@@ -32,6 +32,8 @@ export function PrintPage({ record }: { record: JobRecord }) {
 
       {record.dayToDay && <DayToDay work={record.dayToDay} />}
 
+      {record.rejectionNote && record.rejectionNote.length > 0 && <WhySayNo record={record} />}
+
       <div className="card">
         <h3>Skill / Experience Match</h3>
         <TierSummary requirements={record.requirements} />
@@ -41,8 +43,6 @@ export function PrintPage({ record }: { record: JobRecord }) {
       {record.companyInfo && record.role && <CompanyRoleBrief record={record} />}
 
       <InterviewRounds record={record} />
-
-      {record.rejectionNote && record.rejectionNote.length > 0 && <WhySayNo record={record} />}
 
       <button type="button" onClick={() => window.print()}>
         Print / Save as PDF
